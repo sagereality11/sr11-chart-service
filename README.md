@@ -48,6 +48,7 @@ The Docker build downloads the Swiss Ephemeris data files (1800–2399) and GeoN
 
 ```bash
 pip install -r requirements.txt
+./scripts/fetch_ephemeris.sh ephe
 python -m unittest discover -s tests -v
 ```
 
