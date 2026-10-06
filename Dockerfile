@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
-RUN apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev curl unzip ca-certificates \
+RUN apt-get update && apt-get install -y --no-install-recommends gcc g++ libc6-dev curl unzip ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY requirements.txt .
