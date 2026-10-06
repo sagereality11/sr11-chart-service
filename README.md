@@ -1,0 +1,61 @@
+# SR11 Chart Service
+
+The calculation service behind the Sage Reality 11 birth chart calculator at [sagereality11.com](https://sagereality11.com). It turns a birth date, time and place into planetary positions, house cusps, angles and major aspects. It does not draw charts or write interpretations.
+
+This source code is published under the GNU Affero General Public License v3 (see `LICENSE`), as required by the Swiss Ephemeris licence used for the calculations.
+
+## What it calculates
+
+* Sun through Pluto, True North Node, South Node (North Node + 180°), Chiron
+* Tropical zodiac, geocentric apparent positions, True Node
+* Houses: Placidus (default), Whole Sign, Equal, Koch, Porphyry, Regiomontanus, Campanus, Alcabitius, Topocentric
+* Ascendant, Descendant, Midheaven, IC
+* Major aspects (conjunction, sextile, square, trine, opposition) with configurable orbs
+* Untimed charts: local-noon positions, plus which placements and aspects could change across the day
+
+Local birth times are converted to UTC with the IANA time zone database, including historical daylight saving rules. Ambiguous and skipped clock times are reported instead of guessed.
+
+## API
+
+All endpoints except `/v1/health` require the header `X-SR11-Key` matching the `SR11_API_KEY` environment variable.
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/v1/health` | engine version, ephemeris and place-data status |
+| GET | `/v1/places?q=paris` | birthplace search (GeoNames) |
+| GET | `/v1/timezones` | IANA time zone list |
+| GET | `/v1/house-systems` | supported house systems |
+| POST | `/v1/chart` | calculate a chart |
+
+Example request body for `/v1/chart`:
+
+```json
+{ "year": 1990, "month": 5, "day": 17, "hour": 14, "minute": 30,
+  "location": { "mode": "place", "place_id": 5128581 },
+  "house_system": "P" }
+```
+
+## Run it
+
+```bash
+docker build -t sr11-chart-service .
+docker run -e SR11_API_KEY=change-me -p 8080:8080 sr11-chart-service
+```
+
+The Docker build downloads the Swiss Ephemeris data files (1800–2399) and GeoNames place data. No birth data is stored or logged.
+
+## Tests
+
+```bash
+pip install -r requirements.txt
+python -m unittest discover -s tests -v
+```
+
+## Credits and licences
+
+* Calculations: Swiss Ephemeris, used under the AGPL-3.0.
+* Place data: © GeoNames, CC BY 4.0.
+* Time zones: IANA tz database.
+* Flask and gunicorn under their own licences.
+
+Copyright © 2026 Sage Reality 11. Licensed under the GNU Affero General Public License v3.0.

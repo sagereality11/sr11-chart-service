@@ -1,0 +1,5 @@
+# Calculation service dependencies (see LICENSES.md for licence of each)
+Flask>=3.0,<4
+gunicorn>=22,<24
+pyswisseph>=2.10.3,<2.11      # Swiss Ephemeris 2.10.03 binding (AGPL-3.0 or Swiss Ephemeris Professional Licence)
+tzdata>=2025.1                # IANA time zone database for zoneinfo; keep updated

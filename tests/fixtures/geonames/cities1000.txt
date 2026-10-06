@@ -1,0 +1,10 @@
+5128581	New York City	New York City		40.71427	-74.00597	P	PPL	US		NY				8804190			America/New_York	2024-01-01
+2643743	London	London		51.50853	-0.12574	P	PPL	GB		ENG				8961989			Europe/London	2024-01-01
+2147714	Sydney	Sydney		-33.86785	151.20732	P	PPL	AU		02				4627345			Australia/Sydney	2024-01-01
+3133895	Tromsø	Tromso		69.6489	18.95508	P	PPL	NO		54				38980			Europe/Oslo	2024-01-01
+1261481	New Delhi	New Delhi		28.63576	77.22445	P	PPL	IN		07				317797			Asia/Kolkata	2024-01-01
+4887398	Chicago	Chicago		41.85003	-87.65005	P	PPL	US		IL				2746388			America/Chicago	2024-01-01
+2729907	Longyearbyen	Longyearbyen		78.2186	15.64007	P	PPL	SJ		21				2060			Arctic/Longyearbyen	2024-01-01
+3451190	Rio de Janeiro	Rio de Janeiro		-22.90642	-43.18223	P	PPL	BR		21				6023699			America/Sao_Paulo	2024-01-01
+2988507	Paris	Paris		48.85341	2.3488	P	PPL	FR		11				2138551			Europe/Paris	2024-01-01
+4717560	Paris	Paris		33.66094	-95.55551	P	PPL	US		TX				24782			America/Chicago	2024-01-01

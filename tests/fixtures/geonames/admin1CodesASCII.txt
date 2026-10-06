@@ -1,0 +1,10 @@
+US.NY	New York	New York	0
+GB.ENG	England	England	0
+AU.02	New South Wales	New South Wales	0
+NO.54	Troms og Finnmark	Troms og Finnmark	0
+IN.07	Delhi	Delhi	0
+US.IL	Illinois	Illinois	0
+SJ.21	Svalbard	Svalbard	0
+BR.21	Rio de Janeiro	Rio de Janeiro	0
+FR.11	Île-de-France	Île-de-France	0
+US.TX	Texas	Texas	0

@@ -1,0 +1,10 @@
+# Optional one-click config for Render.com (any Docker host works).
+services:
+  - type: web
+    name: sr11-chart-service
+    runtime: docker
+    plan: starter
+    healthCheckPath: /v1/health
+    envVars:
+      - key: SR11_API_KEY
+        sync: false   # set this secret in the Render dashboard

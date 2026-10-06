@@ -1,0 +1,9 @@
+# TEST FIXTURE — subset in GeoNames countryInfo format
+US				United States														
+GB				United Kingdom														
+AU				Australia														
+NO				Norway														
+IN				India														
+SJ				Svalbard and Jan Mayen														
+BR				Brazil														
+FR				France														
