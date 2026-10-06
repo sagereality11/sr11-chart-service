@@ -13,4 +13,4 @@ places    offline GeoNames city search (lat, lon, IANA zone)
 zodiac    sign maths and display rounding
 """
 
-__version__ = "0.1.0-draft"
+__version__ = "0.2.0"

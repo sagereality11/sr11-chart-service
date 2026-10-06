@@ -19,7 +19,7 @@ import time
 
 from flask import Flask, jsonify, request
 
-from sr11calc import engine, timeconv
+from sr11calc import asteroids, engine, timeconv
 from sr11calc.places import PlaceIndex
 from sr11calc.service import InputError, build_chart, parse_request
 
@@ -81,6 +81,8 @@ def health():
         "places_loaded": places.loaded,
         "places_count": len(places.places),
         "tzdb": timeconv.tzdb_version(),
+        "asteroid_names": len(asteroids._names()[0]),
+        "optional_points": engine.OPTIONAL_POINT_IDS,
     })
 
 
@@ -92,6 +94,13 @@ def search_places():
     if not places.loaded:
         return _error("location_lookup_failed", "Birthplace search is unavailable. Please use the manual location option.", 503)
     return jsonify({"status": "ok", "results": places.search(q), "attribution": "Place data © GeoNames (CC BY 4.0)"})
+
+
+@app.get("/v1/asteroids")
+def search_asteroids():
+    q = (request.args.get("q") or "").strip()[:60]
+    return jsonify({"status": "ok", "results": asteroids.search(q),
+                    "attribution": "Names: IAU Minor Planet Center. Positions: NASA/JPL Horizons."})
 
 
 @app.get("/v1/timezones")

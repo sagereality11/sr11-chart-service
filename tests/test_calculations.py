@@ -343,3 +343,161 @@ class Api(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---------------------------------------------------------------- v0.2 options
+from sr11calc import asteroids as ast_mod  # noqa: E402
+from sr11calc.aspects import GOLDEN_ANGLE  # noqa: E402
+
+
+def opt_chart(**extra):
+    body = {"year": 1983, "month": 7, "day": 10, "hour": 3, "minute": 55, "house_system": "P",
+            "location": {"mode": "manual", "lat": 52 + 4 / 60, "lon": 1 + 10 / 60, "tz": "Europe/London"}}
+    body.update(extra)
+    return build_chart(parse_request(body, PLACES))
+
+
+class OptionalPoints(unittest.TestCase):
+    def test_mean_node_option(self):
+        t = {b["id"]: b for b in opt_chart()["bodies"]}
+        m = {b["id"]: b for b in opt_chart(node="mean")["bodies"]}
+        self.assertEqual(m["north_node"]["name"], "North Node (Mean)")
+        self.assertNotAlmostEqual(t["north_node"]["lon"], m["north_node"]["lon"], places=3)
+        self.assertLess(ang_diff(t["north_node"]["lon"], m["north_node"]["lon"]), 2.0)  # true node oscillates ±1.7° around mean
+        self.assertAlmostEqual((m["south_node"]["lon"] - m["north_node"]["lon"]) % 360, 180.0, places=10)
+        self.assertTrue(m["north_node"]["speed"] < 0)  # the mean node always moves backwards
+
+    def test_parts_use_day_and_night_formulas(self):
+        c = opt_chart(points=["fortune", "spirit"])
+        b = {x["id"]: x for x in c["bodies"]}
+        asc = c["houses"]["angles"]["asc"]["lon"]
+        sun, moon = b["sun"]["lon"], b["moon"]["lon"]
+        self.assertEqual(c["sect"], "night")   # 3:55 am: Sun below the horizon
+        self.assertLess(ang_diff(b["fortune"]["lon"], asc + sun - moon), 1e-9)
+        self.assertLess(ang_diff(b["spirit"]["lon"], asc + moon - sun), 1e-9)
+        self.assertIsNone(b["fortune"]["retrograde"])
+        d = opt_chart(hour=15, points=["fortune", "spirit"])        # afternoon: day chart
+        bd = {x["id"]: x for x in d["bodies"]}
+        asc_d = d["houses"]["angles"]["asc"]["lon"]
+        self.assertEqual(d["sect"], "day")
+        self.assertLess(ang_diff(bd["fortune"]["lon"], asc_d + bd["moon"]["lon"] - bd["sun"]["lon"]), 1e-9)
+        self.assertLess(ang_diff(bd["spirit"]["lon"], asc_d + bd["sun"]["lon"] - bd["moon"]["lon"]), 1e-9)
+
+    def test_vertex_and_antivertex(self):
+        c = opt_chart(points=["vertex", "antivertex"])
+        b = {x["id"]: x for x in c["bodies"]}
+        self.assertLess(ang_diff(b["vertex"]["lon"], c["houses"]["vertex"]), 1e-9)
+        self.assertAlmostEqual((b["antivertex"]["lon"] - b["vertex"]["lon"]) % 360, 180.0, places=9)
+        self.assertNotIn("antivertex", [a["a"] for a in c["aspects"]] + [a["b"] for a in c["aspects"]])
+
+    def test_lilith_ceres_pallas_juno_vesta(self):
+        c = opt_chart(points=["lilith_mean", "lilith_true", "ceres", "pallas", "juno", "vesta"])
+        b = {x["id"]: x for x in c["bodies"]}
+        for k in ("lilith_mean", "lilith_true", "ceres", "pallas", "juno", "vesta"):
+            self.assertIn(k, b)
+            self.assertIn("house", b[k])
+        self.assertNotAlmostEqual(b["lilith_mean"]["lon"], b["lilith_true"]["lon"], places=2)
+
+    def test_untimed_chart_omits_time_points_but_keeps_others(self):
+        c = opt_chart(time_known=False, points=["fortune", "vertex", "lilith_mean"])
+        ids = [x["id"] for x in c["bodies"]]
+        self.assertIn("lilith_mean", ids)
+        self.assertNotIn("fortune", ids)
+        self.assertEqual({o["id"] for o in c["omitted"]}, {"fortune", "vertex"})
+
+    def test_golden_ratio_aspect(self):
+        self.assertAlmostEqual(GOLDEN_ANGLE, 137.5077640500378, places=9)
+        pts = [{"id": "a", "lon": 10.0, "category": "planet"}, {"id": "b", "lon": 148.0, "category": "planet"}]
+        self.assertEqual(find_aspects(pts, DEFAULT_ORBS), [])
+        a = find_aspects(pts, DEFAULT_ORBS, ["golden"])
+        self.assertEqual(a[0]["type"], "golden")
+        self.assertAlmostEqual(a[0]["orb"], 0.4922, places=3)
+        c = opt_chart(aspects=["golden"])
+        self.assertEqual(c["options"]["aspects"], ["golden"])
+
+    def test_invalid_options_rejected(self):
+        for bad in ({"points": ["pholus"]}, {"node": "south"}, {"aspects": ["quintile"]},
+                    {"asteroids": [1, 2, 3, 4, 5, 6]}, {"asteroids": ["abc"]}):
+            with self.assertRaises(InputError):
+                opt_chart(**bad)
+
+
+# A real JPL Horizons answer (recorded 6 Oct 2026) for Ceres at 2000-01-01 17:00 UT.
+HORIZONS_CERES_J2000 = 184.4987196
+
+
+class Asteroids(unittest.TestCase):
+    def test_horizons_frame_matches_swiss_ephemeris(self):
+        x, _ = swe.calc_ut(2451545.2083333335, swe.CERES, swe.FLG_SWIEPH)
+        self.assertLess(abs(x[0] - HORIZONS_CERES_J2000) * 3600, 1.0)   # < 1 arc-second
+
+    def test_search_by_name_and_number(self):
+        r = ast_mod.search("lilith")
+        self.assertEqual(r[0]["number"], 1181)
+        self.assertEqual(ast_mod.search("1181")[0]["label"], "1181 Lilith")
+        self.assertEqual(ast_mod.search("eros")[0]["number"], 433)
+        self.assertIn("unnamed", ast_mod.search("999999")[0]["label"])
+        self.assertEqual(ast_mod.search("x"), [])
+
+    def test_main_asteroid_numbers_use_swiss_ephemeris(self):
+        c = opt_chart(asteroids=[1, 4])
+        ids = [b["id"] for b in c["bodies"]]
+        self.assertIn("ceres", ids)
+        self.assertIn("vesta", ids)
+
+    def test_horizons_points_join_chart(self):
+        calls = []
+
+        def fake(number, jds):
+            calls.append((number, jds))
+            return [(100.0, 1.0), (99.8, 1.1), (99.6, 1.2)], "1181 Lilith (A927 DE)"
+        old = ast_mod._query
+        ast_mod._query = fake
+        try:
+            c = opt_chart(asteroids=[1181])
+        finally:
+            ast_mod._query = old
+        b = {x["id"]: x for x in c["bodies"]}["ast_1181"]
+        self.assertEqual(b["name"], "1181 Lilith")
+        self.assertEqual(b["label"], "Lilith")
+        self.assertAlmostEqual(b["lon"], 99.8)
+        self.assertTrue(b["retrograde"])
+        self.assertIn("house", b)
+        self.assertEqual(len(calls[0][1]), 3)
+        self.assertAlmostEqual(calls[0][1][2] - calls[0][1][0], 1.0)
+
+    def test_horizons_failure_is_reported_not_invented(self):
+        def fail(number, jds):
+            raise ast_mod.AsteroidError(number, "The asteroid service (NASA/JPL Horizons) could not be reached.")
+        old = ast_mod._query
+        ast_mod._query = fail
+        try:
+            c = opt_chart(asteroids=[433])
+        finally:
+            ast_mod._query = old
+        self.assertEqual(c["status"], "ok")
+        self.assertNotIn("ast_433", [b["id"] for b in c["bodies"]])
+        self.assertIn("ast_433", [o["id"] for o in c["omitted"]])
+
+
+class HorizonsParser(unittest.TestCase):
+    def test_parses_real_reply_format(self):
+        import io
+        import json as _json
+        result = ("API VERSION: 1.2\n Target body name: 1181 Lilith (A927 DE)       {source: JPL#41}\n"
+                  " Date__(UT)__HR:MN:SC.fff        ObsEcLon    ObsEcLat\n$$SOE\n"
+                  " 1983-Jul-09 14:55:00.000 *m  201.1000000   2.5000000\n"
+                  " 1983-Jul-10 02:55:00.000 *m  201.2000000   2.5100000\n"
+                  " 1983-Jul-10 14:55:00.000     201.3000000   2.5200000\n$$EOE\n")
+
+        class Resp(io.BytesIO):
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+        old = ast_mod.urllib.request.urlopen
+        ast_mod.urllib.request.urlopen = lambda req, timeout: Resp(_json.dumps({"result": result}).encode())
+        try:
+            rows, source = ast_mod._query(1181, [1.0, 1.5, 2.0])
+        finally:
+            ast_mod.urllib.request.urlopen = old
+        self.assertEqual(rows, [(201.1, 2.5), (201.2, 2.51), (201.3, 2.52)])
+        self.assertIn("1181 Lilith", source)

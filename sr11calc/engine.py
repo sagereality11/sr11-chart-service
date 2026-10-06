@@ -63,6 +63,29 @@ BODIES = [
     ("chiron", "Chiron", swe.CHIRON, "planet"),
 ]
 
+NODE_TYPES = {
+    "true": (swe.TRUE_NODE, "True"),   # osculating node (default)
+    "mean": (swe.MEAN_NODE, "Mean"),
+}
+
+# Optional points calculated from the Swiss Ephemeris files (no birth time needed).
+OPTIONAL_BODIES = {
+    "lilith_mean": ("Black Moon Lilith (Mean)", swe.MEAN_APOG),
+    "lilith_true": ("Black Moon Lilith (True)", swe.OSCU_APOG),
+    "ceres": ("Ceres", swe.CERES),
+    "pallas": ("Pallas", swe.PALLAS),
+    "juno": ("Juno", swe.JUNO),
+    "vesta": ("Vesta", swe.VESTA),
+}
+# Optional points derived from the houses (birth time required).
+TIMED_POINTS = {
+    "fortune": "Part of Fortune",
+    "spirit": "Part of Spirit",
+    "vertex": "Vertex",
+    "antivertex": "Anti-Vertex",
+}
+OPTIONAL_POINT_IDS = list(OPTIONAL_BODIES) + list(TIMED_POINTS)
+
 HOUSE_SYSTEMS = {
     # Swiss Ephemeris identifiers (swe_houses documentation)
     "P": "Placidus",
@@ -121,7 +144,7 @@ def engine_info() -> dict:
         "flags": ["SEFLG_SWIEPH", "SEFLG_SPEED"],
         "zodiac": "Tropical",
         "frame": "Geocentric, apparent positions, true equinox and ecliptic of date",
-        "node": "True Node (osculating)",
+        "node": "True Node (osculating) by default; Mean Node on request",
         "time_scale": "UT input; delta-T applied internally by Swiss Ephemeris",
         "house_assignment": "Ecliptic longitude vs. cusp intervals; a body exactly on a cusp is in the house beginning there",
     }
@@ -144,46 +167,82 @@ def _require_ephemeris():
         )
 
 
-def calc_bodies(jd_ut: float) -> tuple[list[dict], list[dict]]:
+def _point(bid, name, cat, lon, lat=None, dist=None, speed=None, **extra):
+    """A chart point. Retrograde is only reported when a speed exists."""
+    b = {"id": bid, "name": name, "category": cat, "lon": norm360(lon), "lat": lat,
+         "distance_au": dist, "speed": speed, "retrograde": (speed < 0) if speed is not None else None}
+    b.update({k: v for k, v in split_longitude(lon).items() if k != "lon"})
+    b.update(extra)
+    return b
+
+
+def calc_bodies(jd_ut: float, node: str = "true", optional: list | None = None) -> tuple[list[dict], list[dict]]:
     """Return (bodies, omitted). Raises if a required body cannot be computed
-    from the Swiss Ephemeris files."""
+    from the Swiss Ephemeris files. ``node`` is "true" or "mean"; ``optional``
+    lists ids from OPTIONAL_BODIES (Lilith, Ceres, Pallas, Juno, Vesta)."""
     _require_ephemeris()
+    node_id, node_label = NODE_TYPES[node]
     bodies, omitted = [], []
-    for bid, name, sweid, cat in BODIES:
+    todo = [(bid, (f"North Node ({node_label})" if bid == "north_node" else name),
+             (node_id if bid == "north_node" else sweid), cat) for bid, name, sweid, cat in BODIES]
+    todo += [(k, OPTIONAL_BODIES[k][0], OPTIONAL_BODIES[k][1], "extra") for k in (optional or []) if k in OPTIONAL_BODIES]
+    for bid, name, sweid, cat in todo:
+        asteroid_file = bid in ("chiron", "ceres", "pallas", "juno", "vesta")
         try:
             xx, retflag = swe.calc_ut(jd_ut, sweid, CALC_FLAGS)
         except swe.Error as e:
-            if bid == "chiron":
+            if asteroid_file:
                 omitted.append({"id": bid, "name": name,
-                                "reason": "Chiron could not be calculated (asteroid ephemeris file seas_18.se1 unavailable or date outside its range)."})
+                                "reason": f"{name} could not be calculated (asteroid ephemeris file seas_18.se1 unavailable or date outside its range)."})
                 continue
             raise CalculationError("calculation_failed", f"{name} could not be calculated: {e}")
         if not retflag & swe.FLG_SWIEPH:
             # Library fell back to Moshier — data file missing for this date.
-            if bid == "chiron":
-                omitted.append({"id": bid, "name": name, "reason": "Chiron ephemeris file not available for this date."})
+            if asteroid_file:
+                omitted.append({"id": bid, "name": name, "reason": f"{name} ephemeris file not available for this date."})
                 continue
             raise CalculationError("ephemeris_missing",
                                    f"Swiss Ephemeris data files do not cover this date for {name}. No chart was calculated.")
         lon, lat, dist, speed = xx[0], xx[1], xx[2], xx[3]
-        b = {
-            "id": bid, "name": name, "category": cat,
-            "lon": norm360(lon), "lat": lat, "distance_au": dist,
-            "speed": speed, "retrograde": speed < 0,
-        }
-        b.update({k: v for k, v in split_longitude(lon).items() if k != "lon"})
-        bodies.append(b)
+        bodies.append(_point(bid, name, cat, lon, lat, dist, speed))
         if bid == "north_node":
-            s_lon = norm360(lon + 180.0)
-            sn = {
-                "id": "south_node", "name": "South Node (True)", "category": "node",
-                "lon": s_lon, "lat": -lat, "distance_au": None,
-                "speed": speed, "retrograde": speed < 0,
-                "derived_from": "north_node + 180°",
-            }
-            sn.update({k: v for k, v in split_longitude(s_lon).items() if k != "lon"})
-            bodies.append(sn)
+            bodies.append(_point("south_node", f"South Node ({node_label})", "node", lon + 180.0, -lat, None, speed,
+                                 derived_from="north_node + 180°"))
     return bodies, omitted
+
+
+def sect(sun_lon: float, asc_lon: float) -> str:
+    """Day or night chart: the Sun is above the horizon when it lies in the
+    half of the ecliptic from the Descendant through the Midheaven to the
+    Ascendant (houses 7-12 of the horizon). A Sun exactly on the Descendant
+    counts as day, exactly on the Ascendant as night."""
+    return "day" if norm360(sun_lon - asc_lon) >= 180.0 else "night"
+
+
+def timed_points(wanted: list, bodies: list, houses: dict) -> list:
+    """Parts of Fortune and Spirit (sect-aware, Hellenistic) and Vertex/Anti-Vertex.
+      Day:   Fortune = Asc + Moon - Sun     Spirit = Asc + Sun - Moon
+      Night: Fortune = Asc + Sun - Moon     Spirit = Asc + Moon - Sun
+    """
+    by = {b["id"]: b for b in bodies}
+    asc = houses["angles"]["asc"]["lon"]
+    sun, moon = by["sun"]["lon"], by["moon"]["lon"]
+    s = sect(sun, asc)
+    out = []
+    for k in wanted:
+        if k == "fortune":
+            lon = asc + moon - sun if s == "day" else asc + sun - moon
+            out.append(_point(k, "Part of Fortune", "extra", lon, sect=s,
+                              formula=("Asc + Moon − Sun (day chart)" if s == "day" else "Asc + Sun − Moon (night chart)")))
+        elif k == "spirit":
+            lon = asc + sun - moon if s == "day" else asc + moon - sun
+            out.append(_point(k, "Part of Spirit", "extra", lon, sect=s,
+                              formula=("Asc + Sun − Moon (day chart)" if s == "day" else "Asc + Moon − Sun (night chart)")))
+        elif k == "vertex":
+            out.append(_point(k, "Vertex", "extra", houses["vertex"]))
+        elif k == "antivertex":
+            out.append(_point(k, "Anti-Vertex", "extra", houses["vertex"] + 180.0))
+    return out
 
 
 def calc_houses(jd_ut: float, lat: float, lon: float, hsys: str) -> dict:
@@ -271,22 +330,32 @@ def available_house_systems(jd_ut: float, lat: float, lon: float) -> list[str]:
 
 def aspect_points(bodies: list[dict], angles: dict | None) -> list[dict]:
     pts = [{"id": b["id"], "lon": b["lon"], "category": b["category"]}
-           for b in bodies if b["id"] != "south_node"]
+           for b in bodies if b["id"] not in ("south_node", "antivertex")]
     if angles:
         pts += [{"id": k, "lon": angles[k]["lon"], "category": "angle"} for k in ("asc", "mc")]
     return pts
 
 
-def chart_at(utc: dt.datetime, lat: float, lon: float, hsys: str | None, orbs: dict | None) -> dict:
-    """Core natal calculation for one UTC instant. hsys=None -> untimed."""
+def chart_at(utc: dt.datetime, lat: float, lon: float, hsys: str | None, orbs: dict | None,
+             node: str = "true", optional: list | None = None, asteroids: list | None = None,
+             aspect_types: list | None = None) -> dict:
+    """Core natal calculation for one UTC instant. hsys=None -> untimed.
+    ``asteroids`` is a list of already-calculated asteroid points (from
+    sr11calc.asteroids) added before houses and aspects are assigned."""
     orbs = sanitize_orbs(orbs)
+    optional = [k for k in (optional or []) if k in OPTIONAL_POINT_IDS]
     _ensure_thread_setup()
     jd_ut = julian_day_ut(utc)
     delta_t_days = swe.deltat(jd_ut)
-    bodies, omitted = calc_bodies(jd_ut)
+    bodies, omitted = calc_bodies(jd_ut, node, [k for k in optional if k in OPTIONAL_BODIES])
+    bodies += asteroids or []
     houses = None
+    chart_sect = None
+    wanted_timed = [k for k in optional if k in TIMED_POINTS]
     if hsys:
         houses = calc_houses(jd_ut, lat, lon, hsys)
+        chart_sect = sect(bodies[0]["lon"], houses["angles"]["asc"]["lon"])
+        bodies += timed_points(wanted_timed, bodies, houses)
         cusp_lons = [c["lon"] for c in houses["cusps"]]
         for b in bodies:
             b["house"] = house_of(b["lon"], cusp_lons)
@@ -295,7 +364,11 @@ def chart_at(utc: dt.datetime, lat: float, lon: float, hsys: str | None, orbs: d
             for c in houses["cusps"]:
                 if abs(((b["lon"] - c["lon"] + 180) % 360) - 180) < 1 / 3600:
                     b["on_cusp"] = c["house"]
-    aspects = find_aspects(aspect_points(bodies, houses["angles"] if houses else None), orbs)
+    else:
+        for k in wanted_timed:
+            omitted.append({"id": k, "name": TIMED_POINTS[k],
+                            "reason": f"The {TIMED_POINTS[k]} needs an exact birth time, so it is not shown on an untimed chart."})
+    aspects = find_aspects(aspect_points(bodies, houses["angles"] if houses else None), orbs, aspect_types)
     return {
         "jd_ut": jd_ut,
         "delta_t_seconds": delta_t_days * 86400.0,
@@ -303,12 +376,14 @@ def chart_at(utc: dt.datetime, lat: float, lon: float, hsys: str | None, orbs: d
         "bodies": bodies,
         "omitted": omitted,
         "houses": houses,
+        "sect": chart_sect,
         "aspects": aspects,
         "orbs": orbs,
     }
 
 
-def untimed_analysis(day_start_utc: dt.datetime, day_end_utc: dt.datetime, noon_chart: dict, orbs: dict) -> dict:
+def untimed_analysis(day_start_utc: dt.datetime, day_end_utc: dt.datetime, noon_chart: dict, orbs: dict,
+                     node: str = "true", aspect_types: list | None = None) -> dict:
     """What could change across the local birth date (local 00:00 -> 24:00).
 
     * Sign changes: each body's sign at local start vs. end of day. Bodies move
@@ -320,8 +395,8 @@ def untimed_analysis(day_start_utc: dt.datetime, day_end_utc: dt.datetime, noon_
       The Moon moves about 0.5° per hour, so hourly sampling cannot miss an
       aspect window for orbs of 1° or more.
     """
-    start, _ = calc_bodies(julian_day_ut(day_start_utc))
-    end, _ = calc_bodies(julian_day_ut(day_end_utc))
+    start, _ = calc_bodies(julian_day_ut(day_start_utc), node)
+    end, _ = calc_bodies(julian_day_ut(day_end_utc), node)
     by_id_s = {b["id"]: b for b in start}
     by_id_e = {b["id"]: b for b in end}
     changes = []
@@ -333,14 +408,15 @@ def untimed_analysis(day_start_utc: dt.datetime, day_end_utc: dt.datetime, noon_
                             "start_sign": s["sign"], "end_sign": e["sign"]})
     moon_s, moon_e = by_id_s["moon"], by_id_e["moon"]
 
-    noon_set = {(a["a"], a["b"], a["type"]) for a in noon_chart["aspects"]}
+    core = {b[0] for b in BODIES}
+    noon_set = {(a["a"], a["b"], a["type"]) for a in noon_chart["aspects"] if a["a"] in core and a["b"] in core}
     total_seconds = (day_end_utc - day_start_utc).total_seconds()
     steps = max(1, round(total_seconds / 3600))
     present_count: dict = {}
     for k in range(steps + 1):
         t = day_start_utc + dt.timedelta(seconds=total_seconds * k / steps)
-        bb, _ = calc_bodies(julian_day_ut(t))
-        for a in find_aspects(aspect_points(bb, None), orbs):
+        bb, _ = calc_bodies(julian_day_ut(t), node)
+        for a in find_aspects(aspect_points(bb, None), orbs, aspect_types):
             key = (a["a"], a["b"], a["type"])
             present_count[key] = present_count.get(key, 0) + 1
     samples = steps + 1

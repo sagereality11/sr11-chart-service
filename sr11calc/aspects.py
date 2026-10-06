@@ -7,8 +7,10 @@ WordPress server (never by the visitor's browser).
 Orb model
 ---------
 Each point belongs to one category: ``luminary`` (Sun, Moon), ``planet``
-(Mercury through Pluto, and Chiron), ``node`` (True North Node) or ``angle``
-(Ascendant, Midheaven). Each category has an orb per aspect type.
+(Mercury through Pluto, and Chiron), ``node`` (North Node), ``angle``
+(Ascendant, Midheaven) or ``extra`` (optional points: Black Moon Lilith,
+Ceres, Pallas, Juno, Vesta, other asteroids, Parts of Fortune and Spirit,
+Vertex). Each category has an orb per aspect type.
 
 When two points of different categories meet, the orb used is the AVERAGE of
 the two categories' orbs for that aspect type. Example with defaults: Sun
@@ -16,9 +18,9 @@ the two categories' orbs for that aspect type. Example with defaults: Sun
 This rule is symmetric and lets tight node/angle orbs pull a pair's orb down
 without overriding the luminary allowance completely.
 
-Points included in aspects: the ten planets, Chiron, the North Node, and for
-timed charts the Ascendant and Midheaven. The South Node, Descendant and IC
-are excluded because every aspect to them mirrors an aspect to the North Node,
+Points included in aspects: the ten planets, Chiron, the North Node, any
+optional points chosen, and for timed charts the Ascendant and Midheaven. The
+South Node, Anti-Vertex, Descendant and IC are excluded because every aspect to them mirrors an aspect to the North Node,
 Ascendant or Midheaven and would only duplicate lines.
 
 Applying / separating status is NOT calculated in this version, so it is never
@@ -29,6 +31,8 @@ from __future__ import annotations
 
 from .zodiac import angular_separation
 
+GOLDEN_ANGLE = 360.0 * (1.0 - 2.0 / (1.0 + 5.0 ** 0.5))   # 137.5078° = 360°/φ², the golden angle
+
 ASPECTS = [
     {"id": "conjunction", "name": "Conjunction", "angle": 0.0},
     {"id": "sextile", "name": "Sextile", "angle": 60.0},
@@ -36,12 +40,20 @@ ASPECTS = [
     {"id": "trine", "name": "Trine", "angle": 120.0},
     {"id": "opposition", "name": "Opposition", "angle": 180.0},
 ]
+# Optional aspects, only calculated when requested.
+OPTIONAL_ASPECTS = {
+    # Golden ratio aspect: the circle divided in the golden ratio. 360°/φ = 222.49°,
+    # whose smaller separation is 137.51° (the "golden angle").
+    "golden": {"id": "golden", "name": "Golden Ratio (137.5°)", "angle": GOLDEN_ANGLE},
+}
 
 DEFAULT_ORBS = {
-    "luminary": {"conjunction": 10.0, "opposition": 10.0, "square": 8.0, "trine": 8.0, "sextile": 6.0},
-    "planet":   {"conjunction": 7.0,  "opposition": 7.0,  "square": 6.0, "trine": 6.0, "sextile": 4.0},
-    "node":     {"conjunction": 4.0,  "opposition": 4.0,  "square": 3.0, "trine": 3.0, "sextile": 2.0},
-    "angle":    {"conjunction": 6.0,  "opposition": 6.0,  "square": 5.0, "trine": 5.0, "sextile": 3.0},
+    "luminary": {"conjunction": 10.0, "opposition": 10.0, "square": 8.0, "trine": 8.0, "sextile": 6.0, "golden": 2.0},
+    "planet":   {"conjunction": 7.0,  "opposition": 7.0,  "square": 6.0, "trine": 6.0, "sextile": 4.0, "golden": 1.5},
+    "node":     {"conjunction": 4.0,  "opposition": 4.0,  "square": 3.0, "trine": 3.0, "sextile": 2.0, "golden": 1.0},
+    "angle":    {"conjunction": 6.0,  "opposition": 6.0,  "square": 5.0, "trine": 5.0, "sextile": 3.0, "golden": 1.0},
+    # Optional points: Lilith, Ceres/Pallas/Juno/Vesta, other asteroids, Parts, Vertex.
+    "extra":    {"conjunction": 3.0,  "opposition": 3.0,  "square": 2.0, "trine": 2.0, "sextile": 1.5, "golden": 1.0},
 }
 
 MAX_ORB = 15.0
@@ -70,7 +82,7 @@ def pair_orb(orbs: dict, cat_a: str, cat_b: str, aspect_id: str) -> float:
     return (orbs[cat_a][aspect_id] + orbs[cat_b][aspect_id]) / 2.0
 
 
-def find_aspects(points: list[dict], orbs: dict) -> list[dict]:
+def find_aspects(points: list[dict], orbs: dict, optional_types: list | None = None) -> list[dict]:
     """points: [{id, lon, category}]. Returns aspects sorted by tightness.
 
     Algorithm (as specified):
@@ -79,9 +91,8 @@ def find_aspects(points: list[dict], orbs: dict) -> list[dict]:
       3. smallest separation in [0, 180]
       4. |separation - exact aspect angle|
       5. keep if within the pair's orb
-    A pair can match at most one major aspect: the closest exact angles are
-    60° apart and orbs are capped at 15°, so the windows never overlap. The
-    code still keeps only the tightest match as a safeguard.
+    If two aspect windows overlap (possible only with very wide orbs and the
+    optional golden aspect, 17.5° from the trine), the tightest match wins.
     """
     found = []
     for i in range(len(points)):
@@ -89,7 +100,7 @@ def find_aspects(points: list[dict], orbs: dict) -> list[dict]:
             p, q = points[i], points[j]
             sep = angular_separation(p["lon"], q["lon"])
             best = None
-            for asp in ASPECTS:
+            for asp in ASPECTS + [OPTIONAL_ASPECTS[t] for t in (optional_types or []) if t in OPTIONAL_ASPECTS]:
                 diff = abs(sep - asp["angle"])
                 allowed = pair_orb(orbs, p["category"], q["category"], asp["id"])
                 if diff <= allowed and (best is None or diff < best[1]):

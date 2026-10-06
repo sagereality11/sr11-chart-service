@@ -12,6 +12,9 @@ This source code is published under the GNU Affero General Public License v3 (se
 * Ascendant, Descendant, Midheaven, IC
 * Major aspects (conjunction, sextile, square, trine, opposition) with configurable orbs
 * Untimed charts: local-noon positions, plus which placements and aspects could change across the day
+* Optional: Mean Node instead of True Node; Black Moon Lilith (Mean and True); Ceres, Pallas, Juno, Vesta;
+  Part of Fortune and Part of Spirit (day/night formulas by sect); Vertex and Anti-Vertex;
+  the golden ratio aspect (137.5°); up to five more asteroids by number or name
 
 Local birth times are converted to UTC with the IANA time zone database, including historical daylight saving rules. Ambiguous and skipped clock times are reported instead of guessed.
 
@@ -23,6 +26,7 @@ All endpoints except `/v1/health` require the header `X-SR11-Key` matching the `
 |---|---|---|
 | GET | `/v1/health` | engine version, ephemeris and place-data status |
 | GET | `/v1/places?q=paris` | birthplace search (GeoNames) |
+| GET | `/v1/asteroids?q=eros` | asteroid search by name or number |
 | GET | `/v1/timezones` | IANA time zone list |
 | GET | `/v1/house-systems` | supported house systems |
 | POST | `/v1/chart` | calculate a chart |
@@ -56,6 +60,8 @@ python -m unittest discover -s tests -v
 
 * Calculations: Swiss Ephemeris, used under the AGPL-3.0.
 * Place data: © GeoNames, CC BY 4.0.
+* Asteroids beyond Ceres, Pallas, Juno and Vesta: positions from NASA/JPL Horizons, which receives only the
+  asteroid number and the UTC instant. Asteroid names: IAU Minor Planet Center list.
 * Time zones: IANA tz database.
 * Flask and gunicorn under their own licences.
 

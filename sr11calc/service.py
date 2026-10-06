@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import datetime as dt
 
+from . import asteroids as ast
 from . import engine, timeconv
-from .aspects import sanitize_orbs
+from .aspects import OPTIONAL_ASPECTS, sanitize_orbs
 
 
 class InputError(ValueError):
@@ -102,12 +103,33 @@ def parse_request(body: dict, places=None) -> dict:
 
     fold = body.get("fold")
     fold = int(fold) if fold in (0, 1, "0", "1") else None
+
+    node = body.get("node", "true")
+    if node not in engine.NODE_TYPES:
+        raise InputError("invalid_input", "Node type must be true or mean.")
+    points = body.get("points") or []
+    if not isinstance(points, list) or any(p not in engine.OPTIONAL_POINT_IDS for p in points):
+        raise InputError("invalid_input", "Unknown optional point.")
+    raw_ast = body.get("asteroids") or []
+    if not isinstance(raw_ast, list) or len(raw_ast) > ast.MAX_PER_CHART:
+        raise InputError("invalid_input", f"Choose up to {ast.MAX_PER_CHART} asteroids.")
+    asteroid_numbers = [_int(n, "Asteroid number", 1, ast.MAX_NUMBER) for n in raw_ast]
+    for n in asteroid_numbers:   # Ceres-Vesta come from Swiss Ephemeris, Chiron is always shown
+        eq = ast.SWISS_EQUIVALENT.get(n)
+        if eq and eq != "chiron" and eq not in points:
+            points.append(eq)
+    asp = body.get("aspects") or []
+    if not isinstance(asp, list) or any(a not in OPTIONAL_ASPECTS for a in asp):
+        raise InputError("invalid_input", "Unknown aspect type.")
     return {
         "date": date, "time": time, "time_known": time_known,
         "lat": lat, "lon": lon, "tz": tz_name, "utc_offset_minutes": offset,
         "place": place, "house_system": hsys, "fold": fold,
         "accept_lmt": body.get("accept_lmt") is True,
         "orbs": sanitize_orbs(body.get("orbs")),
+        "node": node, "points": list(dict.fromkeys(points)),
+        "asteroids": [n for n in dict.fromkeys(asteroid_numbers) if n not in ast.SWISS_EQUIVALENT],
+        "aspect_types": list(dict.fromkeys(asp)),
     }
 
 
@@ -123,6 +145,7 @@ def build_chart(req: dict) -> dict:
             "time_known": req["time_known"],
             "place": place,
             "house_system": req["house_system"] if req["time_known"] else None,
+            "node": req["node"],
         },
         "location": {"lat": req["lat"], "lon": req["lon"], "tz": req["tz"],
                      "convention": "Latitude north positive, longitude east positive (decimal degrees)"},
@@ -138,10 +161,18 @@ def build_chart(req: dict) -> dict:
     utc = dt.datetime.fromisoformat(t["utc_iso"].rstrip("Z"))
 
     hsys = req["house_system"] if req["time_known"] else None
+    ast_points, ast_omitted = [], []
+    if req["asteroids"]:
+        found, ast_omitted = ast.positions(req["asteroids"], engine.julian_day_ut(utc))
+        for a in found:
+            ast_points.append(engine._point(a["id"], a["name"], "extra", a["lon"], a["lat"], None, a["speed"],
+                                            label=a["label"], number=a["number"], source=a["source"]))
     try:
-        core = engine.chart_at(utc, req["lat"], req["lon"], hsys, req["orbs"])
+        core = engine.chart_at(utc, req["lat"], req["lon"], hsys, req["orbs"], node=req["node"],
+                               optional=req["points"], asteroids=ast_points, aspect_types=req["aspect_types"])
     except engine.CalculationError as e:
         return {**base, "status": "error", "code": e.code, "message": e.message, **e.extra}
+    core["omitted"] += ast_omitted
 
     out = {
         **base,
@@ -155,8 +186,13 @@ def build_chart(req: dict) -> dict:
         "houses": core["houses"],
         "aspects": core["aspects"],
         "orbs": core["orbs"],
+        "sect": core["sect"],
+        "options": {"node": req["node"], "points": req["points"], "asteroids": req["asteroids"],
+                    "aspects": req["aspect_types"]},
         "warnings": warnings,
     }
+    if req["asteroids"]:
+        warnings.append("Asteroid positions (other than Ceres, Pallas, Juno and Vesta) come from NASA/JPL Horizons.")
     if core["omitted"]:
         warnings += [o["reason"] for o in core["omitted"]]
 
@@ -175,7 +211,7 @@ def build_chart(req: dict) -> dict:
         if date + dt.timedelta(days=1) > timeconv.MAX_DATE:
             end = start + dt.timedelta(days=1)
         try:
-            out["untimed"] = engine.untimed_analysis(start, end, core, req["orbs"])
+            out["untimed"] = engine.untimed_analysis(start, end, core, req["orbs"], req["node"], req["aspect_types"])
         except engine.CalculationError as e:
             return {**base, "status": "error", "code": e.code, "message": e.message}
         out["untimed"]["reference_time_local"] = "12:00 (local noon)"
