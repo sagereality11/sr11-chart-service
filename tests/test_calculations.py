@@ -217,27 +217,40 @@ class Bodies(unittest.TestCase):
 
     def test_reference_values_j2000(self):
         # Independent cross-check: Swiss Ephemeris documentation / almanac value
-        # for the Sun on 2000-01-01 17:00 UT is ~280.58° (10°35' Capricorn).
+        # for the Sun on 2000-01-01 17:00 UT is 280.581° (10°34'53" Capricorn, shown 10°34').
         c = chart(2000, 1, 1, 12, 0)
         sun = next(b for b in c["bodies"] if b["id"] == "sun")
-        self.assertEqual((sun["sign"], sun["deg"], sun["min"]), ("Capricorn", 10, 35))
+        self.assertEqual((sun["sign"], sun["deg"], sun["min"]), ("Capricorn", 10, 34))
         self.assertAlmostEqual(c["time"]["delta_t_seconds"], 63.8, delta=0.5)
 
 
 class Rounding(unittest.TestCase):
     def test_rounding_never_changes_sign(self):
-        r = split_longitude(29.9999)
+        r = split_longitude(29.99999)
         self.assertEqual((r["sign"], r["deg"], r["min"]), ("Aries", 29, 59))
         r = split_longitude(359.99999)
         self.assertEqual((r["sign"], r["deg"], r["min"]), ("Pisces", 29, 59))
         r = split_longitude(360.0)
         self.assertEqual((r["sign"], r["deg"], r["min"]), ("Aries", 0, 0))
 
-    def test_rounding_to_nearest_minute_inside_sign(self):
+    def test_minutes_are_truncated_like_astro_com(self):
         r = split_longitude(45 + 12.6 / 60)
-        self.assertEqual((r["sign"], r["deg"], r["min"]), ("Taurus", 15, 13))
-        r = split_longitude(45 + 59.6 / 60)  # 15°59.6' -> 16°00'
-        self.assertEqual((r["deg"], r["min"]), (16, 0))
+        self.assertEqual((r["sign"], r["deg"], r["min"]), ("Taurus", 15, 12))
+        r = split_longitude(45 + 59.6 / 60)  # 15°59.6' -> 15°59'
+        self.assertEqual((r["deg"], r["min"]), (15, 59))
+        r = split_longitude(96 + 18 / 60 + 46.4 / 3600)  # 6°18'46" Cancer -> 6°18'
+        self.assertEqual((r["deg"], r["min"]), (6, 18))
+
+    def test_sample_ipswich_1983_with_astro_gold_coordinates(self):
+        # Sample check against Astro Gold atlas coordinates 52N04, 1E10.
+        body = {"year": 1983, "month": 7, "day": 10, "hour": 3, "minute": 55, "house_system": "P",
+                "location": {"mode": "manual", "lat": 52 + 4 / 60, "lon": 1 + 10 / 60, "tz": "Europe/London"}}
+        c = build_chart(parse_request(body, PLACES))
+        self.assertEqual(c["time"]["utc_iso"], "1983-07-10T02:55:00Z")  # BST
+        sun = next(b for b in c["bodies"] if b["id"] == "sun")
+        self.assertEqual((sun["sign"], sun["deg"], sun["min"]), ("Cancer", 17, 18))
+        asc = c["houses"]["angles"]["asc"]
+        self.assertEqual((asc["sign"], asc["deg"], asc["min"]), ("Cancer", 5, 29))
 
 
 class Aspects(unittest.TestCase):

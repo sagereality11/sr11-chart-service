@@ -3,12 +3,10 @@
 Internal values keep full floating-point precision. Rounding happens only in
 ``split_longitude`` for display.
 
-Display rounding convention (documented, tested):
-    Longitudes are rounded to the nearest arc-minute, BUT the sign is always
-    the sign of the unrounded longitude. A body at 29°59'45" Aries therefore
-    displays as 29°59' Aries, not 0°00' Taurus. This is the same idea as the
-    Swiss Ephemeris SE_SPLIT_DEG_KEEP_SIGN option and prevents a display that
-    contradicts the body's real sign.
+Display convention (documented, tested):
+    Degrees and minutes are TRUNCATED (seconds dropped), the convention used by
+    astro.com: 17°18'46" Cancer displays as 17°18' Cancer. Truncation can never
+    move a body into the next sign, so 29°59'59" Aries stays 29°59' Aries.
 """
 
 from __future__ import annotations
@@ -39,9 +37,8 @@ def split_longitude(lon: float) -> dict:
     lon = norm360(lon)
     sidx = int(lon // 30.0)
     within = lon - sidx * 30.0              # 0 <= within < 30
-    total_min = round(within * 60.0)        # nearest arc-minute
-    if total_min >= 30 * 60:                # would round into the next sign
-        total_min = 30 * 60 - 1             # keep sign: show 29°59'
+    total_min = int(within * 60.0 + 1e-9)   # truncate to the arc-minute
+    total_min = min(total_min, 30 * 60 - 1) # float guard: stay inside the sign
     deg, minute = divmod(total_min, 60)
     sec_exact = (within * 3600.0)
     return {
