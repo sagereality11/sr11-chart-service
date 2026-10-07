@@ -11,4 +11,4 @@
 5074472	Papillion	Papillion		41.15444	-96.04224	P	PPL	US		NE				19510			America/Chicago	2024-01-01
 4297983	Lebanon	Lebanon		37.56979	-85.25274	P	PPL	US		KY				5680			America/New_York	2024-01-01
 4625282	Lebanon	Lebanon		36.20811	-86.2911	P	PPL	US		TN				30262			America/Chicago	2024-01-01
-4407066	Saint Louis	Saint Louis		38.62727	-90.19789	P	PPL	US		MO				315685			America/Chicago	2024-01-01
+4407066	St. Louis	St. Louis		38.62727	-90.19789	P	PPL	US		MO				315685			America/Chicago	2024-01-01

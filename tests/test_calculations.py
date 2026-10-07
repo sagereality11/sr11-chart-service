@@ -514,7 +514,8 @@ class PlaceSearch(unittest.TestCase):
         for q in ("Lebanon, Kentucky", "Lebanon Kentucky", "lebanon ky", "Lebanon KY United States"):
             self.assertEqual(self.first(q), "Lebanon, Kentucky, United States", q)
         self.assertEqual(self.first("Lebanon"), "Lebanon, Tennessee, United States")  # largest first
-        self.assertEqual(self.first("Saint Louis Missouri"), "Saint Louis, Missouri, United States")
+        for q in ("Saint Louis Missouri", "St. Louis, MO", "st louis"):
+            self.assertEqual(self.first(q), "St. Louis, Missouri, United States", q)
         self.assertEqual(self.first("Paris Texas"), "Paris, Texas, United States")
         self.assertEqual(self.first("tromso"), "Tromsø, Troms og Finnmark, Norway")
         self.assertIsNone(self.first("Papillion Kentucky"))

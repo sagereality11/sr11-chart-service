@@ -23,10 +23,16 @@ DATA_DIR = Path(os.environ.get("SR11_GEONAMES_DIR", str(Path(__file__).resolve()
 MAX_RESULTS = 10
 
 
+# Common abbreviations are expanded on both sides, so "St. Louis", "St Louis"
+# and "Saint Louis" all match, as do "Mt Pleasant" and "Mount Pleasant".
+_ABBREV = {"st": "saint", "ste": "sainte", "mt": "mount", "ft": "fort", "pt": "point"}
+
+
 def _fold(s: str) -> str:
     s = unicodedata.normalize("NFKD", s)
     s = "".join(ch for ch in s if not unicodedata.combining(ch))
-    return " ".join(s.casefold().replace("-", " ").replace("'", "").replace(".", "").split())
+    words = s.casefold().replace("-", " ").replace("'", "").replace(".", " ").split()
+    return " ".join(_ABBREV.get(w, w) for w in words)
 
 
 class PlaceIndex:
