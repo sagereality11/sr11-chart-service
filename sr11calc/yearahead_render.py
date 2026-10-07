@@ -165,6 +165,62 @@ def render_html(r):
     return wrap(parts[0]), wrap("".join(parts[1:]))
 
 
+def render_cover_pdf(r) -> bytes:
+    """Full-bleed cover drawn directly (exact Letter size, so it never depends on HTML page sizing)."""
+    import io
+    import os
+    from reportlab.lib.colors import HexColor
+    from reportlab.lib.pagesizes import letter
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.pdfgen import canvas
+
+    fdir = os.environ.get("SR11_FONT_DIR", os.path.join(os.path.dirname(os.path.dirname(__file__)), "fonts"))
+    if "SR11Lora" not in pdfmetrics.getRegisteredFontNames():
+        pdfmetrics.registerFont(TTFont("SR11Lora", os.path.join(fdir, "Lora-Variable.ttf")))
+        pdfmetrics.registerFont(TTFont("SR11LoraI", os.path.join(fdir, "Lora-Italic-Variable.ttf")))
+    W, H = letter
+    purple, soft, gold, ink = HexColor(PURPLE), HexColor("#6d5a8c"), HexColor(GOLD), HexColor("#5b4a75")
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter)
+    c.setTitle(f"Your 2027 for {r['name']}")
+    c.setAuthor("Sage Reality 11")
+    c.setFillColor(purple)
+    c.rect(0, H - 8, W, 8, stroke=0, fill=1)
+    c.rect(0, 0, W, 8, stroke=0, fill=1)
+
+    def centered(text, y, font, size, color, space=0.0):
+        c.setFont(font, size)
+        c.setFillColor(color)
+        w = pdfmetrics.stringWidth(text, font, size) + space * (len(text) - 1)
+        t = c.beginText((W - w) / 2, y)
+        t.setFont(font, size)
+        t.setCharSpace(space)
+        t.textOut(text)
+        c.drawText(t)
+
+    def rule(y):
+        c.setStrokeColor(gold)
+        c.setLineWidth(1.2)
+        c.line(W / 2 - 26, y, W / 2 + 26, y)
+
+    top = H * 0.62
+    centered("SAGE REALITY 11", top, "SR11Lora", 10.5, purple, 4.2)
+    rule(top - 18)
+    centered(r["title"], top - 82, "SR11Lora", 52, purple)
+    centered(r["subtitle"], top - 116, "SR11LoraI", 18, soft)
+    rule(top - 142)
+    b = r["birth"]
+    centered(r["name"], top - 182, "SR11Lora", 13, purple)
+    line = b["date"] + (f"  ·  {b['time']}" if b.get("time") and b["time"] != "unknown" else "")
+    centered(line, top - 200, "SR11Lora", 9.5, ink)
+    if b.get("place"):
+        centered(b["place"], top - 214, "SR11Lora", 9.5, ink)
+    c.showPage()
+    c.save()
+    return buf.getvalue()
+
+
 def render_pdf(r) -> bytes:
     """Build the finished PDF: a full-bleed cover plus the body pages with margins and a footer.
     Needs wkhtmltopdf and the Lora / Inter fonts installed (see the Dockerfile)."""
@@ -183,15 +239,13 @@ def render_pdf(r) -> bytes:
             f.write(body)
         common = ["wkhtmltopdf", "-q", "--page-size", "Letter", "--disable-local-file-access",
                   "--disable-javascript", "--dpi", "110"]
-        subprocess.run(common + ["-T", "0", "-B", "0", "-L", "0", "-R", "0", paths["cover.html"], paths["cover.pdf"]],
-                       check=False, env=env, timeout=40, capture_output=True)
         subprocess.run(common + ["-T", "16mm", "-B", "16mm", "-L", "18mm", "-R", "18mm",
                                  "--footer-center", "Sage Reality 11  ·  Your 2027  ·  [page]",
                                  "--footer-font-name", "Inter", "--footer-font-size", "7", "--footer-spacing", "6",
                                  paths["body.html"], paths["body.pdf"]],
                        check=False, env=env, timeout=60, capture_output=True)
         w = PdfWriter()
-        w.add_page(PdfReader(paths["cover.pdf"]).pages[0])
+        w.add_page(PdfReader(io.BytesIO(render_cover_pdf(r))).pages[0])
         for pg in PdfReader(paths["body.pdf"]).pages:
             w.add_page(pg)
         w.add_metadata({"/Title": f"Your 2027 for {r['name']}", "/Author": "Sage Reality 11"})
