@@ -139,6 +139,7 @@ def year_ahead():
     if not isinstance(body, dict):
         return _error("invalid_input", "Malformed request.", 422)
     body = {**body, "house_system": "P", "node": "true", "points": [], "asteroids": [], "aspects": []}
+    body.pop("orbs", None)
     name = str(body.get("name") or "").strip()[:60] or "Friend"
     try:
         req = parse_request(body, places)
@@ -153,11 +154,20 @@ def year_ahead():
         btime = t.strftime("%I:%M %p").lstrip("0") if (t and req["time_known"]) else ""
         reading = yearahead.build_reading(chart_out, req["date"], name, req["time_known"],
                                           req["place"].get("label", ""), btime)
-        doc = yearahead_render.render_single_html(reading)
+        want_pdf = body.get("format") == "pdf"
+        doc = None if want_pdf else yearahead_render.render_single_html(reading)
+        pdf = yearahead_render.render_pdf(reading) if want_pdf else None
     except Exception:  # never leak internals or input into logs/responses
         app.logger.error("year-ahead calculation failed (input withheld)")
         return _error("calculation_failed", "The reading could not be created. Please try again.", 500)
-    return jsonify({"status": "ok", "product": "your-2027", "reading": reading, "html": doc})
+    out = {"status": "ok", "product": "your-2027", "reading": reading}
+    if pdf is not None:
+        import base64
+        out["pdf_base64"] = base64.b64encode(pdf).decode("ascii")
+        out["filename"] = "Your-2027-Reading-" + "".join(c for c in name if c.isalnum() or c in "-_")[:40] + ".pdf"
+    else:
+        out["html"] = doc
+    return jsonify(out)
 
 
 if __name__ == "__main__":  # local development only

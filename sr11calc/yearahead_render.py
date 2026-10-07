@@ -165,21 +165,41 @@ def render_html(r):
     return wrap(parts[0]), wrap("".join(parts[1:]))
 
 
-if __name__ == "__main__":
-    r = json.load(open(sys.argv[1]))
+def render_pdf(r) -> bytes:
+    """Build the finished PDF: a full-bleed cover plus the body pages with margins and a footer.
+    Needs wkhtmltopdf and the Lora / Inter fonts installed (see the Dockerfile)."""
+    import io
+    import os
+    import tempfile
+    from pypdf import PdfReader, PdfWriter
+
     cover, body = render_html(r)
-    open("cover.html", "w").write(cover)
-    open(sys.argv[2], "w").write(body)
-    common = ["wkhtmltopdf", "-q", "--page-size", "Letter", "--enable-local-file-access", "--dpi", "110"]
-    subprocess.run(common + ["-T", "0", "-B", "0", "-L", "0", "-R", "0", "cover.html", "cover.pdf"], check=False)
-    subprocess.run(common + ["-T", "16mm", "-B", "16mm", "-L", "18mm", "-R", "18mm",
-                             "--footer-center", "Sage Reality 11  ·  Your 2027  ·  [page]", "--footer-font-name", "Inter",
-                             "--footer-font-size", "7", "--footer-spacing", "6",
-                             sys.argv[2], "body.pdf"], check=False)
-    from pypdf import PdfWriter, PdfReader
-    w = PdfWriter()
-    w.add_page(PdfReader("cover.pdf").pages[0])
-    for pg in PdfReader("body.pdf").pages:
-        w.add_page(pg)
-    w.add_metadata({"/Title": f"Your 2027 for {r['name']}", "/Author": "Sage Reality 11"})
-    w.write(sys.argv[3])
+    env = {**os.environ, "QT_QPA_PLATFORM": "offscreen"}
+    with tempfile.TemporaryDirectory() as td:
+        paths = {k: os.path.join(td, k) for k in ("cover.html", "body.html", "cover.pdf", "body.pdf")}
+        with open(paths["cover.html"], "w", encoding="utf-8") as f:
+            f.write(cover)
+        with open(paths["body.html"], "w", encoding="utf-8") as f:
+            f.write(body)
+        common = ["wkhtmltopdf", "-q", "--page-size", "Letter", "--disable-local-file-access",
+                  "--disable-javascript", "--dpi", "110"]
+        subprocess.run(common + ["-T", "0", "-B", "0", "-L", "0", "-R", "0", paths["cover.html"], paths["cover.pdf"]],
+                       check=False, env=env, timeout=40, capture_output=True)
+        subprocess.run(common + ["-T", "16mm", "-B", "16mm", "-L", "18mm", "-R", "18mm",
+                                 "--footer-center", "Sage Reality 11  ·  Your 2027  ·  [page]",
+                                 "--footer-font-name", "Inter", "--footer-font-size", "7", "--footer-spacing", "6",
+                                 paths["body.html"], paths["body.pdf"]],
+                       check=False, env=env, timeout=60, capture_output=True)
+        w = PdfWriter()
+        w.add_page(PdfReader(paths["cover.pdf"]).pages[0])
+        for pg in PdfReader(paths["body.pdf"]).pages:
+            w.add_page(pg)
+        w.add_metadata({"/Title": f"Your 2027 for {r['name']}", "/Author": "Sage Reality 11"})
+        out = io.BytesIO()
+        w.write(out)
+        return out.getvalue()
+
+
+if __name__ == "__main__":  # local preview: python -m sr11calc.yearahead_render reading.json out.pdf
+    r = json.load(open(sys.argv[1]))
+    open(sys.argv[2], "wb").write(render_pdf(r))
