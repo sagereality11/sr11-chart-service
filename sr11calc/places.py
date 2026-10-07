@@ -94,24 +94,47 @@ class PlaceIndex:
         p = self.places.get(gid)
         return self.public(p) if p else None
 
-    def search(self, query: str, limit: int = MAX_RESULTS) -> list[dict]:
-        if not self.loaded:
-            return []
-        parts = [_fold(x) for x in query.split(",")]
-        city = parts[0] if parts else ""
-        ctx = [x for x in parts[1:] if x]
-        if len(city) < 2:
-            return []
+    def _find(self, city: str, ctx: list[str]) -> list[dict]:
+        """Places whose name starts with ``city`` and whose region/country
+        words start with every ``ctx`` token (so "ky" matches Kentucky's
+        code, "neb" matches Nebraska, "united" matches United States)."""
         out = []
         for gid in self.by_prefix.get(city[:2], []):
             p = self.places[gid]
             if not any(k.startswith(city) for k in p["_keys"]):
                 continue
-            if ctx and not all(t in p["_ctx"] for t in ctx):
-                continue
+            if ctx:
+                words = p["_ctx"].split()
+                if not all(any(w.startswith(t) for w in words) for t in ctx):
+                    continue
             out.append(p)
             if len(out) >= 60:
                 break
-        # Exact name matches first, then population.
-        out.sort(key=lambda p: (city not in p["_keys"], -p["population"]))
-        return [self.public(p) for p in out[:limit]]
+        return out
+
+    def search(self, query: str, limit: int = MAX_RESULTS) -> list[dict]:
+        """Accepts "Papillion", "Papillion, Nebraska", "Papillion Nebraska",
+        "Lebanon KY" or "Paris, Texas, United States".
+
+        With commas, the first part is the place name and the rest narrows
+        it down. Without commas, the longest leading run of words that matches
+        a place name is the name and any remaining words narrow it down, so
+        multi-word names like "Saint Louis Missouri" also work."""
+        if not self.loaded:
+            return []
+        q = query.strip()
+        if "," in q:
+            parts = [_fold(x) for x in q.split(",")]
+            attempts = [(parts[0], " ".join(x for x in parts[1:] if x).split())]
+        else:
+            words = _fold(q).split()
+            attempts = [(" ".join(words[:k]), words[k:]) for k in range(len(words), 0, -1)]
+        for city, ctx in attempts:
+            if len(city) < 2:
+                continue
+            out = self._find(city, ctx)
+            if out:
+                # Exact name matches first, then population.
+                out.sort(key=lambda p: (city not in p["_keys"], -p["population"]))
+                return [self.public(p) for p in out[:limit]]
+        return []

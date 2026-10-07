@@ -8,3 +8,7 @@ SJ.21	Svalbard	Svalbard	0
 BR.21	Rio de Janeiro	Rio de Janeiro	0
 FR.11	Île-de-France	Île-de-France	0
 US.TX	Texas	Texas	0
+US.NE	Nebraska	Nebraska	0
+US.KY	Kentucky	Kentucky	0
+US.TN	Tennessee	Tennessee	0
+US.MO	Missouri	Missouri	0

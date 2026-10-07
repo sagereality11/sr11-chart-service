@@ -501,3 +501,20 @@ class HorizonsParser(unittest.TestCase):
             ast_mod.urllib.request.urlopen = old
         self.assertEqual(rows, [(201.1, 2.5), (201.2, 2.51), (201.3, 2.52)])
         self.assertIn("1181 Lilith", source)
+
+
+class PlaceSearch(unittest.TestCase):
+    def first(self, q):
+        r = PLACES.search(q)
+        return r[0]["label"] if r else None
+
+    def test_small_towns_with_and_without_commas(self):
+        for q in ("Papillion", "Papillion, Nebraska", "Papillion Nebraska", "papillion ne", "Papillion, NE"):
+            self.assertEqual(self.first(q), "Papillion, Nebraska, United States", q)
+        for q in ("Lebanon, Kentucky", "Lebanon Kentucky", "lebanon ky", "Lebanon KY United States"):
+            self.assertEqual(self.first(q), "Lebanon, Kentucky, United States", q)
+        self.assertEqual(self.first("Lebanon"), "Lebanon, Tennessee, United States")  # largest first
+        self.assertEqual(self.first("Saint Louis Missouri"), "Saint Louis, Missouri, United States")
+        self.assertEqual(self.first("Paris Texas"), "Paris, Texas, United States")
+        self.assertEqual(self.first("tromso"), "Tromsø, Troms og Finnmark, Norway")
+        self.assertIsNone(self.first("Papillion Kentucky"))

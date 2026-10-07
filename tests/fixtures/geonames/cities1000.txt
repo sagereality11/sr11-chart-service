@@ -8,3 +8,7 @@
 3451190	Rio de Janeiro	Rio de Janeiro		-22.90642	-43.18223	P	PPL	BR		21				6023699			America/Sao_Paulo	2024-01-01
 2988507	Paris	Paris		48.85341	2.3488	P	PPL	FR		11				2138551			Europe/Paris	2024-01-01
 4717560	Paris	Paris		33.66094	-95.55551	P	PPL	US		TX				24782			America/Chicago	2024-01-01
+5074472	Papillion	Papillion		41.15444	-96.04224	P	PPL	US		NE				19510			America/Chicago	2024-01-01
+4297983	Lebanon	Lebanon		37.56979	-85.25274	P	PPL	US		KY				5680			America/New_York	2024-01-01
+4625282	Lebanon	Lebanon		36.20811	-86.2911	P	PPL	US		TN				30262			America/Chicago	2024-01-01
+4407066	Saint Louis	Saint Louis		38.62727	-90.19789	P	PPL	US		MO				315685			America/Chicago	2024-01-01
