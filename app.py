@@ -19,7 +19,7 @@ import time
 
 from flask import Flask, jsonify, request
 
-from sr11calc import asteroids, engine, timeconv
+from sr11calc import asteroids, engine, timeconv, yearahead, yearahead_render
 from sr11calc.places import PlaceIndex
 from sr11calc.service import InputError, build_chart, parse_request
 
@@ -128,6 +128,36 @@ def chart():
         return _error("calculation_failed", "The chart could not be calculated. Please try again.", 500)
     http = {"ok": 200, "ambiguous": 409, "nonexistent": 422, "needs_confirmation": 409}.get(result["status"], 422)
     return jsonify(result), http
+
+
+@app.post("/v1/year-ahead")
+def year_ahead():
+    """Your 2027 personal year-ahead reading. Same body as /v1/chart plus an optional
+    "name". Placidus houses and the True Node are always used. Returns the reading as
+    structured data plus a ready-to-print HTML document."""
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return _error("invalid_input", "Malformed request.", 422)
+    body = {**body, "house_system": "P", "node": "true", "points": [], "asteroids": [], "aspects": []}
+    name = str(body.get("name") or "").strip()[:60] or "Friend"
+    try:
+        req = parse_request(body, places)
+    except InputError as e:
+        return _error(e.code, e.message, 422)
+    try:
+        chart_out = build_chart(req)
+        if chart_out["status"] != "ok":
+            http = {"ambiguous": 409, "nonexistent": 422, "needs_confirmation": 409}.get(chart_out["status"], 422)
+            return jsonify(chart_out), http
+        t = req["time"]
+        btime = t.strftime("%I:%M %p").lstrip("0") if (t and req["time_known"]) else ""
+        reading = yearahead.build_reading(chart_out, req["date"], name, req["time_known"],
+                                          req["place"].get("label", ""), btime)
+        doc = yearahead_render.render_single_html(reading)
+    except Exception:  # never leak internals or input into logs/responses
+        app.logger.error("year-ahead calculation failed (input withheld)")
+        return _error("calculation_failed", "The reading could not be created. Please try again.", 500)
+    return jsonify({"status": "ok", "product": "your-2027", "reading": reading, "html": doc})
 
 
 if __name__ == "__main__":  # local development only

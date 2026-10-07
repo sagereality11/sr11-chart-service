@@ -30,6 +30,7 @@ All endpoints except `/v1/health` require the header `X-SR11-Key` matching the `
 | GET | `/v1/timezones` | IANA time zone list |
 | GET | `/v1/house-systems` | supported house systems |
 | POST | `/v1/chart` | calculate a chart |
+| POST | `/v1/year-ahead` | "Your 2027" personal year-ahead reading (same body as `/v1/chart` plus `name`; returns the reading as data and a printable HTML document) |
 
 Example request body for `/v1/chart`:
 
