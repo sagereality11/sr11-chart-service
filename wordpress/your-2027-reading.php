@@ -127,8 +127,7 @@ add_shortcode( 'sr_your_2027_reading', function () {
 .sr-y27 p.lede{margin:0 0 1.2rem}
 .sr-y27 label{display:block;font-weight:600;color:var(--p);margin:0 0 1rem;font-size:.95rem}
 .sr-y27 input[type=text],.sr-y27 input[type=date],.sr-y27 input[type=time]{display:block;width:100%;box-sizing:border-box;margin-top:.35rem;padding:.7rem .8rem;border:1px solid var(--l2);border-radius:3px;font-size:1rem;color:#2e2340;background:#fff}
-.sr-y27 .row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-@media (max-width:520px){.sr-y27 .row{grid-template-columns:1fr}}
+.sr-y27 .row{display:block}
 .sr-y27 label.check{font-weight:400;color:#2e2340;display:flex;gap:.5rem;align-items:center;margin-top:-.4rem}
 .sr-y27 .city{position:relative;display:block}
 .sr-y27 .sugg{position:absolute;left:0;right:0;top:100%;z-index:20;background:#fff;border:1px solid var(--l2);border-radius:3px;max-height:260px;overflow:auto;box-shadow:0 6px 18px rgba(75,42,123,.12)}
@@ -158,7 +157,7 @@ add_shortcode( 'sr_your_2027_reading', function () {
 <p class="fine">Your details are used only to create your reading. Because this is an instant digital download, all sales are final.</p>
 </div>
 </div>
-<script>
+<script data-jetpack-boost="ignore">
 (function(){
   var C = <?php echo $cfg; ?>;
   var $ = function(id){ return document.getElementById(id); };
