@@ -18,6 +18,8 @@ This source code is published under the GNU Affero General Public License v3 (se
 
 Local birth times are converted to UTC with the IANA time zone database, including historical daylight saving rules. Ambiguous and skipped clock times are reported instead of guessed.
 
+Before 1970 the tzdb can be wrong for places that share a big city's zone (Alabama is filed under Chicago, for example). `sr11calc/corrections.py` holds confirmed historical corrections by state/county and date window; the response's `time.reliability` is `corrected` when one was used. A visitor can also give the time zone written on the birth record with `location.record_offset_minutes` (place mode), which overrides both.
+
 ## API
 
 All endpoints except `/v1/health` require the header `X-SR11-Key` matching the `SR11_API_KEY` environment variable.

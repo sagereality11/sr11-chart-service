@@ -183,6 +183,53 @@ class TimeConversion(unittest.TestCase):
             self.assertEqual(cm.exception.code, "unsupported_date")
 
 
+BIRMINGHAM_AL, PERU_IN, INDIANAPOLIS = 4049979, 4924733, 4259418
+
+
+class HistoricalCorrections(unittest.TestCase):
+    """Places where the tzdb's pre-1970 history is known to be wrong."""
+
+    def test_birmingham_1956_summer_is_cst_not_cdt(self):
+        c = chart(1956, 6, 17, 12, 0, place=BIRMINGHAM_AL)
+        self.assertEqual(c["time"]["tz_abbrev"], "CST")
+        self.assertEqual(c["time"]["utc_offset"], "UTC-06:00")
+        self.assertEqual(c["time"]["utc_iso"], "1956-06-17T18:00:00Z")
+        self.assertEqual(c["time"]["reliability"], "corrected")
+        self.assertFalse(c["time"]["dst_active"])
+
+    def test_birmingham_time_skipped_in_chicago_is_valid_in_alabama(self):
+        # 2:30 am on 29 April 1956 never happened in Chicago, but did in Alabama.
+        self.assertEqual(chart(1956, 4, 29, 2, 30, place=BIRMINGHAM_AL)["status"], "ok")
+
+    def test_birmingham_outside_window_uses_tzdb(self):
+        self.assertEqual(chart(1975, 6, 17, 12, 0, place=BIRMINGHAM_AL)["time"]["tz_abbrev"], "CDT")
+        self.assertEqual(chart(1944, 6, 17, 12, 0, place=BIRMINGHAM_AL)["time"]["tz_abbrev"], "CWT")
+
+    def test_peru_indiana_1959_winter_is_cst(self):
+        c = chart(1959, 2, 5, 12, 0, place=PERU_IN)
+        self.assertEqual(c["time"]["tz_abbrev"], "CST")
+        self.assertEqual(c["time"]["utc_iso"], "1959-02-05T18:00:00Z")
+
+    def test_peru_indiana_summer_fast_time_keeps_utc_minus_5(self):
+        self.assertEqual(chart(1959, 7, 5, 12, 0, place=PERU_IN)["time"]["utc_offset"], "UTC-05:00")
+
+    def test_correction_is_county_specific(self):
+        self.assertEqual(chart(1959, 2, 5, 12, 0, place=INDIANAPOLIS)["time"]["tz_abbrev"], "EST")
+
+    def test_untimed_birmingham_day_bounds_use_correction(self):
+        c = chart(1956, 6, 17, place=BIRMINGHAM_AL)
+        self.assertEqual(c["time"]["utc_iso"], "1956-06-17T18:00:00Z")
+
+    def test_birth_record_offset_overrides_everything(self):
+        c = chart(1956, 6, 17, 12, 0, place=BIRMINGHAM_AL)
+        body = {"year": 1956, "month": 6, "day": 17, "hour": 12, "minute": 0, "house_system": "P",
+                "location": {"mode": "place", "place_id": BIRMINGHAM_AL, "record_offset_minutes": -300}}
+        r = build_chart(parse_request(body, PLACES))
+        self.assertEqual(r["time"]["utc_iso"], "1956-06-17T17:00:00Z")
+        self.assertEqual(r["time"]["reliability"], "record")
+        self.assertEqual(r["input"]["place"]["label"], c["input"]["place"]["label"])
+
+
 class Bodies(unittest.TestCase):
     def test_south_node_exactly_opposite(self):
         c = chart(1990, 5, 17, 14, 30)

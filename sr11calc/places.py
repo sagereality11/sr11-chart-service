@@ -73,6 +73,8 @@ class PlaceIndex:
                     "id": gid,
                     "name": c[1],
                     "admin1": admin1.get(f"{cc}.{c[10]}", ""),
+                    "admin1_code": c[10],
+                    "admin2_code": c[11],
                     "country": countries.get(cc, cc),
                     "country_code": cc,
                     "lat": float(c[4]),

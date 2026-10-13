@@ -9,7 +9,7 @@ from __future__ import annotations
 import datetime as dt
 
 from . import asteroids as ast
-from . import engine, timeconv
+from . import corrections, engine, timeconv
 from .aspects import OPTIONAL_ASPECTS, sanitize_orbs
 
 
@@ -81,6 +81,9 @@ def parse_request(body: dict, places=None) -> dict:
         if not place:
             raise InputError("location_lookup_failed", "That birthplace could not be found. Please search again.")
         lat, lon, tz_name = place["lat"], place["lon"], place["tz"]
+        # Optional: the time zone written on the birth record overrides any lookup.
+        if loc.get("record_offset_minutes") not in (None, ""):
+            offset = _int(loc.get("record_offset_minutes"), "Birth record UTC offset", -16 * 60, 16 * 60)
     elif mode == "manual":
         lat = _float(loc.get("lat"), "Latitude", -90.0, 90.0)
         lon = _float(loc.get("lon"), "Longitude", -180.0, 180.0)
@@ -124,6 +127,7 @@ def parse_request(body: dict, places=None) -> dict:
     return {
         "date": date, "time": time, "time_known": time_known,
         "lat": lat, "lon": lon, "tz": tz_name, "utc_offset_minutes": offset,
+        "record_offset": offset is not None and mode == "place",
         "place": place, "house_system": hsys, "fold": fold,
         "accept_lmt": body.get("accept_lmt") is True,
         "orbs": sanitize_orbs(body.get("orbs")),
@@ -131,6 +135,35 @@ def parse_request(body: dict, places=None) -> dict:
         "asteroids": [n for n in dict.fromkeys(asteroid_numbers) if n not in ast.SWISS_EQUIVALENT],
         "aspect_types": list(dict.fromkeys(asp)),
     }
+
+
+def resolve_time(req: dict, date: dt.date, time: dt.time, fold, accept_lmt: bool) -> dict:
+    """Local birth time -> UTC: birth-record offset, then a historical correction, then the tzdb."""
+    if req.get("record_offset"):
+        conv = timeconv.resolve_local_time(date, time, None, req["utc_offset_minutes"], None, False)
+        conv["time"]["source"] = "time zone on the birth record, entered by the visitor"
+        conv["notes"] = ["The time zone from your birth record was used instead of the time zone database."]
+        conv["reliability"] = "record"
+        return conv
+    if req["utc_offset_minutes"] is None:
+        corr = corrections.find(req["place"], date)
+        if corr:
+            minutes = corr["std_minutes"]
+            if corr["kind"] == "winter_central" and corrections.summer_fast_time(date):
+                conv = timeconv.resolve_local_time(date, time, None, minutes + 60, None, False)
+                conv["time"].update(tz_abbrev="CDT", dst_active=True, zone=req["tz"],
+                                    source=f"Sage Reality 11 historical correction ({corr['id']})")
+                conv["notes"] = [corr["note"] + " In summer, local daylight time (CDT, UTC-5) is used."]
+                conv["reliability"] = "corrected"
+                return conv
+            conv = timeconv.resolve_local_time(date, time, None, minutes, None, False)
+            conv["time"].update(tz_abbrev=corr["abbrev"], dst_active=False, zone=req["tz"],
+                                source=f"Sage Reality 11 historical correction ({corr['id']}); "
+                                       f"tzdb {timeconv.tzdb_version()} gives a different offset here")
+            conv["notes"] = [corr["note"]]
+            conv["reliability"] = "corrected"
+            return conv
+    return timeconv.resolve_local_time(date, time, req["tz"], req["utc_offset_minutes"], fold, accept_lmt)
 
 
 def build_chart(req: dict) -> dict:
@@ -152,8 +185,7 @@ def build_chart(req: dict) -> dict:
     }
 
     ref_time = req["time"] if req["time_known"] else dt.time(12, 0)
-    conv = timeconv.resolve_local_time(date, ref_time, req["tz"], req["utc_offset_minutes"],
-                                       req["fold"], req["accept_lmt"])
+    conv = resolve_time(req, date, ref_time, req["fold"], req["accept_lmt"])
     if conv["status"] != "ok":
         return {**base, **conv}
     t = conv["time"]
@@ -199,9 +231,9 @@ def build_chart(req: dict) -> dict:
     if not req["time_known"]:
         # Local day bounds for the 'what could change' analysis.
         def local_to_utc(d, tm):
-            r = timeconv.resolve_local_time(d, tm, req["tz"], req["utc_offset_minutes"], 0, True)
+            r = resolve_time(req, d, tm, 0, True)
             if r["status"] == "nonexistent":  # midnight skipped by a DST change: use 01:00
-                r = timeconv.resolve_local_time(d, dt.time(1, 0), req["tz"], req["utc_offset_minutes"], 0, True)
+                r = resolve_time(req, d, dt.time(1, 0), 0, True)
             return dt.datetime.fromisoformat(r["time"]["utc_iso"].rstrip("Z"))
         start = local_to_utc(date, dt.time(0, 0))
         try:

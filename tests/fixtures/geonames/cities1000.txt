@@ -12,3 +12,6 @@
 4297983	Lebanon	Lebanon		37.56979	-85.25274	P	PPL	US		KY				5680			America/New_York	2024-01-01
 4625282	Lebanon	Lebanon		36.20811	-86.2911	P	PPL	US		TN				30262			America/Chicago	2024-01-01
 4407066	St. Louis	St. Louis		38.62727	-90.19789	P	PPL	US		MO				315685			America/Chicago	2024-01-01
+4049979	Birmingham	Birmingham		33.52066	-86.80249	P	PPL	US		AL	073			196357			America/Chicago	2024-01-01
+4924733	Peru	Peru		40.75365	-86.06888	P	PPL	US		IN	103			11060			America/Indiana/Indianapolis	2024-01-01
+4259418	Indianapolis	Indianapolis		39.76838	-86.15804	P	PPLA	US		IN	097			880621			America/Indiana/Indianapolis	2024-01-01

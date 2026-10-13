@@ -12,3 +12,5 @@ US.NE	Nebraska	Nebraska	0
 US.KY	Kentucky	Kentucky	0
 US.TN	Tennessee	Tennessee	0
 US.MO	Missouri	Missouri	0
+US.AL	Alabama	Alabama	0
+US.IN	Indiana	Indiana	0
