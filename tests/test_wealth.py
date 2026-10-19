@@ -20,7 +20,12 @@ def reading_for(body, name="Tiff"):
 
 
 def text_of(r):
-    return " ".join(p for s in r["sections"] for p in s["paragraphs"])
+    parts = [p for s in r["sections"] for p in s["paragraphs"]]
+    for s in r["sections"]:
+        pr = s.get("practice")
+        if pr:
+            parts += [pr["try"]] + pr["prompts"]
+    return " ".join(parts)
 
 
 class TestTiffChart(unittest.TestCase):

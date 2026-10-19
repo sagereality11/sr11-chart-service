@@ -32,7 +32,21 @@ def _offers_html(s):
     return f'<div class="offers">{items}</div>' if items else ""
 
 
-def _body_html(r, for_pdf=True, breaks=()):
+def _practice_html(s, for_pdf=True):
+    pr = s.get("practice")
+    if not pr:
+        return ""
+    lines = '<div class="wl"></div>' * (4 if for_pdf else 0)
+    out = [f'<div class="practice"><p class="plabel">{esc(pr["label"])}</p><p>{esc(pr["try"])}</p></div>']
+    if pr["prompts"]:
+        lab = "Journal Prompt" if len(pr["prompts"]) == 1 else "Journal Prompts"
+        items = "".join(f'<div class="jp">{f"<p class=plabel>{lab}</p>" if i == 0 else ""}<p>{esc(q)}</p>{lines}</div>'
+                        for i, q in enumerate(pr["prompts"]))
+        out.append(f'<div class="journal">{items}</div>')
+    return "".join(out)
+
+
+def _body_html(r, for_pdf=True, breaks=(), lines=True):
     out = []
     for s in r["sections"]:
         tag = "h1" if s["level"] == 1 else "h2"
@@ -48,6 +62,7 @@ def _body_html(r, for_pdf=True, breaks=()):
         out.append(f'<div class="keep">{lead}</div>')
         for p in paras:
             out.append(f"<p>{esc(p)}</p>")
+        out.append(_practice_html(s, lines))
         out.append(_offers_html(s))
         if s["id"] == "final":
             sign = esc(r["signoff"]).replace("\n", "<br>")
@@ -75,6 +90,13 @@ p {{ margin:0 0 11px 0; }}
 .toc1 a {{ color:{PURPLE} !important; }}
 .toc2 {{ font-size:11pt; padding:5px 0 5px 20px; color:{SOFT}; }}
 .keep {{ page-break-inside:avoid; }}
+.practice {{ background:{LILAC}; border-left:4px solid {PURPLE}; padding:12px 18px 4px 18px; margin:16px 0 14px 0; page-break-inside:avoid; }}
+.plabel {{ font-family:'Inter','DejaVu Sans',sans-serif; font-size:9.5pt; font-weight:600; letter-spacing:2.5px; text-transform:uppercase; color:{PURPLE}; margin:0 0 6px 0; }}
+.journal {{ margin:6px 0 18px 0; }}
+.journal .plabel {{ color:{GOLD}; }}
+.jp {{ page-break-inside:avoid; margin:0 0 14px 0; }}
+.jp p:not(.plabel) {{ font-style:italic; margin:0 0 4px 0; }}
+.wl {{ height:30px; border-bottom:1px solid {LILAC2}; }}
 p {{ orphans:3; widows:3; }}
 .offer {{ border-left:3px solid {PURPLE}; padding:2px 0 2px 14px; margin:12px 0; page-break-inside:avoid; }}
 .offer a {{ font-family:'Inter','DejaVu Sans',sans-serif; font-weight:600; color:{PURPLE}; text-decoration:none; font-size:12pt; }}
@@ -338,6 +360,10 @@ WEB_CSS = f"""
 .sr-ws .greet{{font-style:italic;color:var(--p);font-size:1.15rem}}
 .sr-ws .signoff{{font-style:italic;color:var(--p);font-size:1.15rem;margin-top:1.6rem}}
 .sr-ws .disc{{font-size:.82rem;color:#7a6d8d;border-top:1px solid var(--l2);padding-top:.8rem;margin-top:1.6rem}}
+.sr-ws .practice{{background:var(--l);border-left:4px solid var(--p);padding:.9rem 1.1rem .2rem;margin:1.2rem 0;border-radius:3px}}
+.sr-ws .plabel{{font-size:.78rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--p);margin:0 0 .4rem!important}}
+.sr-ws .journal{{margin:0 0 1.4rem}}.sr-ws .journal .plabel{{color:#a07f2c}}
+.sr-ws .jp p:not(.plabel){{font-style:italic;margin:0 0 .7rem!important}}
 .sr-ws .offer{{border-left:3px solid var(--p);padding:.1rem 0 .1rem .9rem;margin:.9rem 0}}
 .sr-ws .offer a{{font-weight:600;color:var(--p);text-decoration:none}}
 .sr-ws .offer a:hover{{text-decoration:underline}}
@@ -390,7 +416,7 @@ def render_web(r) -> str:
         cls = "l1" if s["level"] == 1 else "l2"
         nav.append(f'<li><a class="{cls}" href="#{esc(s["id"])}">{esc(s["heading"])}</a></li>')
         opts.append(f'<option value="{esc(s["id"])}">{"  " if s["level"] == 2 else ""}{esc(s["heading"])}</option>')
-    body = _body_html(r, for_pdf=False)
+    body = _body_html(r, for_pdf=False, lines=False)
     return (f'<div class="sr-ws"><style>{WEB_CSS}</style><div class="ws-grid">'
             f'<nav class="ws-nav" aria-label="Sections of your reading"><p class="ws-navt">Your Reading</p>'
             f'<ol>{"".join(nav)}</ol><select aria-label="Jump to a section" onchange="{JUMP}">{"".join(opts)}</select></nav>'

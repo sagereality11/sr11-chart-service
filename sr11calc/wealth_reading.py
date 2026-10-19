@@ -10,6 +10,7 @@ import datetime as dt
 import re
 
 from . import wealth as W
+from .wealth_practice import add_practices
 from . import wealth_text as T
 
 TITLE = "Your Birth Chart's Wealth Story"
@@ -609,6 +610,7 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
                prof_next(prof))
         prof_used = True
     ecl_used = set()
+    thresh_info = {}
     active_planets = [g[1] for g in groups]
     if not groups:
         w.para(T.QUIET_YEAR)
@@ -636,6 +638,8 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
         else:
             title = f"{pl.title()} Moves Through Your Chart"
         w.section(f"t-{pl}", title, level=2)
+        cyc_cls = ("conj" if cycles and cycles[0]["aspect"] == 0 else "hard") if cycles else None
+        thresh_info[f"t-{pl}"] = (pl, main_cls or cyc_cls, bool(ing), [h["target"] for h in normal])
         # timing sentences, per class
         # an IC conjunction and a Midheaven opposition are the same moment on one axis
         ic_conj = [h for h in normal if h["target"] == "ic" and h["aspect"] == 0]
@@ -851,6 +855,7 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
     w.sections[-1]["offers"] = [{"title": t, "url": u, "why": y} for t, u, y in offers]
 
     explain_terms(w.sections)
+    add_practices(a, w.sections, R, thresh_info)
     snap = snapshot(a, w, r2, rc, rf)
     return {"title": TITLE, "subtitle": "How your chart builds, holds, and grows your resources", "name": name,
             "birth": birth, "sections": w.sections, "signoff": T.SIGNOFF, "disclaimer": T.DISCLAIMER,
