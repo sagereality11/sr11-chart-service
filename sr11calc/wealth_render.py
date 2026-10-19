@@ -332,7 +332,8 @@ WEB_CSS = f"""
 .sr-ws .ws-read h1{{line-height:1.2;font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;color:var(--p);font-size:2rem;margin:2.2rem 0 .8rem;padding-bottom:.4rem;border-bottom:1px solid var(--l2)}}
 .sr-ws .ws-read section:first-child h1{{margin-top:0}}
 .sr-ws .ws-read h2{{line-height:1.25;font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;color:var(--p);font-size:1.45rem;margin:1.6rem 0 .5rem;padding-left:.8rem;border-left:4px solid var(--g)}}
-.sr-ws .ws-read p{{margin:0 0 1rem}}
+.sr-ws .ws-read{{max-width:46rem}}
+.sr-ws .ws-read p{{margin:0 0 1.05rem}}
 .sr-ws .greet{{font-style:italic;color:var(--p);font-size:1.15rem}}
 .sr-ws .signoff{{font-style:italic;color:var(--p);font-size:1.15rem;margin-top:1.6rem}}
 .sr-ws .disc{{font-size:.82rem;color:#7a6d8d;border-top:1px solid var(--l2);padding-top:.8rem;margin-top:1.6rem}}
@@ -346,6 +347,10 @@ WEB_CSS = f"""
  .sr-ws .ws-grid{{display:block}}
  .sr-ws nav.ws-nav{{position:sticky;top:0;z-index:30;max-height:none;border-radius:0;margin:0 -16px 1.2rem;padding:.6rem 16px;border-left:0;border-right:0}}
  .sr-ws nav .ws-navt,.sr-ws nav ol{{display:none}}
+ .sr-ws{{font-size:1.04rem;line-height:1.75}}
+ .sr-ws .ws-read section{{scroll-margin-top:140px}}
+ .sr-ws .ws-read h1{{font-size:1.65rem;margin-top:1.8rem}}
+ .sr-ws .ws-read h2{{font-size:1.3rem}}
  .sr-ws nav select{{display:block;width:100%;padding:.65rem .7rem;border:1px solid var(--l2);border-radius:3px;font-size:1rem;color:var(--ink);background:#fff}}
 }}
 """
@@ -356,6 +361,12 @@ WEB_JS = """
   var links=root.querySelectorAll('nav.ws-nav a'), sel=root.querySelector('nav.ws-nav select');
   function go(id){ var el=document.getElementById(id); if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); } }
   links.forEach(function(a){ a.addEventListener('click',function(e){ e.preventDefault(); go(a.getAttribute('href').slice(1)); }); });
+  var nav=root.querySelector('nav.ws-nav');
+  function pin(){ if(!nav||window.innerWidth>820){ if(nav) nav.style.top=''; return; } var b=0;
+    document.querySelectorAll('body *').forEach(function(el){ if(root.contains(el)) return; var cs=getComputedStyle(el);
+      if((cs.position==='fixed'||cs.position==='sticky')&&cs.display!=='none'&&cs.visibility!=='hidden'){ var r=el.getBoundingClientRect(); if(r.top<=1&&r.bottom>b&&r.bottom<200&&r.width>window.innerWidth*0.6) b=r.bottom; } });
+    nav.style.top=b+'px'; }
+  pin(); window.addEventListener('resize',pin); window.addEventListener('scroll',function(){ if(!pin.d){ pin.d=1; setTimeout(function(){ pin.d=0; pin(); },400); } },{passive:true});
   if(sel){ sel.addEventListener('change',function(){ if(sel.value) go(sel.value); }); }
   if('IntersectionObserver' in window){
     var secs=root.querySelectorAll('.ws-read section');

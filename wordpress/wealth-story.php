@@ -155,7 +155,8 @@ if ( ! function_exists( 'sr_ws_style' ) ) {
 .sr-wsf .cta{border:1px solid var(--l2);border-left:5px solid var(--g);padding:1.2rem 1.3rem;border-radius:4px;background:#fff}
 .sr-wsf .cta h3{font-family:"Cormorant Garamond",Georgia,serif;color:var(--p);font-size:1.45rem;margin:0 0 .4rem;letter-spacing:0;text-transform:none}
 .sr-wsf .dl{margin:0 0 1.4rem}
-@media(max-width:600px){.sr-wsf .grid{grid-template-columns:1fr}}
+.sr-wsf p,.sr-wsf li{font-size:1.05rem;line-height:1.7}
+@media(max-width:600px){.sr-wsf .grid{grid-template-columns:1fr}.sr-wsf .card{padding:1.1rem}.sr-wsf .result{padding:1rem .9rem}.sr-wsf .cta{padding:1rem}.sr-wsf p,.sr-wsf li{font-size:1rem}.sr-wsf table,.sr-wsf tbody,.sr-wsf tr,.sr-wsf td{display:block;width:auto}.sr-wsf td.k{width:auto;border-bottom:0;padding-bottom:.1rem;font-size:.9rem}.sr-wsf td{padding:.35rem .7rem .6rem}}
 </style>';
 	}
 	function sr_ws_fields( $pre, $with_name_label ) {
@@ -314,6 +315,13 @@ add_shortcode( 'sr_wealth_story_reading', function () {
         var out = $('ws-out');
         out.innerHTML = '<p class="dl" style="text-align:center"><a class="go" href="'+url+'" download="'+fn+'">Download My PDF</a></p>' + (j.html || '');
         out.hidden = false;
+        (function(){ var nav = out.querySelector('nav.ws-nav'); if (!nav) return;
+          function pin(){ if (window.innerWidth > 820) { nav.style.top=''; return; } var b = 0;
+            document.querySelectorAll('header, #wpadminbar, .site-header, [class*="sticky"], [class*="fixed"]').forEach(function(el){ if (out.contains(el)) return; var cs = getComputedStyle(el);
+              if ((cs.position==='fixed'||cs.position==='sticky') && cs.display!=='none') { var r = el.getBoundingClientRect(); if (r.top <= 1 && r.bottom > b && r.bottom < 200) b = r.bottom; } });
+            nav.style.top = b + 'px'; }
+          pin(); var t; window.addEventListener('scroll', function(){ clearTimeout(t); t = setTimeout(pin, 250); }, {passive:true}); window.addEventListener('resize', pin);
+        })();
         setTimeout(function(){ out.scrollIntoView({behavior:'smooth', block:'start'}); }, 300);
         return;
       }
