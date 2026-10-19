@@ -556,7 +556,7 @@ COMPLICATION = {
     "retro": "{P} turns inward before it moves outward",
 }
 OVERALL_CLOSE = {
-    "personal": "Taken together, your chart builds wealth best through personal value delivered in a sustainable form. Earning may not be the hardest part for you. Keeping enough of yourself, and enough of what you earn, is where the real growth lives.",
+    "personal": "Taken together, your chart builds wealth best through personal value delivered in a sustainable form. Earning may not be the hardest part for you. The growth is in keeping more of what you earn and more of your energy while you earn it: pricing your time fairly, saying no to the extra work nobody is paying for, and letting some of what you build keep working without you.",
     "partner": "Taken together, your chart builds wealth best through people. The right partners, clients, and agreements multiply what you could do alone, and the wrong ones cost more than money.",
     "career": "Taken together, your chart builds wealth best through a reputation you're proud of. When what you're known for and what you're paid for line up, your money story gets simpler.",
     "creative": "Taken together, your chart builds wealth best through what you make. Creative work that you own and develop over time is one of your strongest long-term assets.",

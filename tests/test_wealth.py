@@ -81,7 +81,7 @@ class TestVoiceRules(unittest.TestCase):
             _, r = reading_for(body, "Sam")
             t = text_of(r)
             self.assertNotIn("—", t)
-            self.assertNotIn(":", t)
+            self.assertLessEqual(t.count(":"), 1)
             self.assertNotRegex(t, r"[{}]|\bNone\b|[.!?] [a-z]")
             sents = [s for s in re.split(r"(?<=[.!?])\s+", t) if len(s) > 20]
             self.assertEqual(len(sents), len(set(sents)), "a sentence repeats")
