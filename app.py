@@ -212,7 +212,8 @@ def wealth_story():
             out["pdf_base64"] = base64.b64encode(wealth_render.render_pdf(reading)).decode("ascii")
             if body.get("with_html"):
                 out["html"] = wealth_render.render_web(reading)
-            out["filename"] = "Wealth-Story-" + "".join(c for c in name if c.isalnum() or c in "-_")[:40] + ".pdf"
+            safe = "".join(c for c in name if c.isalnum() or c in "-_")[:40]
+            out["filename"] = f"Wealth-Story-{safe}.pdf" if name != "Friend" and safe else "Wealth-Story.pdf"
     except Exception:  # never leak internals or input into logs/responses
         app.logger.error("wealth story failed (input withheld)")
         return _error("calculation_failed", "The reading could not be created. Please try again.", 500)

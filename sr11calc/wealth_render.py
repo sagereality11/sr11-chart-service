@@ -133,7 +133,8 @@ def render_cover_pdf(r) -> bytes:
     centered(r["subtitle"], top - 166, "SR11LoraI", 15, soft)
     rule(top - 192)
     b = r.get("birth") or {}
-    centered(f"Prepared for {r['name']}", top - 232, "SR11Lora", 13, purple)
+    if r.get("name"):
+        centered(f"Prepared for {r['name']}", top - 232, "SR11Lora", 13, purple)
     line = "  ·  ".join(x for x in (b.get("date"), b.get("time")) if x)
     if line:
         centered(line, top - 252, "SR11Lora", 9.5, ink)
