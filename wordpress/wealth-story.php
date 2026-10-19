@@ -148,7 +148,7 @@ if ( ! function_exists( 'sr_ws_style' ) ) {
 .sr-wsf .msg.err{background:#fdecec;color:#7a1f1f}
 .sr-wsf .fine{font-size:.85rem;color:var(--p2);margin-top:1rem}
 .sr-wsf .result{background:var(--l);border-radius:4px;padding:1.4rem;margin:0 0 1.6rem}
-.sr-wsf .result h3{font-size:.78rem;letter-spacing:2px;text-transform:uppercase;color:var(--p);margin:1.2rem 0 .4rem}
+.sr-wsf .result h3{font-family:inherit;font-weight:700;font-size:.8rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--p);margin:1.2rem 0 .4rem}
 .sr-wsf table{width:100%;border-collapse:collapse;background:#fff;margin:.6rem 0 0}
 .sr-wsf td{padding:.55rem .7rem;border-bottom:1px solid var(--l2);vertical-align:top;font-size:.96rem}
 .sr-wsf td.k{color:var(--p);font-weight:600;width:44%;font-size:.88rem}
