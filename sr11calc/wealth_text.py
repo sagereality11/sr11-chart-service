@@ -584,6 +584,48 @@ FINAL_LINES = {
     "steady": "You can move slowly and still arrive.",
     "trust": "And you can trust your instincts about money, because they're worth listening to.",
 }
+FINAL_SIGN = {
+    "Aries": "With {R} in Aries, you can go first and still give the money time to catch up.",
+    "Taurus": "With {R} in Taurus, you can trust slow, steady growth and let comfort be part of the plan.",
+    "Gemini": "With {R} in Gemini, you can follow more than one interest and still build something that holds.",
+    "Cancer": "With {R} in Cancer, you can care for everyone and still make sure the care comes back to you.",
+    "Leo": "With {R} in Leo, you can let your work be seen and let that visibility turn into real income.",
+    "Virgo": "With {R} in Virgo, you can be brilliant at the details without proving your worth through extra work.",
+    "Libra": "With {R} in Libra, you can keep things fair for everyone, yourself included.",
+    "Scorpio": "With {R} in Scorpio, you can go deep with money and still let a little trust in.",
+    "Sagittarius": "With {R} in Sagittarius, you can keep your freedom and still have a plan that holds.",
+    "Capricorn": "With {R} in Capricorn, you can build for the long run and still enjoy what you've already built.",
+    "Aquarius": "With {R} in Aquarius, you can do things your own way and still let your income be steady.",
+    "Pisces": "With {R} in Pisces, you can be generous with your gifts and still put a fair price on them.",
+}
+FINAL_FORT = {
+    1: "Your Part of Fortune in your first house keeps reminding you that luck follows you when you show up as yourself.",
+    2: "Your Part of Fortune in your second house says what you already have is worth tending.",
+    3: "Your Part of Fortune in your third house means your next good opportunity may arrive in an ordinary conversation.",
+    4: "Your Part of Fortune in your fourth house means the security you build at home is part of your wealth, not separate from it.",
+    5: "Your Part of Fortune in your fifth house means joy isn't a distraction from your money story. It's one of the doors.",
+    6: "Your Part of Fortune in your sixth house means good fortune finds you in the way you do your work every day.",
+    7: "Your Part of Fortune in your seventh house means the right partner or client can change the whole picture.",
+    8: "Your Part of Fortune in your eighth house means shared resources can work in your favor when the agreements are honest.",
+    9: "Your Part of Fortune in your ninth house means every time you widen your world, your opportunities widen with it.",
+    10: "Your Part of Fortune in your tenth house means being visible isn't vanity for you. It's how opportunity finds you.",
+    11: "Your Part of Fortune in your eleventh house means the right people keep finding you, so let them.",
+    12: "Your Part of Fortune in your twelfth house means some of your best luck arrives quietly, once you give yourself room to notice it.",
+}
+FINAL_NODE = {
+    1: "And your North Node in your first house asks you to trust your own judgment a little more each year.",
+    2: "And your North Node in your second house asks you to own what you build, fully and without apology.",
+    3: "And your North Node in your third house asks you to keep sharing your ideas, one conversation at a time.",
+    4: "And your North Node in your fourth house asks you to build a home base that holds you too.",
+    5: "And your North Node in your fifth house asks you to let your work carry more of your joy.",
+    6: "And your North Node in your sixth house asks for simple routines that let your gifts last.",
+    7: "And your North Node in your seventh house asks you to let the right people help.",
+    8: "And your North Node in your eighth house asks you to let trust in, along with other people's investment in you.",
+    9: "And your North Node in your ninth house asks you to teach, travel, and think bigger.",
+    10: "And your North Node in your tenth house asks you to step forward and be known for what you do.",
+    11: "And your North Node in your eleventh house asks you to belong to something bigger than your own effort.",
+    12: "And your North Node in your twelfth house asks you to protect the quiet, because that's where your best work begins.",
+}
 FINAL_TRANSITS = "The transits ahead ask for {asks}. {lines} You don't need to rush any of it."
 TRANSIT_ASK = {"saturn": ("structure", "Saturn wants your foundation strong enough to hold the next chapter."),
                "uranus": ("room for change", "Uranus wants room for what's changing."),

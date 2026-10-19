@@ -639,7 +639,8 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
             title = f"{pl.title()} Moves Through Your Chart"
         w.section(f"t-{pl}", title, level=2)
         cyc_cls = ("conj" if cycles and cycles[0]["aspect"] == 0 else "hard") if cycles else None
-        thresh_info[f"t-{pl}"] = (pl, main_cls or cyc_cls, bool(ing), [h["target"] for h in normal])
+        _tn = list(dict.fromkeys(tname(h["target"]) for h in sorted(normal, key=lambda h: -h["weight"]) if h["class"] == main_cls))
+        thresh_info[f"t-{pl}"] = (pl, main_cls or cyc_cls, bool(ing), [h["target"] for h in normal], _tn)
         # timing sentences, per class
         # an IC conjunction and a Midheaven opposition are the same moment on one axis
         ic_conj = [h for h in normal if h["target"] == "ic" and h["aspect"] == 0]
@@ -809,30 +810,16 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
     w.section("final", "Final Thoughts")
     w.para(T.FINAL_OPEN[r2])
     asks, lines = [], []
-    for pl in active_planets[:3] if False else [g[1] for g in sorted(groups, key=lambda g: -g[0])][:3]:
+    for pl in [g[1] for g in sorted(groups, key=lambda g: -g[0])][:3]:
         if pl in T.TRANSIT_ASK:
             asks.append(T.TRANSIT_ASK[pl][0])
-            lines.append(T.TRANSIT_ASK[pl][1])
-    picks = []
-    if P[r2]["house"] in (1, 2) or concentrated:
-        picks.append(T.FINAL_LINES["build"])
-    if any(x["other"] in ("mars", "jupiter", "neptune") for x in P[r2]["aspects"]) or P[R[11]].get("dignity") in ("fall", "detriment"):
-        picks.append(T.FINAL_LINES["overgive"])
-    if nn["house"] == 12 or P[r2]["house"] == 12:
-        picks.append(T.FINAL_LINES["quiet"])
-    elif P[r2]["house"] in (7, 8):
-        picks.append(T.FINAL_LINES["partner"])
-    elif P[rc]["house"] == 10 or P[r2]["house"] == 10:
-        picks.append(T.FINAL_LINES["seen"])
-    if len(picks) < 3:
-        picks.append(T.FINAL_LINES["steady"])
-    if len(picks) < 3:
-        picks.append(T.FINAL_LINES["trust"])
-    picks = picks[:3]
-    if not picks[-1].startswith("And"):
-        picks[-1] = "And " + picks[-1][0].lower() + picks[-1][1:]
+            nms = thresh_info.get(f"t-{pl}", (None,) * 5)[4]
+            where = f"{pl.title()}'s work on your {join(nms[:2])}" if nms else f"The season {pl.title()} brings"
+            lines.append(f"{where} asks for {T.TRANSIT_ASK[pl][0]}.")
+    rname = ("the " + W.NAME[r2]) if r2 in ("sun", "moon") else W.NAME[r2]
+    picks = [T.FINAL_SIGN[P[r2]["sign"]].format(R=rname), T.FINAL_FORT[P["fortune"]["house"]], T.FINAL_NODE[nn["house"]]]
     if asks:
-        w.para(f"The transits ahead ask for {join(asks)}. " + " ".join(lines) + " " + " ".join(picks))
+        w.para(" ".join(lines) + " " + " ".join(picks))
     else:
         w.para(" ".join(picks))
 
