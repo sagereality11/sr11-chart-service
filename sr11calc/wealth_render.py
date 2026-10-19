@@ -348,7 +348,7 @@ WEB_CSS = f"""
  .sr-ws nav.ws-nav{{position:sticky;top:0;z-index:30;max-height:none;border-radius:0;margin:0 -16px 1.2rem;padding:.6rem 16px;border-left:0;border-right:0}}
  .sr-ws nav .ws-navt,.sr-ws nav ol{{display:none}}
  .sr-ws{{font-size:1.04rem;line-height:1.75}}
- .sr-ws .ws-read section{{scroll-margin-top:140px}}
+ .sr-ws .ws-read section{{scroll-margin-top:175px}}
  .sr-ws .ws-read h1{{font-size:1.65rem;margin-top:1.8rem}}
  .sr-ws .ws-read h2{{font-size:1.3rem}}
  .sr-ws nav select{{display:block;width:100%;padding:.65rem .7rem;border:1px solid var(--l2);border-radius:3px;font-size:1rem;color:var(--ink);background:#fff}}

@@ -316,10 +316,12 @@ add_shortcode( 'sr_wealth_story_reading', function () {
         out.innerHTML = '<p class="dl" style="text-align:center"><a class="go" href="'+url+'" download="'+fn+'">Download My PDF</a></p>' + (j.html || '');
         out.hidden = false;
         (function(){ var nav = out.querySelector('nav.ws-nav'); if (!nav) return;
+          for (var e = nav.parentElement; e && e !== document.body; e = e.parentElement) { var ov = getComputedStyle(e); if (ov.overflowX !== 'visible' || ov.overflowY !== 'visible') e.style.overflow = 'clip'; }
           function pin(){ if (window.innerWidth > 820) { nav.style.top=''; return; } var b = 0;
-            document.querySelectorAll('header, #wpadminbar, .site-header, [class*="sticky"], [class*="fixed"]').forEach(function(el){ if (out.contains(el)) return; var cs = getComputedStyle(el);
-              if ((cs.position==='fixed'||cs.position==='sticky') && cs.display!=='none') { var r = el.getBoundingClientRect(); if (r.top <= 1 && r.bottom > b && r.bottom < 200) b = r.bottom; } });
-            nav.style.top = b + 'px'; }
+            document.querySelectorAll('#wpadminbar, .mobmenu, .mob-menu-header-holder, header, .site-header, [class*="sticky"], [class*="fixed"]').forEach(function(el){
+              if (out.contains(el)) return; var cs = getComputedStyle(el); if ((cs.position !== 'fixed' && cs.position !== 'sticky') || cs.display === 'none' || cs.visibility === 'hidden') return;
+              var r = el.getBoundingClientRect(); if (r.height > 0 && r.top < 130 && r.bottom > b && r.bottom < 220 && r.width > window.innerWidth * 0.6) b = r.bottom; });
+            nav.style.top = Math.round(b) + 'px'; }
           pin(); var t; window.addEventListener('scroll', function(){ clearTimeout(t); t = setTimeout(pin, 250); }, {passive:true}); window.addEventListener('resize', pin);
         })();
         setTimeout(function(){ out.scrollIntoView({behavior:'smooth', block:'start'}); }, 300);
