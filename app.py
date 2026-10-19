@@ -210,6 +210,8 @@ def wealth_story():
         elif mode == "pdf":
             import base64
             out["pdf_base64"] = base64.b64encode(wealth_render.render_pdf(reading)).decode("ascii")
+            if body.get("with_html"):
+                out["html"] = wealth_render.render_web(reading)
             out["filename"] = "Wealth-Story-" + "".join(c for c in name if c.isalnum() or c in "-_")[:40] + ".pdf"
     except Exception:  # never leak internals or input into logs/responses
         app.logger.error("wealth story failed (input withheld)")
