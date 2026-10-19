@@ -26,29 +26,34 @@ def esc(s):
     return html.escape(str(s))
 
 
-def _body_html(r, for_pdf=True):
+def _offers_html(s):
+    items = "".join(f'<div class="offer"><a href="{esc(o["url"])}">{esc(o["title"])}</a><p>{esc(o["why"])}</p></div>'
+                    for o in s.get("offers", []))
+    return f'<div class="offers">{items}</div>' if items else ""
+
+
+def _body_html(r, for_pdf=True, breaks=()):
     out = []
-    top = [s for s in r["sections"] if s["level"] == 1]
-    if for_pdf:
-        items = []
-        for s in r["sections"]:
-            cls = "toc1" if s["level"] == 1 else "toc2"
-            items.append(f'<li class="{cls}"><a href="#{esc(s["id"])}">{esc(s["heading"])}</a></li>')
-        out.append('<div class="contents"><div class="kicker">Inside Your Reading</div><h1 class="ct">Contents</h1>'
-                   '<p class="hint">Tap any section to jump straight to it. Your PDF viewer\'s bookmarks or navigation pane '
-                   'lists every section too.</p><ul>' + "".join(items) + "</ul></div>")
     for s in r["sections"]:
         tag = "h1" if s["level"] == 1 else "h2"
-        brk = ' class="newpage"' if (for_pdf and s["level"] == 1 and s is not top[0] and s["id"] in ("thresholds", "overall")) else ""
-        out.append(f'<section id="{esc(s["id"])}"{brk}><{tag}>{esc(s["heading"])}</{tag}>')
+        cls = ' class="newpage"' if s["id"] in breaks else ""
+        out.append(f'<section id="{esc(s["id"])}"{cls}>')
+        paras = list(s["paragraphs"])
+        lead = f"<{tag}>{esc(s['heading'])}</{tag}>"
         if s.get("greeting"):
-            out.append(f'<p class="greet">{esc(s["greeting"])}</p>')
-        for p in s["paragraphs"]:
+            lead += f'<p class="greet">{esc(s["greeting"])}</p>'
+        # keep each heading with its opening paragraph so a heading never sits alone at the foot of a page
+        if paras:
+            lead += f"<p>{esc(paras.pop(0))}</p>"
+        out.append(f'<div class="keep">{lead}</div>')
+        for p in paras:
             out.append(f"<p>{esc(p)}</p>")
+        out.append(_offers_html(s))
+        if s["id"] == "final":
+            sign = esc(r["signoff"]).replace("\n", "<br>")
+            out.append(f'<p class="signoff">{sign}</p>')
         out.append("</section>")
-    sign = esc(r["signoff"]).replace("\n", "<br>")
-    out.append(f'<p class="signoff">{sign}</p><p class="site">sagereality11.com</p>')
-    out.append(f'<div class="disc">{esc(r["disclaimer"])}</div>')
+    out.append(f'<p class="site">sagereality11.com</p><div class="disc">{esc(r["disclaimer"])}</div>')
     return "".join(out)
 
 
@@ -69,6 +74,11 @@ p {{ margin:0 0 11px 0; }}
 .toc1 {{ font-size:12.5pt; font-weight:600; padding:9px 0; border-bottom:1px solid {LILAC2}; }}
 .toc1 a {{ color:{PURPLE} !important; }}
 .toc2 {{ font-size:11pt; padding:5px 0 5px 20px; color:{SOFT}; }}
+.keep {{ page-break-inside:avoid; }}
+p {{ orphans:3; widows:3; }}
+.offer {{ border-left:3px solid {PURPLE}; padding:2px 0 2px 14px; margin:12px 0; page-break-inside:avoid; }}
+.offer a {{ font-family:'Inter','DejaVu Sans',sans-serif; font-weight:600; color:{PURPLE}; text-decoration:none; font-size:12pt; }}
+.offer p {{ margin:3px 0 0 0; font-size:12.2pt; }}
 .signoff {{ font-style:italic; color:{PURPLE}; font-size:14pt; margin-top:24px; }}
 .site {{ font-size:9pt; letter-spacing:2px; text-transform:uppercase; color:{GOLD}; }}
 .disc {{ font-size:8.6pt; color:#7a6d8d; line-height:1.5; border-top:1px solid {LILAC2}; padding-top:10px; margin-top:28px; }}
@@ -150,6 +160,25 @@ def _find_pages(body_pdf, sections):
             hit = next((i for i in range(start, len(lines)) if h in " ".join(lines[i])), start)
         out[s["id"]] = hit
         start = hit
+    return out
+
+
+def _stranded(body_pdf, sections, breaks, min_words=45):
+    """Sections whose heading starts near the foot of a page with too little text under it."""
+    out = set()
+    pages = [[_norm(x) for x in (pg.extract_text() or "").splitlines()] for pg in body_pdf.pages]
+    start = 0
+    for s in sections:
+        h = _norm(s["heading"])
+        for i in range(start, len(pages)):
+            if h in pages[i]:
+                start = i
+                k = pages[i].index(h)
+                after = " ".join(pages[i][k + 1:])
+                after = after.replace("sage reality 11", "")
+                if len(after.split()) < min_words and i < len(pages) - 1 and s["id"] not in breaks and k > 2:
+                    out.add(s["id"])
+                break
     return out
 
 
@@ -237,16 +266,27 @@ def render_pdf(r) -> bytes:
     from pypdf.annotations import Link
     from pypdf.generic import Fit
 
-    body = f'<!doctype html><html><head><meta charset="utf-8"><style>{PDF_CSS}</style></head><body>{_body_html(r, for_pdf=False)}</body></html>'
     env = {**os.environ, "QT_QPA_PLATFORM": "offscreen"}
+    breaks = set()
     with tempfile.TemporaryDirectory() as td:
         hp, pp = os.path.join(td, "body.html"), os.path.join(td, "body.pdf")
-        with open(hp, "w", encoding="utf-8") as f:
-            f.write(body)
-        subprocess.run(["wkhtmltopdf", "-q", "--page-size", "Letter", "--disable-local-file-access", "--disable-javascript",
-                        "--dpi", "110", "-T", "16mm", "-B", "18mm", "-L", "19mm", "-R", "19mm", hp, pp],
-                       check=False, env=env, timeout=90, capture_output=True)
-        body_pdf = PdfReader(pp)
+        for _ in range(5):
+            body = f'<!doctype html><html><head><meta charset="utf-8"><style>{PDF_CSS}</style></head><body>{_body_html(r, False, breaks)}</body></html>'
+            with open(hp, "w", encoding="utf-8") as f:
+                f.write(body)
+            subprocess.run(["wkhtmltopdf", "-q", "--page-size", "Letter", "--disable-local-file-access", "--disable-javascript",
+                            "--dpi", "110", "-T", "16mm", "-B", "18mm", "-L", "19mm", "-R", "19mm", hp, pp],
+                           check=False, env=env, timeout=90, capture_output=True)
+            body_pdf = PdfReader(pp)
+            stranded = _stranded(body_pdf, r["sections"], breaks)
+            # a final page holding only the closing lines reads as a stray page: start the links on a fresh page instead
+            last = (body_pdf.pages[-1].extract_text() or "")
+            if len(body_pdf.pages) > 1 and len(last.split()) < 120 and "where to go from here" not in _norm(last) \
+                    and "next" not in breaks and any(x["id"] == "next" for x in r["sections"]):
+                stranded.add("next")
+            if not stranded:
+                break
+            breaks |= stranded
         n = len(body_pdf.pages)
         pages = _find_pages(body_pdf, r["sections"])
         footer = PdfReader(io.BytesIO(_footer_pdf(n)))
@@ -295,6 +335,11 @@ WEB_CSS = f"""
 .sr-ws .greet{{font-style:italic;color:var(--p);font-size:1.15rem}}
 .sr-ws .signoff{{font-style:italic;color:var(--p);font-size:1.15rem;margin-top:1.6rem}}
 .sr-ws .disc{{font-size:.82rem;color:#7a6d8d;border-top:1px solid var(--l2);padding-top:.8rem;margin-top:1.6rem}}
+.sr-ws .offer{{border-left:3px solid var(--p);padding:.1rem 0 .1rem .9rem;margin:.9rem 0}}
+.sr-ws .offer a{{font-weight:600;color:var(--p);text-decoration:none}}
+.sr-ws .offer a:hover{{text-decoration:underline}}
+.sr-ws .offer p{{margin:.2rem 0 0}}
+.sr-ws .site{{font-size:.8rem;letter-spacing:2px;text-transform:uppercase;color:var(--g);margin-top:1.4rem}}
 .sr-ws .totop{{display:inline-block;margin-top:.6rem;font-size:.85rem;color:var(--p)}}
 @media (max-width:820px){{
  .sr-ws .ws-grid{{display:block}}

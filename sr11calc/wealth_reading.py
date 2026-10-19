@@ -177,9 +177,12 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
     money_roles = [r for r in ("asc", "second", "fortune", "assets") if r in roles.get(r2, [])]
     label = {"asc": "Ascendant", "second": "second house", "fortune": "Part of Fortune", "assets": "Lot of Assets"}
     companions = [o for o in a["occupants"][P[r2]["house"]] if o != r2 and o in W.TRAD]
+    near = [o for o in a["occupants"][P[r2]["house"]] if o != r2 and abs(W.sep(P[o]["lon"], P[r2]["lon"])) <= 8]
+    share = [o for o in companions if o not in near]
     if len(money_roles) >= 3:
         names = join([f"your {label[r]}" for r in money_roles])
-        with_ = f" with {join([the(c) for c in companions[:3]])} close beside it" if companions else ""
+        with_ = (f" with {join([the(c) for c in near[:3]])} close beside it" if near else
+                 f", sharing that house with {join([the(c) for c in share[:3]])}" if share else "")
         stand = T.STAND["concentrated"].format(roles=names[5:] if names.startswith("your ") else names,
                                                R=the(r2), S=P[r2]["sign"], ord=T.ORD[P[r2]["house"]], with_=with_)
         stand = stand.replace("Your your ", "Your ")
@@ -192,7 +195,7 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
                                         CS=P[rc]["sign"], cord=T.ORD[P[rc]["house"]])
         stand = cap(stand) if False else stand
         concentrated = False
-    w.sections[-1]["greeting"] = f"Hey {name},"
+    w.sections[-1]["greeting"] = f"Hey {name}," if name and name != "Friend" else "Hey there,"
     w.para(T.OPENING.format(stand=stand, close=""))
     w.para(T.CONCENTRATED_NOTE if concentrated else "", T.OPENING_CLOSE)
 
@@ -298,6 +301,8 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
             "and the moment you planned to rest keeps moving further away.")
         blocks = [b for b in blocks if not b.startswith("The Moon is about")]
     w.para(phase_txt if phase_txt.startswith("Your Moon is about") else "", " ".join(blocks))
+    if not w.sections[-1]["paragraphs"]:
+        w.para(T.BLOCK_INTRO)
     hard = contact_text(r2, kinds=("conj", "hard"), only=MALEFIC, limit=2)
     if not hard and rf != r2:
         hard = contact_text(rf, kinds=("conj", "hard"), only=MALEFIC, limit=1,
@@ -379,7 +384,7 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
     def house_section(h, sid, heading, OPEN, IN, OCC, extra_fn=None):
         w.section(sid, heading)
         rr = R[h]
-        w.para(OPEN.format(sign=a["house_sign"][h], R=the(rr)))
+        opener = OPEN.format(sign=a["house_sign"][h], R=the(rr))
         if rr in described:
             where = {"value": "in how you create value", "fortune": "as the ruler of your Part of Fortune",
                      "career": "as the ruler of your career", "fifth": f"in your fifth house",
@@ -388,11 +393,11 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
                 where = "on your Ascendant"
             cond = {"exaltation": ", where it's exalted", "domicile": ", where it's strong in its own sign",
                     "fall": ", where it's in its fall", "detriment": ", where it's in its detriment"}.get(P[rr].get("dignity"), "")
-            w.para(f"We've already met {the(rr)} {where}{cond if described[rr] != 'value' else ''}, and here it takes on another role.",
+            w.para(opener, f"We've already met {the(rr)} {where}{cond if described[rr] != 'value' else ''}, and here it takes on another role.",
                    IN[P[rr]["house"]])
         else:
             dig = P[rr].get("dignity")
-            w.para(f"{The(rr)} sits at {P[rr]['deg']} degrees {P[rr]['sign']} in your {T.ORD[P[rr]['house']]} house.",
+            w.para(opener, f"{The(rr)} sits at {P[rr]['deg']} degrees {P[rr]['sign']} in your {T.ORD[P[rr]['house']]} house.",
                    IN[P[rr]["house"]])
             w.para(stars_for(rr))
             w.para(T.DIGNITY[dig].format(P=The(rr), S=P[rr]["sign"]) if dig else "",
@@ -405,7 +410,7 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
                 if o in described:
                     continue
                 lines.append(OCC.format(P=The(o), kw=T.KEYWORD.get(o, "its energy")))
-                if P[o].get("dignity") in ("domicile", "exaltation"):
+                if P[o].get("dignity"):
                     lines.append(T.DIGNITY[P[o]["dignity"]].format(P=The(o), S=P[o]["sign"]))
                 described[o] = sid
             w.para(" ".join(lines))
@@ -570,8 +575,9 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
             items = [h for h in normal if h["class"] == cls]
             if not items:
                 continue
-            if cls == "soft" and len(items) > 3:
-                items = sorted(sorted(items, key=lambda h: -h["weight"])[:3], key=lambda h: h["start"])
+            cap_n = 3 if cls == "soft" else 4
+            if len(items) > cap_n:
+                items = sorted(sorted(items, key=lambda h: -h["weight"])[:cap_n], key=lambda h: h["start"])
             # merge contacts that share an aspect and a time window
             merged = []
             for h in items:
@@ -606,7 +612,7 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
             w.para(sentence, T.TRANSIT_CORE.get((pl, cls), ""), mtxt)
             # eclipses on the same points
             for e in a["eclipses"]:
-                k = ("ruler" if e["point"] in (r2, rc) else e["point"])
+                k = ("ruler" if e["point"] == r2 else "cruler" if e["point"] == rc else e["point"])
                 if any(h["target"] == e["point"] or (e["point"] in ("mc", "ic") and h["target"] in ("mc", "ic")) for h in items) and e["jd"] not in ecl_used:
                     ecl_used.add(e["jd"])
                     if e["date"] < today:
@@ -740,6 +746,24 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
     else:
         w.para(" ".join(picks))
 
+    # ------------------------------------------------------------------ Where to go from here
+    w.section("next", "Where to Go From Here")
+    w.para(T.NEXT_INTRO)
+    offers = [T.OFFER["timing"]]
+    sign2 = a["house_sign"][2]
+    offers.append((f"The Essence of {sign2}", "https://sagereality11.com/shop/" + T.ESSENCE[sign2] + "/",
+                   T.ESSENCE_WHY.format(sign=sign2)))
+    star = next((x for x in a["stars"] if x["star"] in T.STAR_GUIDE), None)
+    if star:
+        title, slug = T.STAR_GUIDE[star["star"]]
+        pt = T.STAR_PT.get(star["point"]) or W.NAME[star["point"]]
+        offers.append((title, "https://sagereality11.com/shop/" + slug + "/", T.STAR_GUIDE_WHY.format(star=star["star"], pt=pt)))
+    offers.append(T.OFFER["manifest"])
+    offers.append(T.OFFER["karmic"])
+    offers.append(T.OFFER["transit_free"])
+    offers.append(T.OFFER["hub"])
+    w.sections[-1]["offers"] = [{"title": t, "url": u, "why": y} for t, u, y in offers]
+
     snap = snapshot(a, w, r2, rc, rf)
     return {"title": TITLE, "subtitle": "How your chart builds, holds, and grows your resources", "name": name,
             "birth": birth, "sections": w.sections, "signoff": T.SIGNOFF, "disclaimer": T.DISCLAIMER,
@@ -763,4 +787,4 @@ def snapshot(a, w, r2, rc, rf):
     ]
     thresholds = [s["heading"] for s in w.sections if s["level"] == 2]
     return {"theme": theme, "rows": rows, "watch": watch, "thresholds": thresholds,
-            "contents": [s["heading"] for s in w.sections if s["level"] == 1]}
+            "contents": [s["heading"] for s in w.sections if s["level"] == 1 and s["id"] != "next"]}

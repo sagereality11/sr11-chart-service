@@ -64,7 +64,7 @@ class TestTiffChart(unittest.TestCase):
     def test_sections(self):
         heads = [s["heading"] for s in self.r["sections"] if s["level"] == 1]
         self.assertEqual(heads[0], "Where Your Wealth Story Begins")
-        self.assertEqual(heads[-1], "Final Thoughts")
+        self.assertEqual(heads[-2:], ["Final Thoughts", "Where to Go From Here"])
         self.assertIn("Your Midheaven and Career Path", heads)
 
 

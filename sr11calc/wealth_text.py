@@ -515,7 +515,8 @@ PLUTO_8TH = ("Pluto has been moving through your eighth house of shared resource
              "shared assets, and financial entanglements, often by bringing what's hidden in an arrangement to the surface so it can be addressed honestly.")
 ECLIPSE_LINE = ("The {kind} eclipse of {date} falls on your {pt}, which adds weight to this window and can mark a turning point around {topic}.")
 ECLIPSE_TOPIC = {"mc": "career and public direction", "ic": "home and family", "asc": "how you show up for yourself",
-                 "dsc": "partners and clients", "fortune": "opportunity", "ruler": "the planet that guides your income"}
+                 "dsc": "partners and clients", "fortune": "opportunity", "ruler": "the planet that guides your income",
+                 "cruler": "the planet that guides your career"}
 PROFECTION = {
     1: "a first house year, a year about you, your body, and your own initiative",
     2: "a second house year, a year centered on income, possessions, and your sense of worth",
@@ -621,3 +622,45 @@ DIGNITY_SHORT = {
 }
 
 ECLIPSE_PAST = ("The {kind} eclipse of {date} landed on your {pt}, and its story around {topic} is still unfolding through this window.")
+
+# --------------------------------------------------------------------------------------
+# Where to Go From Here (links at the end of the reading)
+# --------------------------------------------------------------------------------------
+SHOP = "https://sagereality11.com/shop/"
+CALC = "https://sagereality11.com/astrology-calculators/"
+NEXT_INTRO = ("If you'd like to keep going, these are the pieces I'd reach for next with your chart. Each one picks up a thread "
+              "from your Wealth Story and follows it further.")
+OFFER = {
+    "timing": ("What's Happening to Me Right Now? Your Personal Timing Reading", SHOP + "personal-timing-reading/",
+               "Every major transit moving through your chart right now, by sign and house, where you are in its timing, and how to move through it. It's the natural next step after The Thresholds Ahead."),
+    "manifest": ("When Are My Best Days to Manifest? Your Personal Manifestation Map", SHOP + "personal-manifestation-map/",
+                 "Twelve months of your personal power days and pause days, so you know when to launch, raise your prices, or ask for what you're worth."),
+    "karmic": ("Your Karmic Contract Reading", SHOP + "karmic-contract-reading-report/",
+               "Your nodes, Saturn, and Chiron in full. If The Pattern You're Learning to Change landed for you, this is where that story goes deeper."),
+    "degree": ("What Do the Exact Degrees in My Chart Say About Me? Your Degree Reading", SHOP + "degree-reading/",
+               "The meaning behind the exact degree and minute of every placement in your money story, including your Part of Fortune and the ruler of your income."),
+    "transit_free": ("Free Calculator: Why Is Everything Changing Right Now?", CALC + "why-is-everything-changing-right-now/",
+                     "A free look at the transits, eclipses, and life chapters active in your chart today."),
+    "hub": ("All of My Free Astrology Calculators", CALC,
+            "Every free tool on Sage Reality 11, each one starting with a question you might be asking right now."),
+}
+ESSENCE = {
+    "Aries": "the-essence-of-aries-through-every-house", "Taurus": "the-essence-of-taurus-through-every-house",
+    "Gemini": "the-essence-of-gemini-through-every-house", "Cancer": "the-essence-of-cancer-through-every-house",
+    "Leo": "the-essence-of-leo-through-every-house", "Virgo": "the-essence-of-virgo-through-every-house",
+    "Libra": "the-essence-of-libra-through-every-house", "Scorpio": "the-essence-of-scorpio-through-every-house",
+    "Sagittarius": "the-essence-of-sagittarius-through-every-house", "Capricorn": "the-essence-of-capricorn-through-every-house",
+    "Aquarius": "the-essence-of-aquarius-through-every-house", "Pisces": "the-essence-of-pisces-through-every-house",
+}
+ESSENCE_WHY = ("{sign} rules the house of your income, and this guide walks through {sign} in every house and with every planet, "
+               "with the lower and higher octave of each, so you can see that energy everywhere it lives in your chart.")
+STAR_GUIDE = {
+    "Regulus": ("Regulus Fixed Star Guide", "regulus-fixed-star-guide-royal-star-of-persia-fame-power-and-soul-legacy"),
+    "Aldebaran": ("Aldebaran Fixed Star Guide", "aldebaran-fixed-star-guide-royal-star-of-integrity-and-success"),
+    "Antares": ("Antares Fixed Star Guide", "antares-fixed-star-guide-royal-star-of-the-warriors-heart"),
+    "Fomalhaut": ("Fomalhaut Fixed Star Guide", "fomalhaut-fixed-star-guide-the-royal-star-of-the-sacred-dream"),
+    "Algol": ("Algol Fixed Star Guide", "algol-fixed-star-guide-reclaiming-the-medusa-gaze"),
+    "Alpheratz": ("Alpheratz Fixed Star Guide", "alpheratz-fixed-star-guide-unchained"),
+}
+STAR_GUIDE_WHY = ("{star} sits on your {pt}, and this guide goes into its myth, what it means on every planet, angle, and house, "
+                  "and how to live its gift without falling into its test.")
