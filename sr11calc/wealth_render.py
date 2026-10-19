@@ -320,7 +320,8 @@ def render_pdf(r) -> bytes:
 WEB_CSS = f"""
 .sr-ws{{--p:{PURPLE};--l:{LILAC};--l2:{LILAC2};--g:{GOLD};--ink:{INK};color:var(--ink);max-width:1080px;margin:0 auto;font-family:'Source Serif 4',Georgia,serif;font-size:1.06rem;line-height:1.7}}
 .sr-ws *{{box-sizing:border-box}}
-.sr-ws .ws-grid{{display:grid;grid-template-columns:250px minmax(0,1fr);gap:2.4rem;align-items:start}}
+.sr-ws .ws-grid{{display:grid;grid-template-columns:215px minmax(0,1fr);gap:1.8rem;align-items:start}}
+@media (min-width:1200px){{.sr-ws .ws-grid{{grid-template-columns:250px minmax(0,1fr);gap:2.4rem}}}}
 .sr-ws nav.ws-nav{{position:sticky;top:90px;max-height:calc(100vh - 110px);overflow:auto;border:1px solid var(--l2);border-top:5px solid var(--p);border-radius:4px;background:#fff;padding:1rem .9rem}}
 .sr-ws nav .ws-navt{{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.25rem;color:var(--p);margin:0 0 .5rem}}
 .sr-ws nav ol{{list-style:none;margin:0;padding:0}}

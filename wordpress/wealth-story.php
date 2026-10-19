@@ -322,6 +322,11 @@ add_shortcode( 'sr_wealth_story_reading', function () {
               if (out.contains(el)) return; var cs = getComputedStyle(el); if ((cs.position !== 'fixed' && cs.position !== 'sticky') || cs.display === 'none' || cs.visibility === 'hidden') return;
               var r = el.getBoundingClientRect(); if (r.height > 0 && r.top < 130 && r.bottom > b && r.bottom < 220 && r.width > window.innerWidth * 0.6) b = r.bottom; });
             nav.style.top = Math.round(b) + 'px'; }
+          var ws = out.querySelector('.sr-ws'), host = ws && ws.closest('.post-content, .entry-content');
+          function widen(){ if (!ws || !host) return; if (window.innerWidth <= 820) { ws.style.marginLeft = ws.style.marginRight = ''; return; }
+            var cs = getComputedStyle(host), m = Math.max(0, Math.min(parseFloat(cs.paddingLeft), parseFloat(cs.paddingRight), 80) - 8);
+            ws.style.marginLeft = ws.style.marginRight = (-m) + 'px'; }
+          widen(); window.addEventListener('resize', widen);
           pin(); var t; window.addEventListener('scroll', function(){ clearTimeout(t); t = setTimeout(pin, 250); }, {passive:true}); window.addEventListener('resize', pin);
         })();
         setTimeout(function(){ out.scrollIntoView({behavior:'smooth', block:'start'}); }, 300);
