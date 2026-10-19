@@ -19,7 +19,7 @@ import time
 
 from flask import Flask, jsonify, request
 
-from sr11calc import asteroids, engine, timeconv, yearahead, yearahead_render
+from sr11calc import asteroids, engine, timeconv, wealth, wealth_reading, wealth_render, yearahead, yearahead_render
 from sr11calc.places import PlaceIndex
 from sr11calc.service import InputError, build_chart, parse_request
 
@@ -167,6 +167,53 @@ def year_ahead():
         out["filename"] = "Your-2027-Reading-" + "".join(c for c in name if c.isalnum() or c in "-_")[:40] + ".pdf"
     else:
         out["html"] = doc
+    return jsonify(out)
+
+
+@app.post("/v1/wealth-story")
+def wealth_story():
+    """Your Birth Chart's Wealth Story. Same body as /v1/chart plus "name" and "mode":
+    "snapshot" (free calculator result), "full" (reading data plus a web HTML fragment with a
+    section menu) or "pdf" (the finished PDF as base64). A birth time is required because the
+    reading is built on houses, the Part of Fortune and the Midheaven. Placidus and the True Node
+    are always used."""
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return _error("invalid_input", "Malformed request.", 422)
+    mode = body.get("mode") if body.get("mode") in ("snapshot", "full", "pdf") else "snapshot"
+    if body.get("time_known") is False:
+        return _error("time_required", "Your Wealth Story needs a birth time, because it reads your houses, your Part of "
+                      "Fortune and your Midheaven. If you don't know yours, a birth certificate or hospital record usually has it.", 422)
+    body = {**body, "house_system": "P", "node": "true", "points": ["fortune"], "asteroids": [], "aspects": []}
+    body.pop("orbs", None)
+    name = str(body.get("name") or "").strip()[:60] or "Friend"
+    try:
+        req = parse_request(body, places)
+    except InputError as e:
+        return _error(e.code, e.message, 422)
+    try:
+        chart_out = build_chart(req)
+        if chart_out["status"] != "ok":
+            http = {"ambiguous": 409, "nonexistent": 422, "needs_confirmation": 409}.get(chart_out["status"], 422)
+            return jsonify(chart_out), http
+        t = req["time"]
+        btime = t.strftime("%I:%M %p").lstrip("0") if t else ""
+        d = req["date"]
+        birth = {"date": f"{wealth.MONTHS[d.month - 1]} {d.day}, {d.year}", "time": btime,
+                 "place": req["place"].get("label", "")}
+        analysis = wealth.analyze(chart_out, d)
+        reading = wealth_reading.build_reading(analysis, name, birth)
+        out = {"status": "ok", "product": "wealth-story", "snapshot": reading["snapshot"], "name": name, "birth": birth}
+        if mode == "full":
+            out["reading"] = {k: reading[k] for k in ("title", "subtitle", "sections", "signoff", "disclaimer")}
+            out["html"] = wealth_render.render_web(reading)
+        elif mode == "pdf":
+            import base64
+            out["pdf_base64"] = base64.b64encode(wealth_render.render_pdf(reading)).decode("ascii")
+            out["filename"] = "Wealth-Story-" + "".join(c for c in name if c.isalnum() or c in "-_")[:40] + ".pdf"
+    except Exception:  # never leak internals or input into logs/responses
+        app.logger.error("wealth story failed (input withheld)")
+        return _error("calculation_failed", "The reading could not be created. Please try again.", 500)
     return jsonify(out)
 
 
