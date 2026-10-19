@@ -75,9 +75,9 @@ DIGNITY = {
 }
 
 SOLAR = {
-    "cazimi": "{P} sits in the heart of the Sun, less than a third of a degree away. Traditional astrologers saw this as a kind of royal protection, so the planet's gifts can shine unusually clearly.",
-    "combust": "{P} is about {d} degrees from the Sun, close enough that its light is reduced. It's still active, but its own needs can get absorbed into whatever you're working toward, and it may take longer for others to notice what it's doing.",
-    "beams": "{P} is still under the Sun's beams, about {d} degrees away. It tends to work quietly before it becomes visible, so give its results a little more time than you think they need.",
+    "cazimi": "{P} sits almost exactly on the Sun, in what astrologers call the heart of the Sun. Traditionally that's a place of special protection, so its gifts can shine unusually clearly.",
+    "combust": "{P} sits so close to the Sun, about {d} degrees away, that the Sun's brightness hides it a little. The gifts it gives you can be easy for others to miss, and for you to miss too.",
+    "beams": "{P} is still fairly close to the Sun, about {d} degrees away, so its gifts tend to work quietly before anyone notices them. Give its results a little more time than you think they need.",
 }
 
 RETRO = {
@@ -90,8 +90,8 @@ RETRO = {
 
 # What another planet adds when it touches a money planet. Keys: conj, soft, hard.
 CONTACT = {
-    "sun": {"conj": "The Sun joins it, putting your identity right into this part of your story. What you earn and who you are can feel like the same thing.",
-            "soft": "A supportive link with the Sun helps you be seen for this ability without forcing it.",
+    "sun": {"conj": "The Sun joins it, tying {area} to how you see yourself. What you earn and who you are can feel like the same thing.",
+            "soft": "A supportive link with the Sun helps you be seen for {area} without forcing it.",
             "hard": "Tension with the Sun can make it hard to balance what you want to be known for with what actually pays."},
     "moon": {"conj": "The Moon is right beside it, so feelings and money travel together. Security isn't abstract for you. It's something you feel in your body.",
              "soft": "A supportive link with the Moon lets you trust your instincts about money, and people tend to feel cared for in your hands.",
@@ -111,21 +111,21 @@ CONTACT = {
     "saturn": {"conj": "Saturn sits with it, adding seriousness and staying power. Things may take longer, and what you build tends to last.",
                "soft": "A supportive link with Saturn gives you discipline and a feel for long-term structure, the kind of patience that compounds.",
                "hard": "Tension with Saturn can feel like a ceiling or a fear of not having enough. It often eases as you build structures that make you feel secure."},
-    "uranus": {"conj": "Uranus sits with it, bringing sudden shifts, new methods, and a strong need for independence into this part of your life.",
+    "uranus": {"conj": "Uranus sits with it, so {area} can change in sudden bursts and new ways, and you need freedom in how you handle it.",
                "soft": "A supportive link with Uranus brings fresh ideas and openings that arrive out of nowhere.",
                "hard": "Tension with Uranus can bring income that rises and falls without warning, or a restlessness with any arrangement that feels confining."},
-    "neptune": {"conj": "Neptune sits with it, adding imagination, compassion, and a little fog. Your vision is real, and the details need extra care.",
+    "neptune": {"conj": "Neptune sits with it, adding imagination and compassion, and sometimes a little confusion about the details. Your vision is real, so give the practical side extra care.",
                 "soft": "A supportive link with Neptune brings inspiration and an intuitive sense of what people are longing for.",
                 "hard": "Tension with Neptune can blur the line between generosity and depletion, or make it hard to see an arrangement clearly."},
     "pluto": {"conj": "Pluto sits with it, adding intensity and a desire to go all the way in. Power around money is something you'll want to understand, not avoid.",
               "soft": "A supportive link with Pluto gives you staying power and the ability to rebuild after a setback.",
-              "hard": "Tension with Pluto can bring all-or-nothing moments with money, or power dynamics that ask you to stand your ground."},
-    "chiron": {"conj": "Chiron sits with it, so this is also where an old ache lives, and where your wisdom eventually comes from.",
+              "hard": "Tension with Pluto can bring all-or-nothing moments with money, or questions about who holds the power, that ask you to stand your ground."},
+    "chiron": {"conj": "Chiron sits with it, so {area} can touch an old hurt, and healing it becomes part of your wisdom.",
                "soft": "A supportive link with Chiron turns what you've healed into something you can offer others.",
                "hard": "Tension with Chiron can touch an old sense of not being enough, which sometimes shows up as giving your expertise away."},
     "north_node": {"conj": "Your North Node sits with it, which makes this placement part of your direction of growth, not only your history.",
                    "soft": "A supportive link with your North Node suggests that leaning into this ability moves your whole life forward.",
-                   "hard": "Tension with your nodes asks you to work this ability in a new way rather than the one you know by heart."},
+                   "hard": "Tension with your nodes asks you to approach {area} in a new way rather than the one you know by heart."},
 }
 
 ANGLE_CONTACT = {
@@ -181,16 +181,16 @@ CARRY_FORWARD = ("There's a practical side to this. When so much depends on your
 # What can block the flow
 # --------------------------------------------------------------------------------------
 PHASE = {
-    "new": "Your Moon was born in the new phase, close to its meeting with the Sun. You tend to begin things on instinct and figure out the shape later, which is a gift as long as you give new ventures time to find their footing.",
-    "crescent": "Your Moon was born in the crescent phase, pulling away from the Sun. There's a push to break free of old patterns, and money may feel like the proof that you can.",
-    "first quarter": "Your Moon was born in the first quarter phase, the phase of action and crisis. You tend to build through challenge, and pressure often brings out your best decisions.",
-    "gibbous": "Your Moon was born in the gibbous phase, the phase of refining. You may keep improving something long after it's good enough, which is wonderful for quality and hard on your pricing.",
-    "full": "Your Moon was born under a Full Moon, facing the Sun across the sky. Relationships and other people's responses can strongly shape how secure you feel with money.",
-    "disseminating": "Your Moon was born in the disseminating phase, the phase of sharing what you know. Teaching and passing on what you've learned can become part of how you earn.",
-    "last quarter": "Your Moon was born in the last quarter phase, a turning point in the cycle. You may outgrow ways of earning that once worked and need to let them go before the next thing can begin.",
-    "balsamic": "Your Moon was born in the balsamic phase, the final stretch before the New Moon. It belongs to the end of a cycle, when something has matured enough to be distilled, so you may do your best financial work when you stop starting over and refine what you already know works.",
+    "new": "You were born close to a New Moon, when the Moon was dark and just beginning a new cycle. You tend to begin things on instinct and figure out the shape later, which is a gift as long as you give new ventures time to find their footing.",
+    "crescent": "You were born under a young crescent Moon, just after the New Moon. There's a push to break free of old patterns, and money may feel like the proof that you can.",
+    "first quarter": "You were born under a growing half Moon, a phase that likes action. You tend to do your best work under a little pressure, and challenges often bring out your best decisions.",
+    "gibbous": "You were born under a nearly full Moon, a phase that loves to refine. You may keep improving something long after it's good enough, which is wonderful for quality and hard on your pricing.",
+    "full": "You were born under a Full Moon, with the Moon facing the Sun across the sky. Relationships and other people's responses can strongly shape how secure you feel with money.",
+    "disseminating": "You were born just after a Full Moon, a phase that loves to share what it knows. Teaching and passing on what you've learned can become part of how you earn.",
+    "last quarter": "You were born under a waning half Moon, a turning point in the Moon's cycle. You may outgrow ways of earning that once worked and need to let them go before the next thing can begin.",
+    "balsamic": "You were born just before a New Moon, when the Moon is a thin sliver about to disappear. That's called a balsamic Moon, and it belongs to the end of a cycle, when something has matured enough to be distilled, so you may do your best financial work when you stop starting over and refine what you already know works.",
 }
-BLOCK_INTRO = "Every chart has a spot where money slips away more easily, usually through habits rather than bad luck. These are the ones worth knowing in yours."
+BLOCK_INTRO = "Every chart has a few spots where money slips away more easily, usually through habits rather than bad luck. These are the ones worth knowing in yours."
 BLOCK_EMOTIONAL = {
     "moon": "Because the Moon carries so much of your money story, money may rarely feel like only money. A raise can feel like proof you're valued, and a slow month can feel like a judgment about your worth. Part of building steady wealth is separating those two experiences. The value of your work and your value as a person are related, but they aren't the same number.",
     "sun": "Because the Sun carries so much of your money story, earning can feel tied to your identity. When work is going well, you feel like yourself. When it isn't, you may question who you are. Your worth doesn't rise and fall with this month's numbers.",
@@ -198,7 +198,7 @@ BLOCK_EMOTIONAL = {
     "venus": "Because Venus carries so much of your money story, how you feel about people can shape what you charge them. Generosity is beautiful. Make sure it's a choice and not an apology.",
     "mars": "Because Mars carries so much of your money story, you may move fast when you feel threatened. Slowing down long enough to ask whether a problem is yours to fix can save you real money and energy.",
     "jupiter": "Because Jupiter carries so much of your money story, it's easy to trust that more will come. That faith is real, and it works best with a plan and a ceiling.",
-    "saturn": "Because Saturn carries so much of your money story, you may feel like you're never quite safe enough. Building small structures that prove you are, savings, contracts, routines, tends to quiet that voice.",
+    "saturn": "Because Saturn carries so much of your money story, you may feel like you're never quite safe enough. Small structures like savings, contracts, and routines can quiet that voice.",
 }
 BLOCK_HARD_MALEFIC = "{P} {asp} {O}. {txt}"
 BLOCK_CADENT_12 = "Your income ruler sits in the twelfth house, so some of its work happens out of view. You may undervalue what you do because nobody sees how much it takes. Naming it, pricing it, and talking about it out loud is part of the work."
@@ -250,13 +250,13 @@ PLANET_CAREER = {
 CAREER_BRIDGE_SAME = ("Your career ruler is also the planet that rules your income, which builds a direct bridge between your reputation "
                       "and your money. When your work is seen, it tends to pay.")
 CAREER_BRIDGE_ASPECT = ("Your career ruler {asp} {R2}, the ruler of your income, so recognition and money are in conversation. {txt}")
-CAREER_BRIDGE_NONE = ("Career visibility and income aren't the same thing, and your chart keeps them somewhat separate. {R} doesn't form a direct "
-                      "aspect with {R2}, so recognition for your work won't automatically turn into money. The bridge is how you price, package, "
-                      "and protect what you offer.")
+CAREER_BRIDGE_NONE = ("Career visibility and income aren't the same thing, and your chart keeps them somewhat separate. {R} and {R2} don't form a direct "
+                      "angle with each other, so recognition for your work doesn't automatically turn into money. Connecting the two is something you "
+                      "build on purpose, through how you price, package, and protect what you offer.")
 BRIDGE_SOFT = "That connection tends to help. Being seen for your work makes it easier to be paid for it."
 BRIDGE_HARD = "That connection works through tension. Recognition can arrive before the money does, or the money can come from work you'd rather not be known for, until you bring the two closer together."
 TENTH_OCCUPANT = "{P} sits in your tenth house, which brings {kw} right into your public life."
-KEYWORD = {"sun": "your identity and leadership", "moon": "care and public sensitivity", "mercury": "your voice and your ideas",
+KEYWORD = {"sun": "your identity and leadership", "moon": "care and sensitivity", "mercury": "your voice and your ideas",
            "venus": "charm, beauty, and diplomacy", "mars": "drive and competitive energy", "jupiter": "growth and good fortune",
            "saturn": "responsibility and authority", "uranus": "innovation and sudden change", "neptune": "imagination and compassion",
            "pluto": "power, depth, and transformation", "chiron": "healing and the wisdom of an old wound"}
@@ -304,7 +304,7 @@ EIGHTH_STRUCTURE = ("Clear terms, realistic timelines, and knowing exactly who o
                     "usually where trouble starts.")
 
 ELEVENTH_OPEN = ("Your eleventh house begins in {sign}, so {R} rules your friends, networks, communities, and the gains that come from your work. "
-                 "The eleventh is also the second house counted from the tenth, which makes it a traditional window into the income your career produces.")
+                 "Astrologers also read the eleventh house as the money your career brings in.")
 ELEVENTH_IN = {
     1: "With that ruler in your first house, support tends to arrive through your own initiative. People show up when you reach out, ask, or start something. Waiting to be discovered isn't how this placement works best.",
     2: "With that ruler in your second house, your networks feed your income directly. Referrals and introductions can turn into real money.",
@@ -406,7 +406,8 @@ SN_CONJ = {
 }
 NN_TRINE = ("Your North Node {asp} {names}, which is an encouraging link. The work those planets describe is one of the paths that supports "
             "this growth.")
-NODE_CLOSE = "When you make something carefully, own it, and let it work for you, you're moving in the direction your nodes describe."
+NODE_CLOSE = {5: "When you make something carefully, own it, and let it work for you, you're moving in the direction your nodes describe.",
+              "other": "Leaning into what those planets describe is one of the ways you move in the direction your nodes point."}
 
 # --------------------------------------------------------------------------------------
 # Fixed stars on key points
@@ -427,7 +428,7 @@ STAR = {
     "Deneb Algedi": ("the Tail of the Goat", "Deneb Algedi is associated with justice, law, and the steady authority of someone who keeps their word."),
     "Alcyone": ("the brightest of the Pleiades", "Alcyone is associated with vision and insight, the ability to see what others can't, with a reminder to share it gently."),
     "Rigel": ("the Foot of Orion", "Rigel is associated with teaching and passing on knowledge, a gift that grows in value the more you share it."),
-    "Betelgeuse": ("the Shoulder of Orion", "Betelgeuse is associated with success that arrives without a struggle when you trust your own momentum."),
+    "Betelgeuse": ("the Shoulder of Orion", "Betelgeuse is associated with success that can arrive more easily when you trust your own momentum."),
     "Canopus": ("the Navigator's Star", "Canopus is associated with guidance and long journeys, the ability to lead others through unfamiliar territory."),
     "Zubenelgenubi": ("the Southern Claw", "Zuben Elgenubi is associated with social reform and the desire to make an exchange fair for everyone."),
     "Zubeneschamali": ("the Northern Claw", "Zuben Eschamali is associated with ambition and a strong drive toward power, best used to build authority over your own choices."),
@@ -443,8 +444,8 @@ STAR = {
     "Alpheratz": ("the Navel of the Horse", "Alpheratz is associated with freedom and movement, and with a talent for getting things started."),
     "Deneb Adige": ("the Tail of the Swan", "Deneb Adige is associated with intelligence, artistry, and a connection with something larger than material ambition."),
 }
-STAR_LINE = "Your {pt} is joined by the fixed star {star}, {epithet}, within {orb}. {txt}"
-STAR_ALSO = "{star} also sits close to your {pt}, which makes its message even harder to ignore."
+STAR_LINE = "The fixed star {star}, {epithet}, sits {orb} your {pt}. {txt}"
+STAR_ALSO = "{star} also sits close to your {pt}, which gives its message extra weight in your chart."
 
 # --------------------------------------------------------------------------------------
 # Thresholds ahead
@@ -465,15 +466,15 @@ TRANSIT_CORE = {
     ("jupiter", "conj"): "Jupiter brings growth, opportunity, and a wider view to whatever it touches, and it's one of the warmer thresholds a chart can have.",
     ("jupiter", "soft"): "Jupiter's supportive aspects are easy to miss because nothing feels urgent. They're windows where help, timing, and goodwill line up more readily.",
     ("jupiter", "hard"): "Jupiter's tense aspects stretch you. Growth is on offer, and so is the temptation to take on more than you can hold.",
-    ("saturn", "conj"): "When Saturn settles onto a point in your chart, it asks for commitment and structure. What you build now is meant to last.",
+    ("saturn", "conj"): "When Saturn settles onto a point in your chart, it asks for commitment and structure. What you build now lasts when you take your time.",
     ("saturn", "soft"): "Saturn's supportive aspects reward steady effort. Plans made carefully during this window tend to hold.",
     ("saturn", "hard"): "Saturn's squares and oppositions ask whether a structure can hold weight. You may notice where you've been carrying too much, or where income depends too heavily on your personal effort. It can feel like a slowdown, and it's often when you set the boundaries and prices you'll later be grateful for.",
     ("uranus", "conj"): "Uranus brings awakening and sudden change. Something may shift quickly, opening a door you didn't know was there.",
     ("uranus", "hard"): "Uranus in tension brings disruption with a purpose. It can open an unexpected door, change how or where you work, or make it suddenly clear that something has run its course.",
     ("neptune", "conj"): "Neptune brings inspiration and a softer, more intuitive approach. It can also blur details, so let time confirm what's solid.",
-    ("neptune", "hard"): "Neptune in tension can blur your picture of what's real. Some opportunities will be exactly what they seem, and others will be more hopeful than real. Get the details in writing.",
+    ("neptune", "hard"): "Neptune in tension can blur your picture of what's real. Some opportunities may be exactly what they seem, and others may be more hopeful than real. Get the details in writing.",
     ("pluto", "conj"): "Pluto brings deep transformation. It strips away what no longer works so something truer can take its place.",
-    ("pluto", "hard"): "Pluto in tension brings pressure to change at the root. Power around money is likely to be part of the story.",
+    ("pluto", "hard"): "Pluto in tension brings pressure to change at the root. You may notice questions about who holds the power around money.",
 }
 TARGET_MEANING = {
     "second": "the planet that rules your income",
@@ -492,17 +493,17 @@ TARGET_MEANING = {
 }
 CYCLE = {
     ("saturn", 0): ("Your Saturn Return", "Saturn is returning to where it was when you were born, one of the most important thresholds of adult life. It asks what you're building and whether it's truly yours. Structures that fit you get stronger. Ones that don't, start to feel impossible to keep."),
-    ("saturn", 180): ("Your Saturn Opposition", "Saturn is opposing its position at your birth, the halfway point of its cycle. What you've built gets tested from the outside. It's a natural moment to rebalance commitments, especially around money and the work you're building to last."),
-    ("saturn", 90): ("Your Saturn Square", "Saturn is squaring its position at your birth, a checkpoint in its cycle. Something you've been building asks for adjustment before it can carry more weight."),
+    ("saturn", 180): ("Your Saturn Opposition", "Saturn is opposite where it was when you were born, the halfway point of its cycle. Outside demands may show you which commitments still fit. It's a natural moment to rebalance, especially around money and the work you're building to last."),
+    ("saturn", 90): ("Your Saturn Square", "Saturn is about a quarter of the way around its cycle from where it was when you were born, a natural checkpoint. Something you've been building asks for adjustment before it can carry more weight."),
     ("jupiter", 0): ("Your Jupiter Return", "Jupiter is returning to where it was when you were born, opening a new twelve-year cycle of growth. It's a good time to plant something you want to grow for years."),
-    ("jupiter", 180): ("Your Jupiter Opposition", "Jupiter is opposite its birth position, the peak of its cycle. What you planted around six years ago may be showing what it can become."),
-    ("jupiter", 90): ("Your Jupiter Square", "Jupiter is squaring its own position, a natural checkpoint for whether your growth is actually supporting your life."),
+    ("jupiter", 180): ("Your Jupiter Opposition", "Jupiter is opposite where it was when you were born, the peak of its cycle. What you planted around six years ago may be showing what it can become."),
+    ("jupiter", 90): ("Your Jupiter Square", "Jupiter is about a quarter of the way around its cycle from where it was when you were born, a natural checkpoint for whether your growth is actually supporting your life."),
 }
 INGRESS = {
-    2: "{P} crosses into your second house of income, beginning a new chapter for how you earn and what you're willing to accept for your work.",
-    5: "{P} crosses into your fifth house, bringing its energy into creativity, pleasure, and the things you make.",
-    8: "{P} crosses into your eighth house, turning attention toward debt, shared resources, and the agreements you've made with others.",
-    11: "{P} sits on the cusp of your eleventh house, bringing its energy into networks, friendships, and the support around your work.",
+    2: "{P} sits at the doorway of your second house of income {when}, opening a new chapter for how you earn and what you're willing to accept for your work.",
+    5: "{P} sits at the doorway of your fifth house {when}, bringing its energy into creativity, pleasure, and the things you make.",
+    8: "{P} sits at the doorway of your eighth house {when}, turning attention toward debt, shared resources, and the agreements you've made with others.",
+    11: "{P} sits at the doorway of your eleventh house {when}, bringing its energy into networks, friendships, and the support around your work.",
 }
 INGRESS_PLANET = {
     "saturn": "Saturn asks for commitment and clear structure there.",
@@ -511,9 +512,9 @@ INGRESS_PLANET = {
     "pluto": "Pluto brings deep restructuring there over a long stretch of time.",
     "jupiter": "Jupiter brings growth and opportunity there.",
 }
-PLUTO_8TH = ("Pluto has been moving through your eighth house of shared resources for several years. It can restructure how you handle debt, "
+PLUTO_8TH = ("Pluto in today's sky has been moving through your eighth house of shared resources for several years. It can restructure how you handle debt, "
              "shared assets, and financial entanglements, often by bringing what's hidden in an arrangement to the surface so it can be addressed honestly.")
-ECLIPSE_LINE = ("The {kind} eclipse of {date} falls on your {pt}, which adds weight to this window and can mark a turning point around {topic}.")
+ECLIPSE_LINE = ("The {kind} eclipse of {date} falls on your {pt}, which adds weight to this window and can bring {topic} into focus.")
 ECLIPSE_TOPIC = {"mc": "career and public direction", "ic": "home and family", "asc": "how you show up for yourself",
                  "dsc": "partners and clients", "fortune": "opportunity", "ruler": "the planet that guides your income",
                  "cruler": "the planet that guides your career"}
@@ -531,8 +532,9 @@ PROFECTION = {
     11: "an eleventh house year, a year of networks, community, and gains",
     12: "a twelfth house year, a year of rest, reflection, and work behind the scenes",
 }
-PROF_LINE = ("This is also {lordname} year for you in another way. At {age}, your annual profection has reached your {ord} house, so you're in {desc}. "
-             "The lord of your year is {Lord}, which runs from your last birthday until {until}.")
+PROF_EXPLAIN = "Each birthday, your chart moves its spotlight to the next house, one house per year. Astrologers call this an annual profection."
+PROF_LINE = ("This is also {lordname} year for you in another way. " + PROF_EXPLAIN + " At {age}, the spotlight is on your {ord} house, so you're in {desc}, "
+             "and {Lord} is the planet guiding the year until your birthday in {until}.")
 PROF_LORD_ACTIVE = " {Lord} is also one of the planets making a major transit this year, so its message is doubled."
 
 # --------------------------------------------------------------------------------------
@@ -557,12 +559,12 @@ COMPLICATION = {
 }
 OVERALL_CLOSE = {
     "personal": "Taken together, your chart builds wealth best through personal value delivered in a sustainable form. Earning may not be the hardest part for you. The growth is in keeping more of what you earn and more of your energy while you earn it: pricing your time fairly, saying no to the extra work nobody is paying for, and letting some of what you build keep working without you.",
-    "partner": "Taken together, your chart builds wealth best through people. The right partners, clients, and agreements multiply what you could do alone, and the wrong ones cost more than money.",
+    "partner": "Taken together, your chart builds wealth best through people. The right partners, clients, and agreements multiply what you could do alone, so it pays to choose them carefully.",
     "career": "Taken together, your chart builds wealth best through a reputation you're proud of. When what you're known for and what you're paid for line up, your money story gets simpler.",
     "creative": "Taken together, your chart builds wealth best through what you make. Creative work that you own and develop over time is one of your strongest long-term assets.",
     "quiet": "Taken together, your chart builds wealth best through work that doesn't need an audience to matter. Name it, price it, and protect the time it needs.",
     "knowledge": "Taken together, your chart builds wealth best through knowledge you've earned and shared. Teaching, writing, and guiding others can carry your value further than your hours ever could.",
-    "steady": "Taken together, your chart builds wealth best through steady effort and good systems. Small, consistent choices compound in your chart more than big gambles ever will.",
+    "steady": "Taken together, your chart builds wealth best through steady effort and good systems. Small, consistent choices pay off for you more than big gambles ever will.",
 }
 FINAL_OPEN = {
     "moon": "There's something tender about the way your chart connects money with care. You don't separate what you do from who you are very easily, and you don't have to. The work is in letting that care include you.",
@@ -580,7 +582,7 @@ FINAL_LINES = {
     "seen": "You can be seen for your work without needing every room to approve of it.",
     "partner": "You can let other people help without losing what's yours.",
     "steady": "You can move slowly and still arrive.",
-    "trust": "And you can trust your instincts about money, because they've been right more often than you give them credit for.",
+    "trust": "And you can trust your instincts about money, because they're worth listening to.",
 }
 FINAL_TRANSITS = "The transits ahead ask for {asks}. {lines} You don't need to rush any of it."
 TRANSIT_ASK = {"saturn": ("structure", "Saturn wants your foundation strong enough to hold the next chapter."),
@@ -598,7 +600,7 @@ STAND = {
                  "and worth, so money is never a side topic for you. It's one of the main stages of your life."),
     "split": ("The first thing that stands out in your chart is the conversation between two planets. {R} rules your income from {S} in your "
               "{ord} house, while {C} guides your career from {CS} in your {cord} house. Much of your wealth story is about how those two "
-              "learn to work together."),
+              "connect."),
 }
 OPENING_CLOSE = ("That's where we'll begin. From there we'll look at your Part of Fortune, what can block the flow, your Midheaven, the houses "
                  "that add creativity, shared resources, and support, and the transits opening new thresholds over the next year.")
@@ -621,7 +623,7 @@ DIGNITY_SHORT = {
     "fall": "That's its sign of fall, which can make it push too hard or hold back at the wrong moment.",
 }
 
-ECLIPSE_PAST = ("The {kind} eclipse of {date} landed on your {pt}, and its story around {topic} is still unfolding through this window.")
+ECLIPSE_PAST = ("The {kind} eclipse of {date} landed on your {pt}, and the focus it brought to {topic} is still unfolding through this window.")
 
 # --------------------------------------------------------------------------------------
 # Where to Go From Here (links at the end of the reading)
@@ -653,7 +655,7 @@ ESSENCE = {
     "Aquarius": "the-essence-of-aquarius-through-every-house", "Pisces": "the-essence-of-pisces-through-every-house",
 }
 ESSENCE_WHY = ("{sign} rules the house of your income, and this guide walks through {sign} in every house and with every planet, "
-               "with the lower and higher octave of each, so you can see that energy everywhere it lives in your chart.")
+               "with the harder side and the brighter side of each, so you can see that energy everywhere it lives in your chart.")
 STAR_GUIDE = {
     "Regulus": ("Regulus Fixed Star Guide", "regulus-fixed-star-guide-royal-star-of-persia-fame-power-and-soul-legacy"),
     "Aldebaran": ("Aldebaran Fixed Star Guide", "aldebaran-fixed-star-guide-royal-star-of-integrity-and-success"),
@@ -664,3 +666,41 @@ STAR_GUIDE = {
 }
 STAR_GUIDE_WHY = ("{star} sits on your {pt}, and this guide goes into its myth, what it means on every planet, angle, and house, "
                   "and how to live its gift without falling into its test.")
+
+NODES_EXPLAIN = "Your South Node shows what comes easily from long habit, and your North Node shows where you're growing."
+GLOSS = [
+    (r"\bAscendant\b", "Your Ascendant is the sign that was rising on the horizon when you were born, and it describes how you meet the world."),
+    (r"\bMidheaven\b", "Your Midheaven is the very top of your chart, tied to career and reputation."),
+    (r"\bIC\b", "Your IC is the very bottom of your chart, tied to home, family, and your private foundation."),
+    (r"\bDescendant\b", "Your Descendant is the point of partners and one-to-one relationships."),
+    (r"\b(trines?|sextiles?|squares?|opposes|opposite|form a (?:sextile|trine))\b(?! its own)",
+     "When planets trine or sextile, they sit at an easy angle and help each other. When they square or oppose, the angle is tense, and they push each other to grow."),
+    (r"\bChiron\b", "Chiron is a small body astrologers link with old hurts and the wisdom that grows from them."),
+    (r"\bretrograde\b", "A planet is retrograde when, seen from Earth, it looks like it's moving backward."),
+]
+STAR_MONEY = {
+    "Castor": "In money terms, that's a gift for putting what you offer into words.",
+    "Pollux": "In money terms, it asks you to compete cleanly and protect what you've built.",
+    "Capella": "In money terms, your curiosity can keep opening new sources of income.",
+    "Alcyone": "In money terms, it can give you a feel for opportunities other people miss.",
+    "Markab": "In money terms, it rewards sticking with a plan long enough for it to pay off.",
+    "Scheat": "In money terms, an unusual idea of yours may be worth more than you think.",
+    "Vega": "In money terms, people are drawn to you, so make sure what you offer matches the charm.",
+    "Arcturus": "In money terms, your own way of doing things can become your edge.",
+    "Procyon": "In money terms, having more than one source of income can serve you well.",
+    "Rigel": "In money terms, teaching what you know can become valuable.",
+    "Canopus": "In money terms, guiding others through something new can become part of your work.",
+    "Sirius": "In money terms, let fast growth be paced so it doesn't burn you out.",
+    "Deneb Algedi": "In money terms, keeping your word becomes a lasting asset.",
+    "Hamal": "In money terms, it supports going first, as long as you still listen to good advice.",
+    "Alpheratz": "In money terms, it favors starting things and keeping your independence.",
+    "Achernar": "In money terms, generosity and faith tend to come back to you.",
+    "Altair": "In money terms, it rewards bold moves made with a clear plan.",
+    "Denebola": "In money terms, it asks you to stand by your choices even when they're unpopular.",
+    "Vindemiatrix": "In money terms, collect what you've earned without waiting for perfect timing.",
+    "Alphard": "In money terms, put your intensity into the work that matters most.",
+    "Zubenelgenubi": "In money terms, fair exchanges are where you do best.",
+    "Zubeneschamali": "In money terms, ambition works best when it builds your own authority.",
+    "Deneb Adige": "In money terms, work that feels meaningful tends to be the work that lasts.",
+    "Betelgeuse": "In money terms, trusting your momentum can carry you further than overplanning.",
+}

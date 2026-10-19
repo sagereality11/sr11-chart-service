@@ -17,6 +17,8 @@ HOUSE_SHORT = {1: "self", 2: "income", 3: "communication", 4: "home", 5: "creati
                7: "partnership", 8: "shared resources", 9: "knowledge", 10: "career", 11: "community",
                12: "quiet, behind-the-scenes work"}
 RULE_SHORT = {**HOUSE_SHORT, 11: "gains", 8: "shared resources", 6: "daily work"}
+KW_SHORT = {"sun": "confidence", "moon": "care", "mercury": "ideas", "venus": "charm", "mars": "drive", "jupiter": "growth",
+            "saturn": "structure", "uranus": "change", "neptune": "imagination", "pluto": "depth", "chiron": "healing"}
 VERB3 = {"conjunction": "sits with", "sextile": "sextiles", "square": "squares", "trine": "trines", "opposition": "opposes"}
 NUM = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine"}
 MALEFIC = {"mars", "saturn", "uranus", "neptune", "pluto", "chiron"}
@@ -66,13 +68,13 @@ def when(h, today):
     s, e = h["start"], h["end"]
     if h.get("ongoing_start") or s <= today + dt.timedelta(days=3):
         return f"from now through {W.month_year(e)}" if not h.get("ongoing_end") else "throughout the coming year"
+    if h.get("ongoing_end"):
+        return f"from {W.month_year(s)} onward"
     if (s.year, s.month) == (e.year, e.month):
         return f"in {W.part_of_month(s)} {W.month_year(s)}"
     if s.year == e.year:
-        tail = " and beyond" if h.get("ongoing_end") else ""
-        return f"from {W.MONTHS[s.month - 1]} through {W.month_year(e)}{tail}"
-    tail = " and beyond" if h.get("ongoing_end") else ""
-    return f"from {W.month_year(s)} through {W.month_year(e)}{tail}"
+        return f"from {W.MONTHS[s.month - 1]} through {W.month_year(e)}"
+    return f"from {W.month_year(s)} through {W.month_year(e)}"
 
 
 def prof_next(prof):
@@ -81,9 +83,30 @@ def prof_next(prof):
     if days > 75:
         return ""
     nh = prof["house"] % 12 + 1
-    lord = prof["next_lord"]
-    return (f"Your birthday in {W.month_year(prof['until'])} begins {T.PROFECTION[nh].split(',')[0].replace('a ', 'a new ', 1).replace('an ', 'a new ', 1)}, "
-            f"with {the(lord)} taking over as lord of the year, so the second half of this window carries that new theme.")
+    nxt = prof["next_lord"]
+    who = (f"and {the(nxt)} stays the planet guiding it" if nxt == prof["lord"] else f"with {the(nxt)} guiding it")
+    yr = T.PROFECTION[nh].split(',')[0].replace('an ', 'a ', 1).replace('a ', 'a new ', 1)
+    return f"That birthday begins {yr}, {who}, so most of the coming year carries that new theme."
+
+
+def explain_terms(sections):
+    """Add a plain explanation right after the first sentence that uses each astrology term."""
+    done = set()
+    for sec in sections:
+        if sec["id"] == "next":
+            continue
+        for pi, para in enumerate(sec["paragraphs"]):
+            if "From there we'll look at" in para:
+                continue
+            adds = []
+            for i, (pat, expl) in enumerate(T.GLOSS):
+                if i in done or expl in para:
+                    continue
+                if re.search(pat, para):
+                    adds.append(expl)
+                    done.add(i)
+            if adds:
+                sec["paragraphs"][pi] = para + " " + " ".join(adds)
 
 
 class Writer:
@@ -121,11 +144,28 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
     roles = a["roles"]
     w = Writer()
     described = {}      # planet -> section id where its full description lives
+    described_kind = {}
     used_contacts = set()
+    used_texts = set()
 
     def loc(pid):
         p = P[pid]
         return f"{p['sign']} in your {T.ORD[p['house']]} house"
+
+    def area_of(pid):
+        if pid == r2:
+            return "your income"
+        if pid == rc:
+            return "your career"
+        if pid == rf:
+            return "your opportunities"
+        if pid == R[5]:
+            return "your creativity"
+        if pid == R[8]:
+            return "shared money"
+        if pid == R[11]:
+            return "your networks"
+        return T.KEYWORD.get(pid, "this planet's gifts")
 
     def contact_text(pid, kinds=("conj", "soft", "hard"), only=None, skip=None, limit=2, lead=True, subject=None):
         out = []
@@ -139,15 +179,26 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
             key = tuple(sorted((pid, o)))
             if key in used_contacts or o not in T.CONTACT:
                 continue
-            txt = T.CONTACT[o][cls]
+            txt = T.CONTACT[o][cls].replace("{area}", area_of(pid))
             first = re.split(r"(?<=[.!?])\s+", txt)[0]
             if re.sub(r"\W+", " ", first.lower()).strip() in w.seen:
                 continue
             used_contacts.add(key)
+            if (o, cls) in used_texts:
+                continue
+            used_texts.add((o, cls))
             if cls == "conj":
-                txt = re.sub(r"\bit\b", (subject.rstrip(",") + ",") if subject else the(pid), txt, count=1)
+                txt = re.sub(r"\bit\b", subject.rstrip(",") if subject else the(pid), txt, count=1)
             elif lead:
-                txt = f"{subject or The(pid)} {VERB3[asp['type']]} {the(o)}. " + txt
+                who = (subject.rstrip(",") if subject else The(pid))
+                m_hard = re.match(r"^Tension with [^.]*? (can|asks) ", txt)
+                m_soft = re.match(r"^A supportive link with [^.]*? (lets|brings|helps|gives|is|turns|suggests) ", txt)
+                if m_hard:
+                    txt = f"{who} {VERB3[asp['type']]} {the(o)}, and that tension {m_hard.group(1)} " + txt[m_hard.end():]
+                elif m_soft:
+                    txt = f"{who} {VERB3[asp['type']]} {the(o)}, a supportive link that {m_soft.group(1)} " + txt[m_soft.end():]
+                else:
+                    txt = f"{who} {VERB3[asp['type']]} {the(o)}. " + txt
             out.append(txt)
             if len(out) >= limit:
                 break
@@ -163,8 +214,10 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
                 continue
             others = [x for x in a["stars"] if x["star"] == s["star"] and not x.get("used")]
             pt = T.STAR_PT.get(point) or W.NAME[point]
-            orb = "about {} minutes of arc".format(int(round(s["orb"] * 60))) if s["orb"] < 1 else "a degree"
+            orb = "almost exactly on" if s["orb"] < 0.5 else "close to"
             line = T.STAR_LINE.format(pt=pt, star=T.STAR_NAME.get(s["star"], s["star"]), epithet=ep, orb=orb, txt=txt)
+            if "money" not in txt.lower() and s["star"] in T.STAR_MONEY:
+                line += " " + T.STAR_MONEY[s["star"]]
             for x in others:
                 x["used"] = True
                 line += " " + T.STAR_ALSO.format(star=T.STAR_NAME.get(s["star"], s["star"]),
@@ -191,8 +244,13 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
         stand = T.STAND["stellium"].format(names=cap(join([the(o) for o in a["occupants"][2]])))
         concentrated = False
     else:
-        stand = T.STAND["split"].format(R=The(r2), S=P[r2]["sign"], ord=T.ORD[P[r2]["house"]], C=the(rc),
-                                        CS=P[rc]["sign"], cord=T.ORD[P[rc]["house"]])
+        if (P[r2]["sign"], P[r2]["house"]) == (P[rc]["sign"], P[rc]["house"]):
+            stand = (f"The first thing that stands out in your chart is the conversation between two planets. {The(r2)} rules your income "
+                     f"and {the(rc)} guides your career, and both sit in {P[r2]['sign']} in your {T.ORD[P[r2]['house']]} house. "
+                     "Much of your wealth story is about how those two connect.")
+        else:
+            stand = T.STAND["split"].format(R=The(r2), S=P[r2]["sign"], ord=T.ORD[P[r2]["house"]], C=the(rc),
+                                            CS=P[rc]["sign"], cord=T.ORD[P[rc]["house"]])
         stand = cap(stand) if False else stand
         concentrated = False
     w.sections[-1]["greeting"] = f"Hey {name}," if name and name != "Friend" else "Hey there,"
@@ -276,8 +334,10 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
     w.para(*ruler_bits)
     A = P["assets"]
     ra = W.RULER[A["sign"]]
-    w.para(T.ASSETS_LINE.format(sign=A["sign"], ord=T.ORD[A["house"]], same=T.ASSETS_SAME if ra == rf else ""),
-           T.ASSETS_MEANING["same"] if ra == r2 else T.ASSETS_MEANING["other"].format(R=the(ra)))
+    w.para(T.ASSETS_LINE.format(sign=A["sign"], ord=T.ORD[A["house"]], same=T.ASSETS_SAME if ra == rf == r2 else ""),
+           T.ASSETS_MEANING["same"] if ra == r2 else
+           (f"{The(ra)} rules both, so the same planet guides your opportunities and what you keep." if ra == rf
+            else T.ASSETS_MEANING["other"].format(R=the(ra))))
     if concentrated or F["house"] == 1 or P[r2]["house"] == 1:
         w.para(T.CARRY_FORWARD)
     w.para(stars_for("fortune"))
@@ -289,18 +349,20 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
         pp = P[pid]
         if pp.get("solar") in ("combust", "beams", "cazimi"):
             d = abs(W.sep(pp["lon"], P["sun"]["lon"]))
-            blocks.append(T.SOLAR[pp["solar"]].format(P=The(pid), d=("five and a half" if 5.25 <= d < 5.75 else NUM.get(int(round(d)), int(round(d))))))
+            blocks.append(T.SOLAR[pp["solar"]].format(P=(The(pid) if pid == r2 else f"{The(pid)}, the ruler of your Part of Fortune,"), d=("five and a half" if 5.25 <= d < 5.75 else NUM.get(int(round(d)), int(round(d))))))
         if pp.get("dignity") in ("detriment", "fall"):
             blocks.append(T.DIGNITY[pp["dignity"]].format(P=The(pid), S=pp["sign"]))
     phase_txt = T.PHASE[a["moon_phase"]] if "moon" in (r2, rf) else ""
     if "moon" in (r2, rf) and a["moon_phase"] == "balsamic" and P["moon"].get("solar") == "combust":
-        phase_txt = ("Your Moon is about {} degrees behind the Sun and moving toward it, in the final phase of the lunar cycle. ".format(
-            "five and a half" if 5.25 <= (360 - a["moon_elong"]) < 5.75 else int(round(360 - a["moon_elong"])))
-            + "That's a balsamic Moon. It's still strong in its sign, but it can have a harder time being seen, including by you. "
+        dd = 360 - a["moon_elong"]
+        phase_txt = ("You were born just before a New Moon, when the Moon is a thin sliver about to disappear. "
+            "That's called a balsamic Moon, and yours sits about {} degrees from the Sun. ".format(
+            "five and a half" if 5.25 <= dd < 5.75 else NUM.get(int(round(dd)), int(round(dd))))
+            + "It's still strong in its sign, but the Sun's brightness hides it a little, including from you. "
             "Your own needs can get absorbed into whatever you're working toward. You handle the urgent thing, then the next one, "
             "and the moment you planned to rest keeps moving further away.")
-        blocks = [b for b in blocks if not b.startswith("The Moon is about")]
-    w.para(phase_txt if phase_txt.startswith("Your Moon is about") else "", " ".join(blocks))
+        blocks = [b for b in blocks if not b.startswith("The Moon sits so close")]
+    w.para(phase_txt if phase_txt.startswith("You were born just before") else "", " ".join(blocks))
     if not w.sections[-1]["paragraphs"]:
         w.para(T.BLOCK_INTRO)
     hard = contact_text(r2, kinds=("conj", "hard"), only=MALEFIC, limit=2)
@@ -314,7 +376,7 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
         w.para(T.BLOCK_CADENT_12)
     elif P[r2]["house"] == 6:
         w.para(T.BLOCK_CADENT_6)
-    if phase_txt and not phase_txt.startswith("Your Moon is about"):
+    if phase_txt and not phase_txt.startswith("You were born just before"):
         w.para(phase_txt)
     elif "moon" in (r2, rf) and a["moon_phase"] == "balsamic":
         w.para("The balsamic phase also carries a quieter gift. It belongs to the end of a cycle, when something has matured enough "
@@ -386,9 +448,12 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
         rr = R[h]
         opener = OPEN.format(sign=a["house_sign"][h], R=the(rr))
         if rr in described:
+            kind = described_kind.get(rr, "ruler")
             where = {"value": "in how you create value", "fortune": "as the ruler of your Part of Fortune",
-                     "career": "as the ruler of your career", "fifth": f"in your fifth house",
-                     "eighth": "in your eighth house", "eleventh": "in your eleventh house"}[described[rr]]
+                     "career": "as the ruler of your career",
+                     "fifth": "in your fifth house" if kind == "occupant" else "as the ruler of your fifth house",
+                     "eighth": "in your eighth house" if kind == "occupant" else "as the ruler of your eighth house",
+                     "eleventh": "in your eleventh house" if kind == "occupant" else "as the ruler of your eleventh house"}[described[rr]]
             if P[rr]["house"] == 1 and any(x["other"] == "asc" and x["type"] == "conjunction" for x in P[rr]["aspects"]):
                 where = "on your Ascendant"
             cond = {"exaltation": ", where it's exalted", "domicile": ", where it's strong in its own sign",
@@ -403,16 +468,21 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
             w.para(T.DIGNITY[dig].format(P=The(rr), S=P[rr]["sign"]) if dig else "",
                    contact_text(rr, kinds=("conj", "soft", "hard"), skip=set(a["occupants"][h]), limit=2))
             described[rr] = sid
+            described_kind[rr] = "ruler"
         occ = [o for o in a["occupants"][h] if o in W.ALL]
         if occ:
+            new = [o for o in occ if o not in described]
             lines = []
-            for o in occ:
-                if o in described:
-                    continue
-                lines.append(OCC.format(P=The(o), kw=T.KEYWORD.get(o, "its energy")))
+            if len(new) >= 2:
+                lines.append(OCC.format(P=cap(join([the(o) for o in new])) + (" both" if len(new) == 2 else " all"),
+                                        kw=join([KW_SHORT.get(o, "energy") for o in new])).replace(" sits in", " sit in"))
+            elif new:
+                lines.append(OCC.format(P=The(new[0]), kw=T.KEYWORD.get(new[0], "its energy")))
+            for o in new:
                 if P[o].get("dignity"):
                     lines.append(T.DIGNITY[P[o]["dignity"]].format(P=The(o), S=P[o]["sign"]))
                 described[o] = sid
+                described_kind[o] = "occupant"
             w.para(" ".join(lines))
         if extra_fn:
             extra_fn(rr, occ)
@@ -459,20 +529,22 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
     w.section("pattern", "The Pattern You're Learning to Change")
     sn, nn = P["south_node"], P["north_node"]
     conj = [o for o in W.ALL if o in P and abs(W.sep(P[o]["lon"], sn["lon"])) <= 5 and o in T.SN_CONJ]
-    sn_head = f"Your South Node is in {sn['sign']} in your {T.ORD[sn['house']]} house" + (f", conjunct {join([the(c) for c in conj])}." if conj else ".")
+    sn_head = f"Your South Node is in {sn['sign']} in your {T.ORD[sn['house']]} house."
     sn_house = T.SN_HOUSE[sn["house"]]
-    w.para(sn_head, T.SN_SIGN[sn["sign"]], sn_house, " ".join(T.SN_CONJ[c] for c in conj))
+    w.para(T.NODES_EXPLAIN, sn_head, T.SN_SIGN[sn["sign"]], sn_house, " ".join(T.SN_CONJ[c] for c in conj))
     w.para(f"Your North Node in {nn['sign']} sits in your {T.ORD[nn['house']]} house.", T.NN_SIGN[nn["sign"]], T.NN_HOUSE[nn["house"]])
     soft = [x for x in nn["aspects"] if x["type"] in ("trine", "sextile") and x["other"] in W.TRAD]
     if soft:
         names = [the(x["other"]) for x in soft]
         hs = {P[x["other"]]["house"] for x in soft}
+        hs_all = set(hs)
         where = f" in your {T.ORD[hs.pop()]} house" if len(hs) == 1 else ""
         types = {x["type"] for x in soft}
         verb = (soft[0]["type"] + "s") if len(types) == 1 else "forms supportive aspects to"
         if len(soft) > 1 and len(types) == 1:
             verb = f"{soft[0]['type']}s both" if len(soft) == 2 else verb
-        w.para(T.NN_TRINE.format(asp=verb, names=join(names) + where), T.NODE_CLOSE)
+        close = T.NODE_CLOSE[5] if hs_all == {5} else T.NODE_CLOSE["other"]
+        w.para(T.NN_TRINE.format(asp=verb, names=join(names) + where), close)
 
     # ------------------------------------------------------------------ Thresholds
     w.section("thresholds", "The Thresholds Ahead")
@@ -530,9 +602,10 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
     prof_used = False
     if prof["lord"] not in [g[1] for g in groups]:
         lp = prof["lord"]
-        w.para(f"Your annual profection adds one more layer. At {prof['age']}, you're in {T.PROFECTION[prof['house']]}. "
-               f"{The(lp)} is the lord of your year until {W.MONTHS[prof['until'].month - 1]} {prof['until'].year}, so watch "
-               f"your {T.ORD[P[lp]['house']]} house, where {the(lp)} sits in your chart, for where the year's story concentrates.",
+        w.para(f"Your birthday cycle adds one more layer. {T.PROF_EXPLAIN} At {prof['age']}, the spotlight is on your {T.ORD[prof['house']]} house, "
+               f"so you're in {T.PROFECTION[prof['house']]}, and {the(lp)} is the planet guiding the year until your birthday in "
+               f"{W.MONTHS[prof['until'].month - 1]} {prof['until'].year}. Your {T.ORD[P[lp]['house']]} house, where {the(lp)} sits in your chart, "
+               "is where the year's story tends to concentrate.",
                prof_next(prof))
         prof_used = True
     ecl_used = set()
@@ -586,30 +659,38 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
                     merged[-1]["names"].append(tname(h["target"]))
                 else:
                     merged.append({"aspect": h["aspect"], "when": ww, "names": [tname(h["target"])]})
-            bits = []
-            for i, m in enumerate(merged):
-                verb = {0: "crosses", 90: "squares", 180: "opposes", 120: "trines", 60: "sextiles"}[m["aspect"]]
-                tgt = "your " + join(m["names"])
-                if i == 0:
-                    bits.append(f"{pl.title()} {verb} {tgt} {m['when']}")
-                elif merged[i - 1]["aspect"] == m["aspect"]:
-                    bits.append(f"{tgt} {m['when']}")
-                else:
-                    bits.append(f"{verb} {tgt} {m['when']}")
-            sentence = join(bits) + "."
+            sents = []
+            for c0 in range(0, len(merged), 2):
+                chunk = merged[c0:c0 + 2]
+                bits = []
+                for i, m in enumerate(chunk):
+                    verb = {0: "crosses", 90: "squares", 180: "opposes", 120: "trines", 60: "sextiles"}[m["aspect"]]
+                    tgt = "your " + join(m["names"])
+                    if i == 0:
+                        bits.append(f"{pl.title() if c0 == 0 else 'It then'} {verb} {tgt} {m['when']}")
+                    elif chunk[0]["aspect"] == m["aspect"]:
+                        bits.append(f"{tgt} {m['when']}")
+                    else:
+                        bits.append(f"{verb} {tgt} {m['when']}")
+                sents.append(" and ".join(bits) + ".")
+            sentence = " ".join(sents)
             if cls == "conj" and ic_conj and any(h["target"] == "ic" for h in items):
                 sentence = sentence[:-1] + ", while opposing your Midheaven."
             elif cls == "conj" and mc_conj and any(h["target"] == "mc" for h in items) and len(items) == 1:
                 sentence = sentence[:-1] + ", while opposing your IC."
             if len(items) >= 3 and cls == "hard" and pl == "saturn":
-                sentence += " That's a long, steady pressure on the exact points that carry your money story."
+                money_pts = {r2, rf, "fortune", "assets"}
+                if any(h["target"] in money_pts for h in items):
+                    sentence += " That's a long, steady pressure on the exact points that carry your money story."
+                else:
+                    sentence += " That's a long, steady stretch of pressure, so pace yourself."
             means = []
             for h in items:
                 m = tmeaning(h["target"])
                 if m and h["target"] in (r2, rc, rf) and h["target"] not in ("fortune",):
                     means.append(f"your {tname(h['target'])} is {m}")
-            mtxt = f"Remember that {join(list(dict.fromkeys(means)))}." if means else ""
-            w.para(sentence, T.TRANSIT_CORE.get((pl, cls), ""), mtxt)
+            mtxt = f"Because {join(list(dict.fromkeys(means)))}, this one matters." if means else ""
+            w.para(mtxt, sentence, T.TRANSIT_CORE.get((pl, cls), ""))
             # eclipses on the same points
             for e in a["eclipses"]:
                 k = ("ruler" if e["point"] == r2 else "cruler" if e["point"] == rc else e["point"])
@@ -623,7 +704,7 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
                                                      pt=tname(e["point"]), topic=T.ECLIPSE_TOPIC.get(k, "money")))
         for h in cycles:
             nm, txt = T.CYCLE[(pl, h["aspect"])]
-            lead = {("saturn", 180): f"{cap(when(h, today))}, Saturn opposes its natal position.",
+            lead = {("saturn", 180): f"{cap(when(h, today))}, Saturn sits opposite where it was when you were born.",
                     }.get((pl, h["aspect"]), f"This window also includes {nm.replace('Your ', 'your ')}, {when(h, today)}.")
             parts_ = re.split(r"(?<=[.!?])\s+", txt, maxsplit=1)
             if normal and (pl, h["aspect"]) == ("saturn", 180) and len(parts_) > 1:
@@ -631,15 +712,15 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
             w.para(lead if normal else "", txt)
         for g in ing:
             ww = when({**g, "ongoing_start": g["start"] <= today}, today)
-            w.para(f"{cap(ww)}, {T.INGRESS[g['house']].format(P=pl.title())}",
+            w.para(T.INGRESS[g['house']].format(P=pl.title(), when=ww),
                    T.INGRESS_PLANET[pl] if not normal else "")
         if pl == prof["lord"] and not prof_used:
             prof_used = True
             lordname = ("a " + pl.title()) if pl != "uranus" else "a Uranus"
+            soon = (prof["until"] - today).days <= 75
             w.para(T.PROF_LINE.format(lordname=lordname, age=prof["age"], ord=T.ORD[prof["house"]], desc=T.PROFECTION[prof["house"]],
-                                      Lord=The(pl), until=W.MONTHS[prof["until"].month - 1] + " " + str(prof["until"].year))
-                   .replace("last birthday until", "last birthday through"),
-                   "Agreements, debts, shared resources, and long-term commitments deserve careful attention right now." if prof["house"] == 8 else "",
+                                      Lord=the(pl), until=W.MONTHS[prof["until"].month - 1] + " " + str(prof["until"].year)),
+                   "Agreements, debts, shared resources, and long-term commitments deserve careful attention right now." if prof["house"] == 8 and not soon else "",
                    prof_next(prof))
     # move a trailing profection paragraph out of a level-2 section if needed (handled by renderer order)
 
@@ -648,9 +729,9 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
     strengths, comps = [], []
     p = P[r2]
     if p.get("dignity") in ("domicile", "exaltation"):
-        strengths.append("dignified")
+        strengths.append("strong in its sign")
     if p["angularity"] == "angular":
-        strengths.append("angular")
+        strengths.append("placed at one of the four main turning points of your chart")
     if abs(W.sep(P["fortune"]["lon"], P[rf]["lon"])) <= 3:
         strengths.append(f"closely tied to your Part of Fortune" if rf == r2 else "")
     if p.get("solar") == "combust":
@@ -697,14 +778,19 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
             return f"{nm}, also in your {T.ORD[h]} house"
         seen_h.add(h)
         return f"{nm} in your {T.ORD[h]} house of {HOUSE_SHORT[h]}"
-    sentence2 = (f"Your career runs through {cdesc} in the house of {HOUSE_SHORT[pc['house']]}" +
+    cdesc = cdesc.replace("a dignified ", "a strong ")
+    sentence2 = ((f"Your career runs through {cdesc}, sitting right at the top of your chart" if pc["house"] == 10 else
+                  f"Your career runs through {cdesc} in the house of {HOUSE_SHORT[pc['house']]}") +
                  (", which favors knowledge, guidance, and steady service while asking you to be intentional about how much of that service you give away."
                   if rc == "jupiter" and pc["house"] == 6 else "."))
     if r5 == r8:
         bits = [f"your fifth and eighth houses share {desc(r5)}, linking creative work with agreements and long-term structures"]
     else:
         bits = [f"creativity reaches money through {desc(r5)}", f"shared resources run through {desc(r8)}"]
-    bits.append(f"your eleventh house brings gains through {'your own outreach' if P[r11]['house'] == 1 else RULE_SHORT[P[r11]['house']]}")
+    h11 = P[r11]["house"]
+    gains = ("your own outreach" if h11 == 1 else
+             f"that same {T.ORD[h11]} house" if (h11 in seen_h and r11 not in seen_p) or r11 in seen_p else RULE_SHORT[h11])
+    bits.append(f"your eleventh house brings gains through {gains}")
     tail = ""
     star_bits = [s_ for s_ in a["stars"] if s_["point"] in ("venus", "ic", "mc", r2)]
     if any(s_["star"] == "Regulus" for s_ in star_bits) and any(x["other"] == "ic" and x["type"] == "conjunction" for x in P["venus"]["aspects"]):
@@ -764,6 +850,7 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
     offers.append(T.OFFER["hub"])
     w.sections[-1]["offers"] = [{"title": t, "url": u, "why": y} for t, u, y in offers]
 
+    explain_terms(w.sections)
     snap = snapshot(a, w, r2, rc, rf)
     return {"title": TITLE, "subtitle": "How your chart builds, holds, and grows your resources", "name": name,
             "birth": birth, "sections": w.sections, "signoff": T.SIGNOFF, "disclaimer": T.DISCLAIMER,
@@ -778,12 +865,12 @@ def snapshot(a, w, r2, rc, rf):
     watch = ""
     if blocks and blocks["paragraphs"]:
         paras = [p for p in blocks["paragraphs"] if not p.startswith(T.BLOCK_INTRO[:40])]
-        concrete = [p for p in paras if p.startswith("Your Moon is about") or any(k in p for k in ("from the Sun", "detriment", "its fall"))]
+        concrete = [p for p in paras if p.startswith("You were born just before") or any(k in p for k in ("from the Sun", "detriment", "its fall"))]
         emotional = [p for p in paras if p.startswith("Because ")]
         pick = (concrete or emotional or paras or [""])[0]
         sents, words = [], 0
         for s_ in re.split(r"(?<=[.!?])\s+", pick):
-            limit = 3 if pick.startswith("Your Moon is about") else 2
+            limit = 3 if pick.startswith("You were born just before") else 2
             if sents and (len(sents) >= limit or words + len(s_.split()) > 65):
                 break
             sents.append(s_)
@@ -794,7 +881,7 @@ def snapshot(a, w, r2, rc, rf):
         ("Your Part of Fortune", f"{P['fortune']['deg']}° {P['fortune']['sign']}, {T.ORD[P['fortune']['house']]} house"),
         ("The ruler of your career", f"{W.NAME[rc]} in {P[rc]['sign']}, {T.ORD[P[rc]['house']]} house"),
         ("Your Midheaven", f"{W.deg_of(a['lon']['mc'])}° {W.sign_of(a['lon']['mc'])}"),
-        ("This year's profection", f"{T.ORD[a['profection']['house']].title()} house, ruled by {W.NAME[a['profection']['lord']]}"),
+        ("This year's focus (your birthday-year spotlight)", f"{T.ORD[a['profection']['house']].title()} house, guided by {the(a['profection']['lord'])}"),
     ]
     thresholds = [s["heading"] for s in w.sections if s["level"] == 2]
     return {"theme": theme, "rows": rows, "watch": watch, "thresholds": thresholds,
