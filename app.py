@@ -80,6 +80,7 @@ def health():
         "ephemeris_files": st["files"],
         "places_loaded": places.loaded,
         "places_count": len(places.places),
+        "small_places_count": places.small_count,
         "tzdb": timeconv.tzdb_version(),
         "asteroid_names": len(asteroids._names()[0]),
         "optional_points": engine.OPTIONAL_POINT_IDS,

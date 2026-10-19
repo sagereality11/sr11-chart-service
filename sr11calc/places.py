@@ -9,14 +9,21 @@ GeoNames data is CC BY 4.0 — attribution is shown under the form):
   admin1CodesASCII.txt  state / province / region names
   countryInfo.txt       country names
 
+  small_places.sqlite   every other GeoNames populated place, however small
+                        (built by scripts/build_small_places.py from
+                        allCountries.zip). Read from disk, so it adds almost
+                        nothing to memory. Optional: without it only
+                        cities500 is searched.
+
 Nothing is sent to a third party while a visitor types: searches run against
-this local copy. Smaller villages may be missing; the form's manual-location
-option covers them.
+this local copy.
 """
 
 from __future__ import annotations
 
 import os
+import sqlite3
+import threading
 import unicodedata
 from pathlib import Path
 
@@ -46,13 +53,33 @@ class PlaceIndex:
         self.data_dir = Path(data_dir)
         self.places: dict[int, tuple] = {}
         self.by_prefix: dict[str, list[int]] = {}
+        self.countries: dict[str, str] = {}
+        self.admin1: dict[str, str] = {}
         self.loaded = False
         self.error = None
+        self.small_path = self.data_dir / "small_places.sqlite"
+        self.small_count = 0
+        self._local = threading.local()
         try:
             self._load()
             self.loaded = True
         except FileNotFoundError as e:
             self.error = f"GeoNames data not found: {e.filename}"
+        if self.small_path.exists():
+            try:
+                self.small_count = self._small_db().execute("SELECT COUNT(*) FROM place").fetchone()[0]
+            except sqlite3.Error:
+                self.small_count = 0
+
+    def _small_db(self):
+        """Read-only SQLite connection to the small-places index, one per thread."""
+        if self.small_count == 0 and not self.small_path.exists():
+            return None
+        db = getattr(self._local, "db", None)
+        if db is None:
+            db = sqlite3.connect(f"file:{self.small_path}?mode=ro&immutable=1", uri=True, check_same_thread=False)
+            self._local.db = db
+        return db
 
     def _cities_file(self) -> Path:
         # cities500 (population >= 500) when available, otherwise cities1000.
@@ -70,12 +97,14 @@ class PlaceIndex:
                     continue
                 c = line.rstrip("\n").split("\t")
                 countries[c[0]] = c[4]
+        self.countries = countries
         admin1 = {}
         with open(self.data_dir / "admin1CodesASCII.txt", encoding="utf-8") as f:
             for line in f:
                 c = line.rstrip("\n").split("\t")
                 if len(c) >= 2:
                     admin1[c[0]] = c[1]
+        self.admin1 = admin1
         shared: dict = {}
         intern = lambda v: shared.setdefault(v, v)
         with open(self._cities_file(), encoding="utf-8") as f:
@@ -92,9 +121,10 @@ class PlaceIndex:
                 rec = (c[1], intern(a1), intern(c[10]), intern(c[11]), intern(country), intern(cc),
                        float(c[4]), float(c[5]), intern(c[17]), int(c[14] or 0), keys, ctx)
                 self.places[gid] = rec
-                for k in keys:
-                    if len(k) >= 2:
-                        self.by_prefix.setdefault(k[:2], []).append(gid)
+                # One entry per prefix (name and ASCII name usually share
+                # one), so a place is never listed twice in the results.
+                for pre in {k[:2] for k in keys if len(k) >= 2}:
+                    self.by_prefix.setdefault(pre, []).append(gid)
         for lst in self.by_prefix.values():
             lst.sort(key=lambda g: -self.places[g][_POP])
 
@@ -109,8 +139,73 @@ class PlaceIndex:
         out["label"] = ", ".join(parts)
         return out
 
+    def _small_rec(self, row) -> dict:
+        gid, name, a1c, a2c, cc, lat, lon, tz, pop = row
+        a1 = self.admin1.get(f"{cc}.{a1c}", "")
+        country = self.countries.get(cc, cc)
+        return {
+            "id": gid, "name": name, "admin1": a1, "admin1_code": a1c, "admin2_code": a2c,
+            "country": country, "country_code": cc, "lat": lat, "lon": lon, "tz": tz,
+            "population": pop, "label": ", ".join([name] + ([a1] if a1 else []) + [country]),
+        }
+
+    _SMALL_COLS = "p.id, p.name, p.admin1_code, p.admin2_code, p.cc, p.lat, p.lon, p.tz, p.pop"
+
     def get(self, gid: int) -> dict | None:
-        return self.public_rec(gid) if gid in self.places else None
+        if gid in self.places:
+            return self.public_rec(gid)
+        db = self._small_db()
+        if db is None:
+            return None
+        row = db.execute(f"SELECT {self._SMALL_COLS} FROM place p WHERE p.id = ?", (gid,)).fetchone()
+        return self._small_rec(row) if row else None
+
+    def _regions_for(self, ctx: list[str]) -> tuple[list[str], list[str]]:
+        """The "CC.admin1" regions and whole countries whose words start with
+        every ``ctx`` token, using the same rule as the in-memory search."""
+        def ok(text):
+            words = _fold(text).split()
+            return all(any(w.startswith(t) for w in words) for t in ctx)
+        countries = [cc for cc, name in self.countries.items() if ok(f"{name} {cc}")]
+        whole = set(countries)
+        regions = []
+        for key, name in self.admin1.items():
+            cc, code = key.split(".", 1)
+            if cc not in whole and ok(" ".join([name, self.countries.get(cc, cc), cc, code if cc == "US" else ""])):
+                regions.append(key)
+        return regions, countries
+
+    def _find_small(self, city: str, ctx: list[str]) -> list[tuple[bool, int, dict]]:
+        """Small places whose name starts with ``city`` (needs 3+ letters,
+        so a 2-letter prefix does not scan millions of rows)."""
+        db = self._small_db()
+        if db is None or len(city) < 3:
+            return []
+        sql = "SELECT id, MAX(k = ?) AS exact, pop FROM pkey WHERE k >= ? AND k < ?"
+        args: list = [city, city, city + "\U0010ffff"]
+        if ctx:
+            regions, countries = self._regions_for(ctx)
+            if not regions and not countries:
+                return []
+            conds = []
+            if regions:
+                conds.append(f"region IN ({','.join('?' * len(regions))})")
+                args += regions
+            if countries:
+                conds.append(f"substr(region, 1, 2) IN ({','.join('?' * len(countries))})")
+                args += countries
+            sql += " AND (" + " OR ".join(conds) + ")"
+        sql += " GROUP BY id ORDER BY exact DESC, pop DESC LIMIT 60"
+        try:
+            hits = db.execute(sql, args).fetchall()
+            if not hits:
+                return []
+            exact = {h[0]: bool(h[1]) for h in hits}
+            rows = db.execute(f"SELECT {self._SMALL_COLS} FROM place p WHERE p.id IN ({','.join('?' * len(hits))})",
+                              [h[0] for h in hits]).fetchall()
+        except sqlite3.Error:
+            return []
+        return [(exact[r[0]], r[8], self._small_rec(r)) for r in rows]
 
     def _find(self, city: str, ctx: list[str]) -> list[int]:
         """Places whose name starts with ``city`` and whose region/country
@@ -150,9 +245,11 @@ class PlaceIndex:
         for city, ctx in attempts:
             if len(city) < 2:
                 continue
-            out = self._find(city, ctx)
-            if out:
+            found = [(city in self.places[g][_KEYS], self.places[g][_POP], self.public_rec(g))
+                     for g in dict.fromkeys(self._find(city, ctx))]
+            found += self._find_small(city, ctx)
+            if found:
                 # Exact name matches first, then population.
-                out.sort(key=lambda g: (city not in self.places[g][_KEYS], -self.places[g][_POP]))
-                return [self.public_rec(g) for g in out[:limit]]
+                found.sort(key=lambda t: (not t[0], -t[1]))
+                return [t[2] for t in found[:limit]]
         return []

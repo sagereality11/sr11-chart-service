@@ -49,7 +49,7 @@ docker build -t sr11-chart-service .
 docker run -e SR11_API_KEY=change-me -p 8080:8080 sr11-chart-service
 ```
 
-The Docker build downloads the Swiss Ephemeris data files (1800–2399) and GeoNames place data. No birth data is stored or logged.
+The Docker build downloads the Swiss Ephemeris data files (1800–2399) and GeoNames place data: cities500 (held in memory) plus every smaller populated place from allCountries, built into an on-disk SQLite index (`data/geonames/small_places.sqlite`) so tiny towns like Adak, Alaska are found. No birth data is stored or logged.
 
 ## Tests
 
