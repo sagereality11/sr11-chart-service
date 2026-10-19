@@ -84,7 +84,23 @@ TIMED_POINTS = {
     "vertex": "Vertex",
     "antivertex": "Anti-Vertex",
 }
-OPTIONAL_POINT_IDS = list(OPTIONAL_BODIES) + list(TIMED_POINTS)
+# The eight Uranian (transneptunian) points of the Hamburg School. Hypothetical
+# points, not physical bodies: Swiss Ephemeris calculates them from its built-in
+# orbital elements (Witte's four, then Sieggrün's four), so no extra data file
+# is needed and no birth time is required. Category "uranian" has its own tight
+# orbs (see aspects.py).
+URANIAN_BODIES = {
+    "cupido": ("Cupido", swe.CUPIDO),
+    "hades": ("Hades", swe.HADES),
+    "zeus": ("Zeus", swe.ZEUS),
+    "kronos": ("Kronos", swe.KRONOS),
+    "apollon": ("Apollon", swe.APOLLON),
+    "admetos": ("Admetos", swe.ADMETOS),
+    "vulcanus": ("Vulcanus", swe.VULKANUS),
+    "poseidon": ("Poseidon", swe.POSEIDON),
+}
+URANIAN_IDS = list(URANIAN_BODIES)
+OPTIONAL_POINT_IDS = list(OPTIONAL_BODIES) + list(URANIAN_BODIES) + list(TIMED_POINTS)
 
 HOUSE_SYSTEMS = {
     # Swiss Ephemeris identifiers (swe_houses documentation)
@@ -186,6 +202,7 @@ def calc_bodies(jd_ut: float, node: str = "true", optional: list | None = None) 
     todo = [(bid, (f"North Node ({node_label})" if bid == "north_node" else name),
              (node_id if bid == "north_node" else sweid), cat) for bid, name, sweid, cat in BODIES]
     todo += [(k, OPTIONAL_BODIES[k][0], OPTIONAL_BODIES[k][1], "extra") for k in (optional or []) if k in OPTIONAL_BODIES]
+    todo += [(k, URANIAN_BODIES[k][0], URANIAN_BODIES[k][1], "uranian") for k in (optional or []) if k in URANIAN_BODIES]
     for bid, name, sweid, cat in todo:
         asteroid_file = bid in ("chiron", "ceres", "pallas", "juno", "vesta")
         try:
@@ -347,7 +364,7 @@ def chart_at(utc: dt.datetime, lat: float, lon: float, hsys: str | None, orbs: d
     _ensure_thread_setup()
     jd_ut = julian_day_ut(utc)
     delta_t_days = swe.deltat(jd_ut)
-    bodies, omitted = calc_bodies(jd_ut, node, [k for k in optional if k in OPTIONAL_BODIES])
+    bodies, omitted = calc_bodies(jd_ut, node, [k for k in optional if k in OPTIONAL_BODIES or k in URANIAN_BODIES])
     bodies += asteroids or []
     houses = None
     chart_sect = None

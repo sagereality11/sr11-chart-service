@@ -445,6 +445,27 @@ class OptionalPoints(unittest.TestCase):
             self.assertIn("house", b[k])
         self.assertNotAlmostEqual(b["lilith_mean"]["lon"], b["lilith_true"]["lon"], places=2)
 
+    def test_uranian_points(self):
+        ids = ["cupido", "hades", "zeus", "kronos", "apollon", "admetos", "vulcanus", "poseidon"]
+        c = opt_chart(points=ids)
+        b = {x["id"]: x for x in c["bodies"]}
+        for k in ids:
+            self.assertIn(k, b)
+            self.assertEqual(b[k]["category"], "uranian")
+            self.assertIn("house", b[k])
+        # Reference: Kronos 16°52' Gemini in this chart (published on the Sage Reality 11 blog as 16° Gemini).
+        self.assertEqual(b["kronos"]["sign"], "Gemini")
+        self.assertLess(ang_diff(b["kronos"]["lon"], 76.87), 0.02)
+        self.assertEqual(b["vulcanus"]["name"], "Vulcanus")
+        for a in c["aspects"]:
+            cats = {b[a["a"]]["category"] if a["a"] in b else "angle", b[a["b"]]["category"] if a["b"] in b else "angle"}
+            if "uranian" in cats:
+                self.assertNotEqual(cats, {"uranian"})            # no Uranian-to-Uranian aspects
+                self.assertLessEqual(a["allowed_orb"], 1.5)      # tight Uranian orbs, not averaged
+        # Untimed charts still get them (no birth time needed).
+        u = opt_chart(time_known=False, points=["kronos"])
+        self.assertIn("kronos", [x["id"] for x in u["bodies"]])
+
     def test_untimed_chart_omits_time_points_but_keeps_others(self):
         c = opt_chart(time_known=False, points=["fortune", "vertex", "lilith_mean"])
         ids = [x["id"] for x in c["bodies"]]

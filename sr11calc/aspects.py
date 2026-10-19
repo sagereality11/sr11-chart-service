@@ -54,6 +54,10 @@ DEFAULT_ORBS = {
     "angle":    {"conjunction": 6.0,  "opposition": 6.0,  "square": 5.0, "trine": 5.0, "sextile": 3.0, "golden": 1.0},
     # Optional points: Lilith, Ceres/Pallas/Juno/Vesta, other asteroids, Parts, Vertex.
     "extra":    {"conjunction": 3.0,  "opposition": 3.0,  "square": 2.0, "trine": 2.0, "sextile": 1.5, "golden": 1.0},
+    # Uranian points (Cupido ... Poseidon). Used as-is, not averaged (see pair_orb):
+    # 1.5° for conjunctions and oppositions, 1° for the rest, as in the
+    # Sage Reality 11 Uranian Planets guide.
+    "uranian":  {"conjunction": 1.5,  "opposition": 1.5,  "square": 1.0, "trine": 1.0, "sextile": 1.0, "golden": 0.5},
 }
 
 MAX_ORB = 15.0
@@ -79,6 +83,10 @@ def sanitize_orbs(raw) -> dict:
 
 
 def pair_orb(orbs: dict, cat_a: str, cat_b: str, aspect_id: str) -> float:
+    # Uranian points are read by precision, so their own tight orb applies
+    # as-is to every contact instead of being widened by averaging.
+    if cat_a == "uranian" or cat_b == "uranian":
+        return orbs["uranian"][aspect_id]
     return (orbs[cat_a][aspect_id] + orbs[cat_b][aspect_id]) / 2.0
 
 
@@ -98,7 +106,9 @@ def find_aspects(points: list[dict], orbs: dict, optional_types: list | None = N
     for i in range(len(points)):
         for j in range(i + 1, len(points)):
             p, q = points[i], points[j]
-            sep = angular_separation(p["lon"], q["lon"])
+            if p["category"] == "uranian" and q["category"] == "uranian":
+                continue   # slow, generational pairs; Uranian points are read through contacts to the chart
+            sep =angular_separation(p["lon"], q["lon"])
             best = None
             for asp in ASPECTS + [OPTIONAL_ASPECTS[t] for t in (optional_types or []) if t in OPTIONAL_ASPECTS]:
                 diff = abs(sep - asp["angle"])

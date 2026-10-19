@@ -14,7 +14,10 @@ This source code is published under the GNU Affero General Public License v3 (se
 * Untimed charts: local-noon positions, plus which placements and aspects could change across the day
 * Optional: Mean Node instead of True Node; Black Moon Lilith (Mean and True); Ceres, Pallas, Juno, Vesta;
   Part of Fortune and Part of Spirit (day/night formulas by sect); Vertex and Anti-Vertex;
-  the golden ratio aspect (137.5°); up to five more asteroids by number or name
+  the golden ratio aspect (137.5°); up to five more asteroids by number or name;
+  the eight Uranian points of the Hamburg School (Cupido, Hades, Zeus, Kronos, Apollon, Admetos,
+  Vulcanus, Poseidon) from Swiss Ephemeris's built-in elements, with their own tight orbs
+  (1.5° conjunction/opposition, 1° otherwise, not averaged; no Uranian-to-Uranian aspects)
 
 Local birth times are converted to UTC with the IANA time zone database, including historical daylight saving rules. Ambiguous and skipped clock times are reported instead of guessed.
 
