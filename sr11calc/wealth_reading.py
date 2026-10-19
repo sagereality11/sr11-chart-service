@@ -777,7 +777,18 @@ def snapshot(a, w, r2, rc, rf):
     blocks = next((s for s in w.sections if s["id"] == "blocks"), None)
     watch = ""
     if blocks and blocks["paragraphs"]:
-        watch = re.split(r"(?<=[.!?])\s+", blocks["paragraphs"][0])[0]
+        paras = [p for p in blocks["paragraphs"] if not p.startswith(T.BLOCK_INTRO[:40])]
+        concrete = [p for p in paras if p.startswith("Your Moon is about") or any(k in p for k in ("from the Sun", "detriment", "its fall"))]
+        emotional = [p for p in paras if p.startswith("Because ")]
+        pick = (concrete or emotional or paras or [""])[0]
+        sents, words = [], 0
+        for s_ in re.split(r"(?<=[.!?])\s+", pick):
+            limit = 3 if pick.startswith("Your Moon is about") else 2
+            if sents and (len(sents) >= limit or words + len(s_.split()) > 65):
+                break
+            sents.append(s_)
+            words += len(s_.split())
+        watch = " ".join(sents)
     rows = [
         ("The planet that rules your income", f"{W.NAME[r2]} in {P[r2]['sign']}, {T.ORD[P[r2]['house']]} house"),
         ("Your Part of Fortune", f"{P['fortune']['deg']}° {P['fortune']['sign']}, {T.ORD[P['fortune']['house']]} house"),

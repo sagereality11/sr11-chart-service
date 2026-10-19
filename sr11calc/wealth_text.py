@@ -190,7 +190,7 @@ PHASE = {
     "last quarter": "Your Moon was born in the last quarter phase, a turning point in the cycle. You may outgrow ways of earning that once worked and need to let them go before the next thing can begin.",
     "balsamic": "Your Moon was born in the balsamic phase, the final stretch before the New Moon. It belongs to the end of a cycle, when something has matured enough to be distilled, so you may do your best financial work when you stop starting over and refine what you already know works.",
 }
-BLOCK_INTRO = "Every money story has a place where it gets tender. In your chart, a few conditions are worth understanding so they work for you instead of quietly against you."
+BLOCK_INTRO = "Every chart has a spot where money slips away more easily, usually through habits rather than bad luck. These are the ones worth knowing in yours."
 BLOCK_EMOTIONAL = {
     "moon": "Because the Moon carries so much of your money story, money may rarely feel like only money. A raise can feel like proof you're valued, and a slow month can feel like a judgment about your worth. Part of building steady wealth is separating those two experiences. The value of your work and your value as a person are related, but they aren't the same number.",
     "sun": "Because the Sun carries so much of your money story, earning can feel tied to your identity. When work is going well, you feel like yourself. When it isn't, you may question who you are. Your worth doesn't rise and fall with this month's numbers.",
