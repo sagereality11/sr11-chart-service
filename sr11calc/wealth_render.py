@@ -36,13 +36,16 @@ def _practice_html(s, for_pdf=True):
     pr = s.get("practice")
     if not pr:
         return ""
-    lines = '<div class="wl"></div>' * (4 if for_pdf else 0)
-    out = [f'<div class="practice"><p class="plabel">{esc(pr["label"])}</p><p>{esc(pr["try"])}</p></div>']
-    if pr["prompts"]:
-        lab = "Journal Prompt" if len(pr["prompts"]) == 1 else "Journal Prompts"
-        items = "".join(f'<div class="jp">{f"<p class=plabel>{lab}</p>" if i == 0 else ""}<p>{esc(q)}</p>{lines}</div>'
-                        for i, q in enumerate(pr["prompts"]))
-        out.append(f'<div class="journal">{items}</div>')
+    lines = '<div class="wl"></div>' * (3 if for_pdf else 0)
+    box = f'<div class="practice"><p class="plabel">{esc(pr["label"])}</p><p>{esc(pr["try"])}</p></div>'
+    if not pr["prompts"]:
+        return f'<div class="pblock">{box}</div>'
+    lab = "Journal Prompt" if len(pr["prompts"]) == 1 else "Journal Prompts"
+    first, rest = pr["prompts"][0], pr["prompts"][1:]
+    # the box always travels with the first prompt; later prompts can start a new page on their own
+    out = [f'<div class="pblock">{box}<div class="journal"><div class="jp"><p class="plabel">{lab}</p><p>{esc(first)}</p>{lines}</div></div></div>']
+    for q in rest:
+        out.append(f'<div class="journal"><div class="jp"><p>{esc(q)}</p>{lines}</div></div>')
     return "".join(out)
 
 
@@ -92,7 +95,8 @@ p {{ margin:0 0 11px 0; }}
 .keep {{ page-break-inside:avoid; }}
 .practice {{ background:{LILAC}; border-left:4px solid {PURPLE}; padding:12px 18px 4px 18px; margin:16px 0 14px 0; page-break-inside:avoid; }}
 .plabel {{ font-family:'Inter','DejaVu Sans',sans-serif; font-size:9.5pt; font-weight:600; letter-spacing:2.5px; text-transform:uppercase; color:{PURPLE}; margin:0 0 6px 0; }}
-.journal {{ margin:6px 0 18px 0; }}
+.pblock {{ page-break-inside:avoid; }}
+.journal {{ margin:6px 0 4px 0; }}
 .journal .plabel {{ color:{GOLD}; }}
 .jp {{ page-break-inside:avoid; margin:0 0 14px 0; }}
 .jp p:not(.plabel) {{ font-style:italic; margin:0 0 4px 0; }}
