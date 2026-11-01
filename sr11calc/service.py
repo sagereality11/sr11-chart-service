@@ -148,12 +148,30 @@ def resolve_time(req: dict, date: dt.date, time: dt.time, fold, accept_lmt: bool
     if req["utc_offset_minutes"] is None:
         corr = corrections.find(req["place"], date)
         if corr:
-            minutes = corr["std_minutes"]
+            minutes = corr.get("std_minutes")
             if corr["kind"] == "winter_central" and corrections.summer_fast_time(date):
                 conv = timeconv.resolve_local_time(date, time, None, minutes + 60, None, False)
                 conv["time"].update(tz_abbrev="CDT", dst_active=True, zone=req["tz"],
                                     source=f"Sage Reality 11 historical correction ({corr['id']})")
                 conv["notes"] = [corr["note"] + " In summer, local daylight time (CDT, UTC-5) is used."]
+                conv["reliability"] = "corrected"
+                return conv
+            if corr["kind"] in ("season", "dst_over_tzdb"):
+                local = dt.datetime.combine(date, time)
+                std, base = None, None
+                if corr["kind"] == "dst_over_tzdb":
+                    base = timeconv.resolve_local_time(date, time, req["tz"], None, None, True)
+                    if base["status"] != "ok":
+                        return base
+                    std = base["time"]["utc_offset_seconds"] // 60
+                minutes, abbrev, dst = corrections.offset_for(corr, local, std)
+                conv = timeconv.resolve_local_time(date, time, None, minutes, None, False)
+                upd = {"dst_active": dst, "zone": req["tz"],
+                       "source": f"Sage Reality 11 historical correction ({corr['id']}); "
+                                 f"tzdb {timeconv.tzdb_version()} may give a different offset here"}
+                upd["tz_abbrev"] = abbrev or (base["time"]["tz_abbrev"] if base else None)
+                conv["time"].update(upd)
+                conv["notes"] = [corr["note"]]
                 conv["reliability"] = "corrected"
                 return conv
             conv = timeconv.resolve_local_time(date, time, None, minutes, None, False)
