@@ -100,7 +100,9 @@
   var recordBoxes = [];
   function attachRecordZone(cityInput, getDate) {
     injectCss();
-    var field = cityInput.closest('.bd-field') || cityInput.parentNode;
+    /* Placed after the city field's wrapper; never inside a label (a click there would
+       jump to the city box). */
+    var field = cityInput.closest('.bd-field') || cityInput.closest('label') || cityInput.parentNode;
     var box = document.createElement('div'); box.className = 'bd-field sr11-rectz'; box.hidden = true;
     var id = (cityInput.id || 'city') + '-record-tz';
     var html = '<div class="sr11-dstq" hidden><label for="' + id + '-dst">Did your birth town set its clocks forward for daylight saving time that day?</label>' +
@@ -153,8 +155,10 @@
       rec.std = askDst ? std : null;
     }
     rec.refresh = refresh;
-    document.addEventListener('input', refresh, true);
-    document.addEventListener('change', refresh, true);
+    /* Deferred so split date boxes have filled in the full date first. */
+    function later() { setTimeout(refresh, 0); }
+    document.addEventListener('input', later, true);
+    document.addEventListener('change', later, true);
     setTimeout(refresh, 0);
     recordBoxes.push(rec);
     return function () { refresh(); return readOffset(rec); };
