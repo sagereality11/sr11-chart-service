@@ -170,7 +170,8 @@ if ( ! function_exists( 'sr_ws_style' ) ) {
 	/** City lookup + request helper shared by both pages. */
 	function sr_ws_js_common() {
 		return 'function srwsCity(C,$,pre,onPick){var city=$(pre+"-city"),box=$(pre+"-city-s"),timer=null;
-if(window.SR11Chart){SR11Chart.attachRecordZone(city,function(){return $(pre+"-date").value;});}
+function srwsZone(){if(window.SR11Chart){SR11Chart.attachRecordZone(city,function(){return $(pre+"-date").value;});}}
+if(window.SR11Chart){srwsZone();}else{window.addEventListener("load",srwsZone);}
 city.addEventListener("input",function(){city.sr11Place=null;onPick(null);clearTimeout(timer);var q=city.value.trim();if(q.length<2){box.hidden=true;return;}
 timer=setTimeout(function(){fetch(C.places+"?q="+encodeURIComponent(q),{headers:{"X-SR11-Request":"1"}}).then(function(r){return r.json();}).then(function(j){
 box.innerHTML="";var res=(j&&j.results)||[];if(!res.length){box.innerHTML="<button type=\"button\" disabled>No matches yet. Try the city name only.</button>";box.hidden=false;return;}
