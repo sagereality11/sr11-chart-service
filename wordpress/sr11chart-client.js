@@ -50,7 +50,8 @@
   function injectCss() {
     if (document.getElementById('sr11-chart-client-css')) return;
     var css = document.createElement('style'); css.id = 'sr11-chart-client-css';
-    css.textContent = '.sr11-rectz{margin:.6rem 0 0}.sr11-rectz label{display:block;font-size:.9rem;margin:0 0 .3rem}' +
+    css.textContent = '.sr11-rectz{margin:.6rem 0 0;grid-column:1/-1}.sr11-rectz label{display:block;font-size:.9rem;margin:0 0 .3rem}' +
+      'div.sr11-rectz p.sr11-help{font-size:.8rem;line-height:1.45;margin:.35rem 0 0;opacity:.8}' +
       '.sr11-rectz select{width:100%;max-width:100%;padding:.55rem .6rem;border-radius:8px;border:1px solid rgba(124,77,170,.35);background:#fff;color:#3a2a4f;font:inherit;font-size:.95rem}' +
       '.sr11-rectz p{font-size:.8rem;margin:.35rem 0 0;opacity:.8;line-height:1.45}' +
       '.sr11-rectz .sr11-dstq{margin:0 0 .8rem}' +
@@ -109,12 +110,12 @@
       '<select id="' + id + '-dst"><option value="">Not sure (use our best records)</option>' +
       '<option value="yes">Yes, clocks were set forward an hour</option>' +
       '<option value="no">No, clocks stayed on standard time</option></select>' +
-      '<p>From 1946 to 1966 each US town chose for itself whether to use daylight saving time, so two towns in the same state could be an hour apart. If your birth record or family knows, choose it here.</p></div>';
+      '<p class="sr11-help">From 1946 to 1966 each US town chose for itself whether to use daylight saving time, so two towns in the same state could be an hour apart. If your birth record or family knows, choose it here.</p></div>';
     html += '<label for="' + id + '">Born before 1970? Time zone on your birth record (optional)</label><select id="' + id + '">';
     RECORD_ZONES.forEach(function (z) { html += '<option value="' + z[0] + '">' + z[1] + '</option>'; });
     html += '<optgroup label="Other UTC offsets">';
     OTHER_OFFSETS.forEach(function (m) { html += '<option value="' + m + '">' + offsetLabel(m) + '</option>'; });
-    html += '</optgroup></select><p>Older records sometimes used a different time zone than today. If your birth certificate states one, choose it here. Otherwise leave the first option.</p>';
+    html += '</optgroup></select><p class="sr11-help">Older records sometimes used a different time zone than today. If your birth certificate states one, choose it here. Otherwise leave the first option.</p>';
     box.innerHTML = html;
     field.parentNode.insertBefore(box, field.nextSibling);
     var sel = box.querySelector('#' + id);
