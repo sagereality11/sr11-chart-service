@@ -141,8 +141,8 @@ def resolve_time(req: dict, date: dt.date, time: dt.time, fold, accept_lmt: bool
     """Local birth time -> UTC: birth-record offset, then a historical correction, then the tzdb."""
     if req.get("record_offset"):
         conv = timeconv.resolve_local_time(date, time, None, req["utc_offset_minutes"], None, False)
-        conv["time"]["source"] = "time zone on the birth record, entered by the visitor"
-        conv["notes"] = ["The time zone from your birth record was used instead of the time zone database."]
+        conv["time"]["source"] = "time zone given by the visitor (birth record or daylight saving answer)"
+        conv["notes"] = ["The time zone you gave for your birth was used instead of the time zone database."]
         conv["reliability"] = "record"
         return conv
     if req["utc_offset_minutes"] is None:
