@@ -57,8 +57,10 @@ def _esc(s: str) -> str:
 def _fold(line: str) -> str:
     out, b = [], line.encode("utf-8")
     while len(b) > 74:
-        cut = 74
+        cut = 73
         while cut > 0 and (b[cut] & 0xC0) == 0x80:  # don't split a UTF-8 character
+            cut -= 1
+        while cut > 1 and b[cut - 1:cut] == b"\\":  # don't split an escape like \n or \, (Apple's importer stops there)
             cut -= 1
         out.append(b[:cut].decode("utf-8"))
         b = b" " + b[cut:]
