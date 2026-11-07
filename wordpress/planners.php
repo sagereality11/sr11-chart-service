@@ -65,6 +65,8 @@ if ( ! function_exists( 'sr_pl_products' ) ) {
 	}
 	/* Calendar add-on ($9.99 per planner): a checkbox on the planner's product page. */
 	if ( ! defined( 'SR_PL_CAL_PRICE' ) ) { define( 'SR_PL_CAL_PRICE', 9.99 ); }
+	/* Illustrated how-to guide: downloading, GoodNotes and other apps, calendar import. */
+	if ( ! defined( 'SR_PL_GUIDE_URL' ) ) { define( 'SR_PL_GUIDE_URL', 'https://sagereality11.com/planner-guide/' ); }
 	function sr_pl_is_planner( $pid ) {
 		foreach ( sr_pl_products() as $p ) { if ( (int) $p['id'] === (int) $pid ) { return true; } }
 		return false;
@@ -217,6 +219,7 @@ add_action( 'rest_api_init', function () {
 						$body   = '<p>Hi ' . esc_html( $first ) . ',</p>'
 							. '<p>Your ' . esc_html( $p['name'] ) . ' dates are attached as a calendar file, so every date in your planner can live right in your phone\'s calendar.</p>'
 							. sr_pl_cal_steps_html()
+							. '<p>Want pictures? The <a href="' . esc_url( SR_PL_GUIDE_URL ) . '">How to Use Your Planner guide</a> walks you through it step by step.</p>'
 							. '<p>With Love and Light,<br>Tiff</p>';
 						$mailer = WC()->mailer();
 						if ( $mailer->send( $to, 'Your ' . $p['name'] . ' dates for your calendar', $mailer->wrap_message( 'Your Planner Dates', $body ), "Content-Type: text/html\r\n", array( $file ) ) ) {
@@ -293,7 +296,7 @@ add_shortcode( 'sr_planner', function ( $atts ) {
 <div id="sr-<?php echo esc_attr( $pre ); ?>-app" class="sr-plf">
 <div class="card">
 <h2>Create Your <?php echo esc_html( $p['name'] ); ?></h2>
-<p>Enter the birth details for the person this planner is for, the city they live in now, and the month the planner should begin. It's created in seconds and downloads as a PDF you can print or use in GoodNotes. A copy is emailed to you too.</p>
+<p>Enter the birth details for the person this planner is for, the city they live in now, and the month the planner should begin. It's created in seconds and downloads as a PDF you can print or use in GoodNotes. A copy is emailed to you too. New to digital planners? See <a href="<?php echo esc_url( SR_PL_GUIDE_URL ); ?>" target="_blank" rel="noopener">How to Use Your Planner</a> for step-by-step pictures.</p>
 <?php if ( is_array( $saved ) ) : ?><p class="fine">Your planner has been created before. Each planner is for one person, so you can correct the birth details once if there was a typo. After that, this page re-creates your saved planner.</p><?php endif; ?>
 <form id="<?php echo esc_attr( $pre ); ?>-form" novalidate>
 <div class="grid">
@@ -311,7 +314,7 @@ add_shortcode( 'sr_planner', function ( $atts ) {
 <h2>Add Your Dates to Your Calendar</h2>
 <p><a class="go" id="<?php echo esc_attr( $pre ); ?>-ics" href="#">Add My Dates to My Calendar</a></p>
 <?php echo sr_pl_cal_steps_html(); // static markup ?>
-<p class="fine">Your calendar file is in your email too.</p>
+<p class="fine">Your calendar file is in your email too. Step-by-step pictures are in the <a href="<?php echo esc_url( SR_PL_GUIDE_URL ); ?>" target="_blank" rel="noopener">How to Use Your Planner guide</a>.</p>
 </div>
 <p class="fine">Your details are used only to create your planner. Because this is an instant digital download, all sales are final.</p>
 </div>
@@ -357,7 +360,7 @@ add_shortcode( 'sr_planner', function ( $atts ) {
           var iu=URL.createObjectURL(new Blob([iby],{type:'text/calendar'})), il=$('ics'); il.href=iu; il.setAttribute('download', j.ics_filename||'Planner-Calendar.ics');
           $('cal').hidden=false;
         }
-        msg((j.note ? j.note + ' ' : '') + 'Your planner is ready and should download automatically. If it didn\'t start, <a href="'+url+'" download="'+fn+'">tap here to download it</a>. A copy is on its way to your email too.', false, true);
+        msg((j.note ? j.note + ' ' : '') + 'Your planner is ready and should download automatically. If it didn\'t start, <a href="'+url+'" download="'+fn+'">tap here to download it</a>. A copy is on its way to your email too. To put it in GoodNotes or another app, see the <a href="<?php echo esc_url( SR_PL_GUIDE_URL ); ?>" target="_blank" rel="noopener">How to Use Your Planner guide</a>.', false, true);
         return;
       }
       if (j.status==='ambiguous') {
@@ -391,7 +394,8 @@ add_action( 'woocommerce_thankyou', function ( $order_id ) {
 		echo '<div style="border:1px solid #dccdf3;border-top:6px solid #4b2a7b;border-radius:4px;padding:1.4rem;margin:0 0 1.5rem;text-align:center;background:#fff">'
 			. '<p style="font-style:italic;font-size:1.3rem;margin:0 0 .5rem;color:#4b2a7b">Your ' . esc_html( $p['name'] ) . ' is ready to create</p>'
 			. '<p style="margin:0 0 1rem">Click below, enter your birth details, the city you live in now and the month you want your planner to begin, and it is created in seconds. I have also emailed you this link so you can come back anytime.</p>'
-			. '<a href="' . esc_url( sr_pl_url( $order, $p ) ) . '" style="display:inline-block;background:#4b2a7b;color:#fff;padding:.8rem 1.4rem;border-radius:3px;text-decoration:none">Create My Planner</a></div>';
+			. '<a href="' . esc_url( sr_pl_url( $order, $p ) ) . '" style="display:inline-block;background:#4b2a7b;color:#fff;padding:.8rem 1.4rem;border-radius:3px;text-decoration:none">Create My Planner</a>'
+			. '<p style="margin:1rem 0 0;font-size:.95rem">Need help with downloading, GoodNotes or your calendar? <a href="' . esc_url( SR_PL_GUIDE_URL ) . '">How to Use Your Planner</a></p></div>';
 	}
 }, 5 );
 
@@ -401,9 +405,9 @@ add_action( 'woocommerce_email_after_order_table', function ( $order, $sent_to_a
 		if ( ! sr_pl_order_has( $order, $p['id'] ) ) { continue; }
 		$url = sr_pl_url( $order, $p );
 		if ( $plain_text ) {
-			echo PHP_EOL . 'Create your ' . esc_html( $p['name'] ) . ': ' . esc_url_raw( $url ) . PHP_EOL;
+			echo PHP_EOL . 'Create your ' . esc_html( $p['name'] ) . ': ' . esc_url_raw( $url ) . PHP_EOL . 'How to use your planner: ' . esc_url_raw( SR_PL_GUIDE_URL ) . PHP_EOL;
 			continue;
 		}
-		echo '<p style="margin:16px 0"><strong>Your ' . esc_html( $p['name'] ) . '</strong><br>Create your personal planner anytime here: <a href="' . esc_url( $url ) . '">Create My Planner</a></p>';
+		echo '<p style="margin:16px 0"><strong>Your ' . esc_html( $p['name'] ) . '</strong><br>Create your personal planner anytime here: <a href="' . esc_url( $url ) . '">Create My Planner</a><br>Help with downloading, GoodNotes and your calendar: <a href="' . esc_url( SR_PL_GUIDE_URL ) . '">How to Use Your Planner</a></p>';
 	}
 }, 10, 4 );
