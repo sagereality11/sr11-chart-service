@@ -63,7 +63,63 @@ if ( ! function_exists( 'sr_pl_products' ) ) {
 	function sr_pl_details_sig( $d ) {
 		return md5( wp_json_encode( array( $d['year'], $d['month'], $d['day'], $d['hour'], $d['minute'], $d['place_id'], $d['start'] ) ) );
 	}
+	/* Calendar add-on ($9.99 per planner): a checkbox on the planner's product page. */
+	if ( ! defined( 'SR_PL_CAL_PRICE' ) ) { define( 'SR_PL_CAL_PRICE', 9.99 ); }
+	function sr_pl_is_planner( $pid ) {
+		foreach ( sr_pl_products() as $p ) { if ( (int) $p['id'] === (int) $pid ) { return true; } }
+		return false;
+	}
+	function sr_pl_order_has_calendar( $order, $pid ) {
+		if ( ! $order || ! is_a( $order, 'WC_Order' ) ) { return false; }
+		foreach ( $order->get_items() as $item ) {
+			if ( (int) $item->get_product_id() === (int) $pid && 'Yes' === $item->get_meta( 'Calendar add-on' ) ) { return true; }
+		}
+		return false;
+	}
+	function sr_pl_cal_steps_html() {
+		return '<p><strong>iPhone or iPad:</strong> tap the calendar file (in this email, or the Add My Dates to My Calendar button on your planner page), then tap <strong>Add All</strong> and choose <strong>New Calendar</strong>.</p>'
+			. '<p><strong>Mac:</strong> double-click the file and choose a calendar.</p>'
+			. '<p><strong>Outlook:</strong> double-click the file, or in Outlook.com go to Calendar, then Add calendar, then Upload from file.</p>'
+			. '<p><strong>Google Calendar:</strong> on a computer, go to calendar.google.com, then Settings, then Import &amp; export, and import the file. The dates then show on your phone too.</p>'
+			. '<p>Each date has a reminder at 9:00 AM that morning. To remove everything at once, delete the calendar you created.</p>';
+	}
 }
+
+/* ---------- Calendar add-on on the product page, cart and order ---------- */
+add_action( 'woocommerce_before_add_to_cart_button', function () {
+	global $product;
+	if ( ! $product || ! sr_pl_is_planner( $product->get_id() ) ) { return; }
+	echo '<div class="sr-pl-cal" style="border:1px solid #dccdf3;border-left:5px solid #5b2a86;border-radius:4px;padding:.9rem 1rem;margin:0 0 1rem;background:#faf6fe">'
+		. '<label style="display:flex;gap:.6rem;align-items:flex-start;cursor:pointer;font-weight:600;color:#3b1d5c">'
+		. '<input type="checkbox" name="sr_pl_calendar" value="1" style="margin-top:.3rem">'
+		. '<span>Add my planner dates to my calendar (+' . wp_strip_all_tags( wc_price( SR_PL_CAL_PRICE ) ) . ')'
+		. '<span style="display:block;font-weight:400;color:#6d5a8c;font-size:.92rem;margin-top:.25rem">Every date in your planner as a color-coded calendar file for iPhone, iPad, Mac, Outlook and Google Calendar, with a reminder at 9:00 AM on the day.</span></span>'
+		. '</label></div>';
+} );
+add_filter( 'woocommerce_add_cart_item_data', function ( $data, $product_id ) {
+	if ( sr_pl_is_planner( $product_id ) && ! empty( $_POST['sr_pl_calendar'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification
+		$data['sr_pl_calendar'] = 1;
+		$data['unique_key']     = md5( 'sr_pl_cal' . $product_id ); // keep planners with and without the add-on as separate lines
+	}
+	return $data;
+}, 10, 2 );
+add_action( 'woocommerce_before_calculate_totals', function ( $cart ) {
+	if ( is_admin() && ! defined( 'DOING_AJAX' ) ) { return; }
+	foreach ( $cart->get_cart() as $item ) {
+		if ( empty( $item['sr_pl_calendar'] ) || empty( $item['data'] ) ) { continue; }
+		$base = wc_get_product( $item['product_id'] );
+		if ( $base ) { $item['data']->set_price( (float) $base->get_price() + SR_PL_CAL_PRICE ); }
+	}
+}, 20 );
+add_filter( 'woocommerce_get_item_data', function ( $out, $item ) {
+	if ( ! empty( $item['sr_pl_calendar'] ) ) {
+		$out[] = array( 'key' => 'Calendar add-on', 'value' => 'Yes', 'display' => 'Yes' );
+	}
+	return $out;
+}, 10, 2 );
+add_action( 'woocommerce_checkout_create_order_line_item', function ( $item, $key, $values ) {
+	if ( ! empty( $values['sr_pl_calendar'] ) ) { $item->add_meta_data( 'Calendar add-on', 'Yes', true ); }
+}, 10, 3 );
 
 /* ---------- REST route ---------- */
 add_action( 'rest_api_init', function () {
@@ -127,7 +183,8 @@ add_action( 'rest_api_init', function () {
 			if ( is_wp_error( $v ) ) { return sr_pl_err( $v->get_error_message(), 422 ); }
 			unset( $v['house_system'], $v['points'], $v['asteroids'], $v['aspects'] );
 			list( $sy, $sm ) = array_map( 'intval', explode( '-', $details['start'] ) );
-			$v = array_merge( $v, array( 'product' => $slug, 'name' => $details['name'], 'start_year' => $sy, 'start_month' => $sm, 'current_place_id' => $details['current'] ) );
+			$with_cal = is_a( $access, 'WC_Order' ) ? sr_pl_order_has_calendar( $access, $p['id'] ) : current_user_can( 'manage_options' );
+			$v = array_merge( $v, array( 'product' => $slug, 'name' => $details['name'], 'start_year' => $sy, 'start_month' => $sm, 'current_place_id' => $details['current'], 'with_calendar' => (bool) $with_cal ) );
 			$s   = SR11BC_Settings::get();
 			$res = wp_remote_post( $s['service_url'] . '/v1/planner', array(
 				'timeout'     => 90,
@@ -147,9 +204,32 @@ add_action( 'rest_api_init', function () {
 			if ( empty( $json['pdf_base64'] ) ) { return sr_pl_err( 'Something went wrong creating your planner. Please try again in a minute.', 502 ); }
 			if ( is_a( $access, 'WC_Order' ) ) {
 				$access->update_meta_data( '_sr_pl_created_' . $slug, (int) $access->get_meta( '_sr_pl_created_' . $slug ) + 1 );
+				// Email the calendar file to the buyer once per set of birth details.
+				if ( ! empty( $json['ics_base64'] ) && function_exists( 'WC' ) ) {
+					$sig  = sr_pl_details_sig( $details );
+					$sent = (array) $access->get_meta( '_sr_pl_cal_sent_' . $slug );
+					$to   = $access->get_billing_email();
+					if ( $to && ! in_array( $sig, $sent, true ) && count( $sent ) < 5 ) {
+						$file = trailingslashit( get_temp_dir() ) . sanitize_file_name( $json['ics_filename'] ?? 'Planner-Calendar.ics' );
+						file_put_contents( $file, base64_decode( $json['ics_base64'] ) );
+						$first  = $access->get_billing_first_name() ? $access->get_billing_first_name() : $details['name'];
+						$body   = '<p>Hi ' . esc_html( $first ) . ',</p>'
+							. '<p>Your ' . esc_html( $p['name'] ) . ' dates are attached as a calendar file, so every date in your planner can live right in your phone\'s calendar.</p>'
+							. sr_pl_cal_steps_html()
+							. '<p>With Love and Light,<br>Tiff</p>';
+						$mailer = WC()->mailer();
+						if ( $mailer->send( $to, 'Your ' . $p['name'] . ' dates for your calendar', $mailer->wrap_message( 'Your Planner Dates', $body ), "Content-Type: text/html\r\n", array( $file ) ) ) {
+							$sent[] = $sig;
+							$access->update_meta_data( '_sr_pl_cal_sent_' . $slug, $sent );
+							$access->add_order_note( 'Calendar file for the ' . $p['name'] . ' emailed to the customer at ' . $to . '.' );
+						}
+						@unlink( $file );
+					}
+				}
 				$access->save();
 			}
-			$r = new WP_REST_Response( array( 'status' => 'ok', 'pdf' => $json['pdf_base64'], 'filename' => $json['filename'] ?? 'Planner.pdf', 'note' => $note ), 200 );
+			$r = new WP_REST_Response( array( 'status' => 'ok', 'pdf' => $json['pdf_base64'], 'filename' => $json['filename'] ?? 'Planner.pdf', 'note' => $note,
+				'ics' => $json['ics_base64'] ?? '', 'ics_filename' => $json['ics_filename'] ?? '' ), 200 );
 			$r->header( 'Cache-Control', 'no-store, private' );
 			return $r;
 		},
@@ -226,6 +306,12 @@ add_shortcode( 'sr_planner', function ( $atts ) {
 <button class="go" id="<?php echo esc_attr( $pre ); ?>-go" type="submit">Create My Planner</button>
 <div id="<?php echo esc_attr( $pre ); ?>-msg" class="msg" hidden></div>
 </form>
+<div id="<?php echo esc_attr( $pre ); ?>-cal" class="card" style="margin-top:1.2rem;border-top-color:#4e8b5f" hidden>
+<h2>Add Your Dates to Your Calendar</h2>
+<p><a class="go" id="<?php echo esc_attr( $pre ); ?>-ics" href="#">Add My Dates to My Calendar</a></p>
+<?php echo sr_pl_cal_steps_html(); // static markup ?>
+<p class="fine">Your calendar file is in your email too.</p>
+</div>
 <p class="fine">Your details are used only to create your planner. Because this is an instant digital download, all sales are final.</p>
 </div>
 </div>
@@ -265,6 +351,11 @@ add_shortcode( 'sr_planner', function ( $atts ) {
         var bin=atob(j.pdf), bytes=new Uint8Array(bin.length); for (var i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
         var url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'})), fn=j.filename||'Planner.pdf';
         var a=document.createElement('a'); a.href=url; a.download=fn; document.body.appendChild(a); a.click(); setTimeout(function(){ a.remove(); }, 4000);
+        if (j.ics) {
+          var ib=atob(j.ics), iby=new Uint8Array(ib.length); for (var q=0;q<ib.length;q++) iby[q]=ib.charCodeAt(q);
+          var iu=URL.createObjectURL(new Blob([iby],{type:'text/calendar'})), il=$('ics'); il.href=iu; il.setAttribute('download', j.ics_filename||'Planner-Calendar.ics');
+          $('cal').hidden=false;
+        }
         msg((j.note ? j.note + ' ' : '') + 'Your planner is ready and should download automatically. If it didn\'t start, <a href="'+url+'" download="'+fn+'">tap here to download it</a>. A copy is on its way to your email too.', false, true);
         return;
       }
