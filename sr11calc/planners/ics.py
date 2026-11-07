@@ -121,10 +121,11 @@ def moon(data: dict, name: str, tzl: str) -> bytes:
             desc += "\n\n" + (MC.ECLIPSE_SOLAR if e["kind"] == "New Moon" else MC.ECLIPSE_LUNAR)
         color = "black" if e["eclipse"] else ("indigo" if e["kind"] == "New Moon" else "orchid")
         cat = "Eclipse" if e["eclipse"] else e["kind"]
-        cal.add(d.date(), title, desc, color, cat)
+        sym = "\u2B50" if e["eclipse"] else ("\U0001F311" if e["kind"] == "New Moon" else "\U0001F315")
+        cal.add(d.date(), f"{sym} {title}", desc, color, cat)
     for q in data["quarters"]:
         d = _t(q["dt"])
-        cal.add(d.date(), f"{q['kind']} Moon · check in", f"{_clock(d, tzl)} · {q['deg']}, your {ORD[q['house']]} house\n\n"
+        cal.add(d.date(), ("\U0001F313 " if q["kind"] == "First Quarter" else "\U0001F317 ") + f"{q['kind']} Moon · check in", f"{_clock(d, tzl)} · {q['deg']}, your {ORD[q['house']]} house\n\n"
                 + MC.QUARTER_PROMPT[q["kind"]], "thistle", "Quarter Moon", reminder=False)
     return cal.bytes()
 
@@ -138,12 +139,12 @@ def money(data: dict, name: str, tzl: str) -> bytes:
         if dd["status"] == "green":
             i += 1
             why = ", ".join(dd.get("why") or [])
-            cal.add(day, "Green day for money moves", f"Affirmation: {aff}\n\nA supportive day to launch, sign, pitch, send invoices, ask "
+            cal.add(day, "\U0001F7E2 Green day for money moves", f"Affirmation: {aff}\n\nA supportive day to launch, sign, pitch, send invoices, ask "
                     f"for a raise or make a planned purchase." + (f" ({why})" if why else ""), "seagreen", "Green day")
         elif dd["status"] == "caution":
             i += 1
             why = ", ".join(dd.get("why") or [])
-            cal.add(day, "Caution day: pause big money decisions", f"Affirmation: {aff}\n\nEnergy is unpredictable today"
+            cal.add(day, "\U0001F534 Caution day: pause big money decisions", f"Affirmation: {aff}\n\nEnergy is unpredictable today"
                     + (f" ({why})" if why else "") + ". Review and plan instead of committing if you can.", "indianred", "Caution day")
     for e in data["events"]:
         d = _t(e["dt"])
@@ -165,14 +166,15 @@ def money(data: dict, name: str, tzl: str) -> bytes:
         if tip:
             desc += f"\n\nFor your personal money: {tip['personal']}\nFor your business: {tip['business']}"
         color = "goldenrod" if e["type"] == "aspect" else ("slategray" if e["type"] == "station" else "darkseagreen")
-        cal.add(d.date(), title, desc, color, "Money transit", reminder=e["type"] == "station" or e.get("planet") in ("Jupiter", "Saturn"))
+        sym = "\U0001F504" if e["type"] == "station" else "\U0001F4B0"
+        cal.add(d.date(), f"{sym} {title}", desc, color, "Money transit", reminder=e["type"] == "station" or e.get("planet") in ("Jupiter", "Saturn"))
     for l in data["lunations"]:
         if l["house"] not in MO.MONEY_MOON and not l["eclipse"]:
             continue
         d = _t(l["dt"])
         nf = 0 if l["kind"] == "New Moon" else 1
         txt = MO.MONEY_MOON.get(l["house"], MO.OTHER_MOON)[nf]
-        cal.add(d.date(), f"Money {l['eclipse'] or l['kind']} · your {ORD[l['house']]} house", f"{_clock(d, tzl)} · {l['deg']}\n\n{txt}",
+        cal.add(d.date(), ("\u2B50" if l["eclipse"] else ("\U0001F311" if l["kind"] == "New Moon" else "\U0001F315")) + f" Money {l['eclipse'] or l['kind']} · your {ORD[l['house']]} house", f"{_clock(d, tzl)} · {l['deg']}\n\n{txt}",
                 "black" if l["eclipse"] else "mediumpurple", "Money moon")
     return cal.bytes()
 
@@ -191,22 +193,22 @@ def transits(data: dict, name: str, tzl: str) -> bytes:
         for x in b["exact"]:
             d = _t(x)
             if start <= d.date() <= end:
-                cal.add(d.date(), f"Exact today: {title}", desc, "rebeccapurple", "Big transit")
+                cal.add(d.date(), f"\U0001F7E3 Exact today: {title}", desc, "rebeccapurple", "Big transit")
         bs = dt.date.fromisoformat(b["start"][:10])
         if start <= bs <= end and not (b["planet"] == "Jupiter" and b["aspect"] == "sextile"):
-            cal.add(bs, f"Begins: {title}", desc, "mediumpurple", "Big transit", reminder=False)
+            cal.add(bs, f"\U0001F7EA Begins: {title}", desc, "mediumpurple", "Big transit", reminder=False)
     for f in data["fast"]:
         d = _t(f["dt"])
         phrase = TC.FAST[(f["planet"], f["flow"])]
-        cal.add(d.date(), f"{f['planet']} {f['aspect']} {pname(f['point'])}",
+        cal.add(d.date(), f"\U0001F539 {f['planet']} {f['aspect']} {pname(f['point'])}",
                 f"{phrase[0].upper() + phrase[1:]} around {TC.FAST_POINT[f['point']]}.", "plum", "Transit", reminder=False)
     for s in data["stations"]:
         d = _t(s["dt"])
-        cal.add(d.date(), f"{s['planet']} stations {s['direction']} · your {ORD[s['house']]} house",
+        cal.add(d.date(), f"\U0001F504 {s['planet']} stations {s['direction']} · your {ORD[s['house']]} house",
                 f"{s['deg']}. {TC.STATION_X[s['direction']]}", "slategray", "Retrograde")
     for e in data["eclipses"]:
         d = _t(e["dt"])
-        cal.add(d.date(), f"{e['kind']} · your {ORD[e['house']]} house", f"{_clock(d, tzl)} · {e['deg']}. Eclipses are turning points that unfold over months.",
+        cal.add(d.date(), f"\u2B50 {e['kind']} · your {ORD[e['house']]} house", f"{_clock(d, tzl)} · {e['deg']}. Eclipses are turning points that unfold over months.",
                 "black", "Eclipse")
     return cal.bytes()
 
