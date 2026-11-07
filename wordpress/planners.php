@@ -81,7 +81,8 @@ if ( ! function_exists( 'sr_pl_products' ) ) {
 			. '<p><strong>Mac:</strong> double-click the file and choose a calendar.</p>'
 			. '<p><strong>Outlook:</strong> double-click the file, or in Outlook.com go to Calendar, then Add calendar, then Upload from file.</p>'
 			. '<p><strong>Google Calendar:</strong> on a computer, go to calendar.google.com, then Settings, then Import &amp; export, and import the file. The dates then show on your phone too.</p>'
-			. '<p>Each date has a reminder at 9:00 AM that morning. To remove everything at once, delete the calendar you created.</p>';
+			. '<p>Each date has a reminder at 9:00 AM that morning. To remove everything at once, delete the calendar you created.</p>'
+			. '<p><strong>Works with:</strong> Apple Calendar on iPhone, iPad and Mac, Outlook, and Google Calendar (imported on a computer). Most other calendar apps that can import a .ics file work too. Google Calendar and some versions of Outlook do not keep imported reminders, so turn on notifications in those apps if you want them. Calendar apps that cannot import files, such as the Google Calendar phone app on its own, will not open it directly.</p>';
 	}
 }
 
@@ -93,7 +94,7 @@ add_action( 'woocommerce_before_add_to_cart_button', function () {
 		. '<label style="display:flex;gap:.6rem;align-items:flex-start;cursor:pointer;font-weight:600;color:#3b1d5c">'
 		. '<input type="checkbox" name="sr_pl_calendar" value="1" style="margin-top:.3rem">'
 		. '<span>Add my planner dates to my calendar (+' . wp_strip_all_tags( wc_price( SR_PL_CAL_PRICE ) ) . ')'
-		. '<span style="display:block;font-weight:400;color:#6d5a8c;font-size:.92rem;margin-top:.25rem">Every date in your planner as a color-coded calendar file for iPhone, iPad, Mac, Outlook and Google Calendar, with a reminder at 9:00 AM on the day.</span></span>'
+		. '<span style="display:block;font-weight:400;color:#6d5a8c;font-size:.92rem;margin-top:.25rem">Every date in your planner as a calendar file with color-coded symbols and a reminder at 9:00 AM on the day. Works with Apple Calendar (iPhone, iPad, Mac), Outlook and Google Calendar. Google Calendar imports on a computer, and Google and some versions of Outlook may not keep the 9:00 AM reminder.</span></span>'
 		. '</label></div>';
 } );
 add_filter( 'woocommerce_add_cart_item_data', function ( $data, $product_id ) {
