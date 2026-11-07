@@ -221,5 +221,61 @@ def wealth_story():
     return jsonify(out)
 
 
+@app.post("/v1/planner")
+def planner():
+    """Personalized twelve-month planner PDF. Same body as /v1/chart plus "product" ("moon", "money" or
+    "transits"), "name", "start_year" and "start_month" (the first month of the twelve), and
+    "current_place_id" (the buyer's current city, used for the time zone of every date and time).
+    A birth time is required because every planner reads the houses. Placidus and the True Node
+    are always used."""
+    from sr11calc import planners
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return _error("invalid_input", "Malformed request.", 422)
+    product = body.get("product")
+    if product not in planners.PRODUCTS:
+        return _error("invalid_input", "Unknown planner.", 422)
+    if body.get("time_known") is False:
+        return _error("time_required", "Your planner needs a birth time, because every page reads the houses of your "
+                      "chart. A birth certificate or hospital record usually has it.", 422)
+    try:
+        sy, sm = int(body.get("start_year")), int(body.get("start_month"))
+    except (TypeError, ValueError):
+        return _error("invalid_input", "Please choose the month your planner begins.", 422)
+    today = __import__("datetime").date.today()
+    idx, now_idx = sy * 12 + sm - 1, today.year * 12 + today.month - 1
+    if not (1 <= sm <= 12) or not (now_idx - 1 <= idx <= now_idx + 13):
+        return _error("invalid_start", "Please choose a start month from this month through the next twelve.", 422)
+    cur = None
+    if body.get("current_place_id") not in (None, ""):
+        try:
+            cur = places.get(int(body.get("current_place_id")))
+        except (TypeError, ValueError):
+            cur = None
+        if not cur:
+            return _error("location_lookup_failed", "Please choose the city you live in now from the list.", 422)
+    body = {**body, "house_system": "P", "node": "true", "points": [], "asteroids": [], "aspects": []}
+    body.pop("orbs", None)
+    name = str(body.get("name") or "").strip()[:60] or "Friend"
+    try:
+        req = parse_request(body, places)
+    except InputError as e:
+        return _error(e.code, e.message, 422)
+    try:
+        chart_out = build_chart(req)
+        if chart_out["status"] != "ok":
+            http = {"ambiguous": 409, "nonexistent": 422, "needs_confirmation": 409}.get(chart_out["status"], 422)
+            return jsonify(chart_out), http
+        tz_name = (cur or req["place"])["tz"] or "UTC"
+        city = (cur or req["place"]).get("label", "")
+        pdf, filename = planners.build(product, chart_out, req["date"], tz_name, city, sy, sm, name)
+    except Exception:  # never leak internals or input into logs/responses
+        app.logger.error("planner failed (input withheld)")
+        return _error("calculation_failed", "Your planner could not be created. Please try again.", 500)
+    import base64
+    return jsonify({"status": "ok", "product": product, "pdf_base64": base64.b64encode(pdf).decode("ascii"),
+                    "filename": filename})
+
+
 if __name__ == "__main__":  # local development only
     app.run(host="127.0.0.1", port=int(os.environ.get("PORT", "8080")))

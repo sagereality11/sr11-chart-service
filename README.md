@@ -35,6 +35,7 @@ All endpoints except `/v1/health` require the header `X-SR11-Key` matching the `
 | GET | `/v1/timezones` | IANA time zone list |
 | GET | `/v1/house-systems` | supported house systems |
 | POST | `/v1/chart` | calculate a chart |
+| POST | `/v1/planner` | personalized twelve-month planner PDF: `product` is `moon` (Moon Cycles), `money` (Money & Business) or `transits`; same body as `/v1/chart` plus `name`, `start_year`, `start_month` (this month through the next twelve) and `current_place_id` (the city whose time zone the dates use). Birth time required. |
 | POST | `/v1/year-ahead` | "Your 2027" personal year-ahead reading (same body as `/v1/chart` plus `name`; returns the reading as data and a printable HTML document) |
 
 Example request body for `/v1/chart`:
@@ -69,6 +70,7 @@ python -m unittest discover -s tests -v
 * Asteroids beyond Ceres, Pallas, Juno and Vesta: positions from NASA/JPL Horizons, which receives only the
   asteroid number and the UTC instant. Asteroid names: IAU Minor Planet Center list.
 * Time zones: IANA tz database.
+* Planner fonts (`sr11calc/planners/fonts`): Cormorant Garamond and Lato, SIL Open Font License 1.1.
 * Flask and gunicorn under their own licences.
 
 Copyright © 2026 Sage Reality 11. Licensed under the GNU Affero General Public License v3.0.

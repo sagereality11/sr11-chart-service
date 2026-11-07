@@ -1,0 +1,220 @@
+ORD = {1:"1st",2:"2nd",3:"3rd",4:"4th",5:"5th",6:"6th",7:"7th",8:"8th",9:"9th",10:"10th",11:"11th",12:"12th"}
+
+# short keyword used in Full Moon axis sentences
+HOUSE_KEY = {
+ 1:"who you are becoming", 2:"your money, worth and resources", 3:"your words, learning and daily connections",
+ 4:"home, family and your inner foundation", 5:"joy, creativity and romance", 6:"your health, routines and daily work",
+ 7:"your partnerships and one-on-one relationships", 8:"shared resources, intimacy and deep change",
+ 9:"your beliefs, travel and higher learning", 10:"your career, reputation and public path",
+ 11:"your friendships, community and future dreams", 12:"rest, the unseen and your spiritual life",
+}
+
+NEW = {
+ 1: dict(text="This New Moon lands in your 1st house, the part of your chart that holds your body, your presence and the way you begin things. This is your personal new year inside the lunar cycle. What you plant now is about you. Not your family. Not your work. You. It is a strong time to choose how you want to show up, how you want to feel in your own skin, and which fresh start you have been waiting for permission to take.",
+   prompts=["How do I want to feel when I walk into a room this year?","What fresh start have I been postponing, and what is the smallest first step?"],
+   try_this="Write one sentence that begins with \"I am becoming....\" and place it where you will see it every morning until the Full Moon."),
+ 2: dict(text="This New Moon lands in your 2nd house, the part of your chart connected to money, possessions, your values and your sense of worth. Seeds planted here grow into stability. This is a good moment to set an intention around income, savings, or how you value your own time and gifts. The 2nd house also asks a softer question. What do you believe you deserve?",
+   prompts=["What would feeling financially steady look like in my everyday life?","Where am I undercharging, overgiving or not valuing what I bring?"],
+   try_this="Choose one money habit to begin today, as small as checking your balance each Sunday, and keep it going for one full lunar cycle."),
+ 3: dict(text="This New Moon lands in your 3rd house, the part of your chart that rules your words, your thinking, short trips, siblings, neighbors and everyday learning. Intentions planted here often move through conversations, writing, classes and messages. It is a beautiful time to start a course, begin a journal practice, or decide how you want to speak to yourself and to the people around you.",
+   prompts=["What do I want to learn or say out loud this cycle?","Which conversation have I been avoiding, and how could I begin it gently?"],
+   try_this="Pick one thing you want to learn and spend fifteen minutes on it before the Full Moon. Write down what surprised you."),
+ 4: dict(text="This New Moon lands in your 4th house, the root of your chart. This house holds home, family, ancestry and the private emotional foundation you stand on. Seeds planted here grow underground first. You may not see them right away, but they change everything built on top of them. Set intentions around your living space, your family patterns, and what helps you feel safe enough to rest.",
+   prompts=["What does home need to feel like for me to truly rest?","Which family pattern am I ready to stop carrying forward?"],
+   try_this="Clear one corner of your home that feels heavy, and place one object there that reminds you of the life you are building."),
+ 5: dict(text="This New Moon lands in your 5th house, the part of your chart connected to joy, creativity, romance, play, children and self-expression. This house asks what makes your heart light up. Intentions set here are allowed to be fun. Begin a creative project, plan something that brings you pleasure, or make room for the part of you that wants to be seen and celebrated.",
+   prompts=["When was the last time I did something only because it made me happy?","What creative idea keeps returning to me, asking to be started?"],
+   try_this="Schedule one hour this week for pure play or creating, with no goal attached, and keep the appointment like you would for anyone else."),
+ 6: dict(text="This New Moon lands in your 6th house, the part of your chart that rules health, daily routines, work habits, service and the body's needs. This is where big dreams become ordinary Tuesdays. Intentions planted here are practical. A morning routine. A new way to organize your work. A promise to listen to your body sooner instead of later.",
+   prompts=["Which daily habit would make the biggest difference in how I feel?","Where am I serving everyone else's needs before my own?"],
+   try_this="Choose one routine to begin today and track it on the calendar page of this planner each day until the Full Moon."),
+ 7: dict(text="This New Moon lands in your 7th house, the part of your chart that holds partnership, marriage, close friendships, business partners and anyone you meet one-on-one. Seeds planted here grow through other people. Set intentions around the kind of relationships you want, how you want to give and receive, and what a healthy partnership feels like for you.",
+   prompts=["What do I want more of in my closest relationships?","Where do I give too much, or not enough, in partnership?"],
+   try_this="Tell one important person in your life something you appreciate about them, in words or in writing, before the Full Moon."),
+ 8: dict(text="This New Moon lands in your 8th house, the part of your chart connected to shared money, debt, inheritance, intimacy, trust and deep transformation. This is not a light house. Intentions planted here ask for honesty. It is a powerful time to begin paying something down, rebuild trust, or start healing something you usually keep hidden.",
+   prompts=["What am I ready to let transform instead of trying to control?","Where in my finances or relationships do I need more honesty?"],
+   try_this="Write down one thing you have been afraid to look at, then take one small action toward it, such as opening the statement or booking the appointment."),
+ 9: dict(text="This New Moon lands in your 9th house, the part of your chart that rules travel, higher education, publishing, belief, faith and the search for meaning. Seeds planted here widen your world. It is a lovely time to plan a trip, start a study, share your knowledge, or question a belief that has been making your life smaller than it needs to be.",
+   prompts=["What belief about myself is ready to grow?","Where do I want to go, physically or in my learning, this year?"],
+   try_this="Spend time with a teaching outside your usual world this week: a book, a lecture, a new place, and write down one idea it opened in you."),
+ 10: dict(text="This New Moon lands in your 10th house, the highest point of your chart, connected to career, reputation, ambition and the legacy you build in public. Seeds planted here are about what you want to be known for. Set intentions around your work, your visibility and the next step on your path, even if that step still feels a little bigger than you.",
+   prompts=["What do I want to be known for a year from now?","What is one bold professional step I have been waiting to take?"],
+   try_this="Write down one career goal for this cycle and share it with someone who will cheer you on."),
+ 11: dict(text="This New Moon lands in your 11th house, the part of your chart connected to friendship, community, networks, causes you care about and your hopes for the future. Seeds planted here grow through your circle. This is a good time to dream bigger, find your people, and set intentions that reach beyond your own life into the lives of others.",
+   prompts=["Who are the people who help me grow, and how can I spend more time with them?","What is a dream for my future that I rarely say out loud?"],
+   try_this="Reach out to one friend or join one group that shares a hope or interest with you before the Full Moon."),
+ 12: dict(text="This New Moon lands in your 12th house, the most hidden part of your chart. It holds rest, dreams, solitude, endings, spirituality and what lives below the surface. Intentions planted here are quiet and inward. This is a time to rest more than you push, to listen to your dreams, and to make peace with something before a new chapter begins.",
+   prompts=["What do I need to rest from right now?","What is my intuition telling me that I have been too busy to hear?"],
+   try_this="Keep a notebook by your bed and write down any dream or first thought you wake with each morning until the Full Moon."),
+}
+
+FULL = {
+ 1: dict(text="This Full Moon lights up your 1st house, shining directly on you: your body, your identity and how you show up in the world. Emotions may run close to the surface, and you may see clearly how much of yourself you have been shaping around other people's needs. This is a time to release an old image of who you have to be.",
+   prompts=["What version of myself am I outgrowing?","Where have I been shrinking to keep the peace?"],
+   try_this="Write the old story about yourself on a piece of paper, read it once out loud, then tear it up or safely burn it."),
+ 2: dict(text="This Full Moon lights up your 2nd house of money, possessions, values and self-worth. What you have been building financially, or avoiding, may become very visible. This is a strong time to release spending patterns that do not serve you, let go of belongings you no longer need, and set down the belief that your worth is something you have to earn.",
+   prompts=["What money pattern am I ready to release?","What do I own that no longer reflects who I am?"],
+   try_this="Donate, sell or let go of three things you no longer use, and notice how it feels to make space."),
+ 3: dict(text="This Full Moon lights up your 3rd house of words, thinking, learning and everyday connections. A conversation, message or piece of news may bring something to a head. This is a time to release mental clutter, unfinished thoughts and the inner critic voice that talks to you in a way you would never talk to a friend.",
+   prompts=["What thought keeps looping in my mind, and is it actually true?","What do I need to say, or stop saying, to feel lighter?"],
+   try_this="Do a brain dump: write every worry, task and thought on paper until nothing is left, then circle only the three that truly matter."),
+ 4: dict(text="This Full Moon lights up your 4th house of home, family, ancestry and your inner foundation. Family feelings may rise, or something at home may reach a turning point. This is a time to release old family roles, the emotional weight you carry for others, and anything in your living space that keeps you tied to the past.",
+   prompts=["Which role did I take on in my family that I no longer want to play?","What feeling from my childhood is asking to be acknowledged and set down?"],
+   try_this="Open the windows, clear one space in your home and imagine stale energy leaving with the air."),
+ 5: dict(text="This Full Moon lights up your 5th house of joy, creativity, romance and self-expression. Something you have been creating, or a situation in love, may reach a peak. This is a time to release the fear of being seen, perfectionism around your creative work, and any belief that joy has to be earned before you can have it.",
+   prompts=["Where is perfectionism keeping me from sharing what I create?","What would I do differently if I were not afraid of how it looks?"],
+   try_this="Share one thing you made, finished or not, with someone you trust."),
+ 6: dict(text="This Full Moon lights up your 6th house of health, routines, daily work and service. Your body and your schedule may be speaking loudly. This is a time to release habits that drain you, tasks that are not yours to carry, and the guilt that comes up when you take care of yourself first.",
+   prompts=["Which habit is costing me more energy than it gives?","What am I doing out of obligation that I can hand back or stop?"],
+   try_this="Cross one task off your list permanently by delegating it, automating it or deciding it no longer needs doing."),
+ 7: dict(text="This Full Moon lights up your 7th house of partnership and one-on-one relationships. Something between you and another person may come into full view. This is a time to release imbalanced dynamics, resentment you have been holding quietly, and the habit of losing yourself in what someone else needs.",
+   prompts=["What relationship pattern keeps repeating, and what is it teaching me?","What resentment am I ready to release for my own peace?"],
+   try_this="Write a letter to someone you need to release, saying everything you need to say. You do not need to send it."),
+ 8: dict(text="This Full Moon lights up your 8th house of shared resources, intimacy, trust and deep change. Hidden feelings, money matters or power dynamics may surface. This is a time to release control, old grief, shame and anything you have been carrying alone that was never meant to be carried in silence.",
+   prompts=["What am I holding onto out of fear?","What would it feel like to trust again, starting with myself?"],
+   try_this="Take a long bath or shower and picture what you are releasing washing away with the water."),
+ 9: dict(text="This Full Moon lights up your 9th house of beliefs, travel, learning and meaning. A truth may land, or a belief you have held for a long time may stop feeling true. This is a time to release rigid thinking, borrowed beliefs and the need to have every answer before you are allowed to move forward.",
+   prompts=["Which belief did I inherit that I no longer agree with?","What am I waiting to be certain about before I move?"],
+   try_this="Write down one belief you are ready to release and one new belief you would like to try on instead."),
+ 10: dict(text="This Full Moon lights up your 10th house of career, reputation and your public path. Something at work may peak or come to light, and you may be recognized for something you have worked hard on. This is a time to release goals that belonged to someone else, the need for outside approval, and roles that no longer fit where you are going.",
+   prompts=["Whose definition of success have I been living by?","What professional role or goal am I ready to retire?"],
+   try_this="Make a list of what you have accomplished this year and read it slowly. Let yourself be proud before you plan the next thing."),
+ 11: dict(text="This Full Moon lights up your 11th house of friendships, community and future dreams. You may notice which people truly support you and which connections have run their course. This is a time to release friendships built on obligation, groups that dim your light, and dreams you have outgrown.",
+   prompts=["Which connections leave me feeling drained instead of supported?","Which old dream am I ready to release so a truer one can grow?"],
+   try_this="Unfollow, mute or step back from one space, online or off, that leaves you feeling less than."),
+ 12: dict(text="This Full Moon lights up your 12th house, the hidden part of your chart. Old feelings, dreams and memories may surface in unexpected ways. This is a deeply spiritual time to release what you have kept even from yourself, along with self-sabotage, exhaustion and anything that has been working against you in the background.",
+   prompts=["What have I been hiding, even from myself?","Where am I standing in my own way?"],
+   try_this="Spend ten minutes in silence tonight, then write down whatever comes, without editing it."),
+}
+
+SIGN = {
+ "Aries":dict(text="The Moon is in Aries, which brings courage, momentum and the urge to begin. In its lower octave this energy can look like impatience, anger or rushing ahead without a plan. In its higher octave it becomes brave, honest action taken for the right reasons.",
+   new="What would I start today if I trusted my own courage?", full="Where has my impatience been costing me?"),
+ "Taurus":dict(text="The Moon is in Taurus, which brings steadiness, comfort, beauty and patience. In its lower octave this energy can look like stubbornness or holding on too tightly to what feels safe. In its higher octave it becomes deep trust that good things grow slowly and stay.",
+   new="What would I build if I gave it time to grow slowly?", full="What am I holding onto only because it feels familiar?"),
+ "Gemini":dict(text="The Moon is in Gemini, which brings curiosity, conversation and quick thinking. In its lower octave this energy can look like scattered focus, overthinking or gossip. In its higher octave it becomes clear communication and a mind that is open to learning.",
+   new="What am I curious enough about to follow?", full="Which conversation have I been having in my head instead of out loud?"),
+ "Cancer":dict(text="The Moon is in Cancer, its own home sign, which brings feeling, nurturing, memory and care. In its lower octave this energy can look like moodiness, worry or caring for everyone but yourself. In its higher octave it becomes emotional strength and a home inside yourself that no one can take away.",
+   new="How would I care for myself if I were my own child?", full="Whose feelings have I been carrying as if they were mine?"),
+ "Leo":dict(text="The Moon is in Leo, which brings warmth, confidence, creativity and heart. In its lower octave this energy can look like needing approval or feeling invisible when no one is watching. In its higher octave it becomes generous self-expression that lights up the people around you.",
+   new="Where do I want to let myself shine more brightly?", full="Where have I been waiting for applause before I believe in myself?"),
+ "Virgo":dict(text="The Moon is in Virgo, which brings care, skill, discernment and the wish to make things better. In its lower octave this energy can look like criticism, worry or never feeling good enough. In its higher octave it becomes devoted service and the wisdom to know what truly needs fixing.",
+   new="What small improvement would make my days feel easier?", full="Where am I being harder on myself than I would be on anyone else?"),
+ "Libra":dict(text="The Moon is in Libra, which brings harmony, beauty, fairness and relationship. In its lower octave this energy can look like people pleasing or avoiding conflict until it builds. In its higher octave it becomes true balance, where your needs count as much as anyone else's.",
+   new="What would balance look like in my life right now?", full="Where have I said yes when I meant no?"),
+ "Scorpio":dict(text="The Moon is in Scorpio, which brings depth, intensity, loyalty and transformation. In its lower octave this energy can look like jealousy, control or holding a grudge. In its higher octave it becomes the courage to face the truth and come out the other side renewed.",
+   new="What truth am I ready to face so I can transform?", full="What am I still trying to control that I need to surrender?"),
+ "Sagittarius":dict(text="The Moon is in Sagittarius, which brings optimism, adventure, faith and the search for meaning. In its lower octave this energy can look like restlessness, overpromising or running from what is hard. In its higher octave it becomes wisdom earned through experience and a hopeful view that carries you forward.",
+   new="What adventure, big or small, is calling me?", full="Where have I been running instead of facing what is in front of me?"),
+ "Capricorn":dict(text="The Moon is in Capricorn, which brings structure, responsibility, ambition and endurance. In its lower octave this energy can look like coldness, overworking or believing you have to do it all alone. In its higher octave it becomes steady, patient mastery and a legacy built with integrity.",
+   new="What long-term goal am I willing to commit to step by step?", full="Where am I carrying responsibilities that were never mine?"),
+ "Aquarius":dict(text="The Moon is in Aquarius, which brings originality, freedom, vision and community. In its lower octave this energy can look like detachment or rebelling just to prove a point. In its higher octave it becomes the freedom to be fully yourself while still belonging.",
+   new="What part of me is ready to be more fully myself?", full="Where am I keeping my distance to avoid being hurt?"),
+ "Pisces":dict(text="The Moon is in Pisces, which brings compassion, imagination, intuition and spiritual connection. In its lower octave this energy can look like escapism, blurred boundaries or losing yourself in other people's pain. In its higher octave it becomes deep faith, creativity and compassion that includes yourself.",
+   new="What is my intuition asking me to trust?", full="Where have my boundaries become so soft that I lose myself?"),
+}
+
+# natal point the lunation lands on (within 3 degrees)
+CONTACT = {
+ "Sun":"This lunation lands on your natal Sun, the core of who you are. Whatever this moon touches feels personal and important, and it can bring a turning point in your confidence, health or sense of direction.",
+ "Moon":"This lunation lands on your natal Moon, your emotional center. Feelings may be stronger than usual, and you may need extra comfort, rest and time at home. Be gentle with yourself.",
+ "Mercury":"This lunation lands on your natal Mercury, the planet of your mind and voice. Pay attention to conversations, messages and ideas that arrive now. Something you say or hear may change your thinking.",
+ "Venus":"This lunation lands on your natal Venus, the planet of love, beauty, pleasure and what you value. Relationships and finances may come into focus, and you may see more clearly what you truly want to receive.",
+ "Mars":"This lunation lands on your natal Mars, your drive and your fire. Energy, frustration or motivation may rise. Use it with intention. Move your body and take action instead of letting it turn into conflict.",
+ "Jupiter":"This lunation lands on your natal Jupiter, the planet of growth, luck and faith. This can be an expansive moon for you, where opportunities or insight arrive. Just watch for the shadow of Jupiter, which is overdoing it.",
+ "Saturn":"This lunation lands on your natal Saturn, the planet of lessons, time and responsibility. You may feel the weight of something you have been building, or see where a boundary is needed. What you learn now is meant to last.",
+ "Uranus":"This lunation lands on your natal Uranus, the planet of change and awakening. Expect the unexpected. A sudden insight or shift may point you toward more freedom.",
+ "Neptune":"This lunation lands on your natal Neptune, the planet of dreams, intuition and spirit. Your sensitivity is heightened. Trust your inner knowing, protect your energy, and give extra attention to dreams and synchronicities.",
+ "Pluto":"This lunation lands on your natal Pluto, the planet of power and rebirth. Something deep may be stirring. This is a potent moment to reclaim your power and let something old end so something stronger can begin.",
+ "North Node":"This lunation lands on your natal North Node, the direction your soul is growing toward. Pay attention to people and opportunities that appear now. They may be pointing you toward your path.",
+ "Ascendant":"This lunation lands on your Ascendant, the doorway of your chart. This is a very personal moon that can bring a new beginning in how you see yourself and how others see you.",
+ "Midheaven":"This lunation lands on your Midheaven, the highest point of your chart. Career, visibility and your public direction are highlighted. You may reach a milestone or see your next professional step clearly.",
+ "Descendant":"This lunation lands on your Descendant, the doorway to partnership. Important relationships, new or existing, are highlighted, and someone may enter or shift in your life.",
+ "IC":"This lunation lands on your IC, the very root of your chart. Home, family and your private life are highlighted. Something may begin or end at home, or a family matter may come to the surface.",
+}
+
+ECLIPSE_SOLAR = "This New Moon is also a solar eclipse. Eclipses act like supercharged New Moons, but they often bring beginnings through events outside your control rather than through careful planning. Instead of pushing hard to manifest today, observe what arrives and what doors open in the weeks that follow. Eclipse energy is felt around the eclipse, not only on the day itself."
+ECLIPSE_LUNAR = "This Full Moon is also a lunar eclipse. Lunar eclipses act like intensified Full Moons, bringing endings, revelations and release that can feel more sudden than usual. Be gentle with yourself. What leaves your life now is often making room for what your soul has been asking for."
+PENUMBRAL = " This is a penumbral eclipse, which means the Moon only passes through Earth's outer shadow, so the effect is often subtle and felt emotionally more than through big outer events."
+
+# (name, elongation start, end, text)
+PHASES = [
+ ("New Moon", "Plant", "The sky is dark and the cycle begins again. This is the time to get quiet, decide what you want to grow, and set one or two clear intentions. Seeds are planted in the dark."),
+ ("Waxing Crescent", "Commit", "A thin sliver of light returns. Your intention needs its first small steps now. Gather what you need, say yes to the first action, and protect your new idea from doubt while it is still fragile."),
+ ("First Quarter", "Act", "Half the Moon is lit and the pressure builds. This is a decision point, when obstacles show up to test how much you want what you planted. Push through, adjust and keep going."),
+ ("Waxing Gibbous", "Refine", "The Moon is almost full. Things are growing, but they are not finished yet. Fine-tune, stay patient and trust the process instead of starting over."),
+ ("Full Moon", "Release", "The light reaches its peak. What you planted becomes visible, feelings run high and truths come to the surface. Celebrate what has grown and release what is ready to go."),
+ ("Waning Gibbous", "Share", "The light begins to soften. This is a time for gratitude, teaching and sharing what you learned. What you have gained this cycle is meant to be given back in some way."),
+ ("Last Quarter", "Let Go", "Half the Moon is lit again, but now the light is leaving. This is a turning point for forgiveness, clearing and closing what is complete. Make room."),
+ ("Waning Crescent", "Rest", "The final sliver before the dark. Also called the balsamic moon, this is a sacred time to rest, reflect, dream and surrender. Do less. The next cycle is already forming in the quiet."),
+]
+
+QUARTER_PROMPT = {
+ "First Quarter": "What is getting in the way of my New Moon intention, and what will I do about it?",
+ "Last Quarter": "What am I ready to forgive, finish or clear before the next New Moon?",
+}
+
+APP_PRINT = [
+ "Open your planner PDF on a computer.",
+ "Print it on US Letter paper at 100% or actual size, so nothing gets cut off. Double-sided printing keeps each moon's reading page and writing page together.",
+ "Use a three-hole punch and a binder, or take it to a local print shop and ask for spiral or coil binding so it lies flat while you write.",
+]
+APP_IPAD = [
+ "Download GoodNotes from the App Store on your iPad. Notability and Noteshelf work the same way if you already have one of them.",
+ "Open the email with your planner and tap the PDF or the download link, then tap the Share icon and choose Save to Files.",
+ "Open GoodNotes, tap New, then Import, and choose your planner from Files. It opens as its own notebook.",
+ "Write right on the pages with your Apple Pencil or your finger. Use the highlighter, add stickers, or type with the text tool.",
+ "Tap any moon on your Year at a Glance page or your monthly calendars to jump straight to that moon's pages, and tap Back to Calendar at the bottom of a page to return. If tapping a link draws on the page instead, switch to Read Only mode, tap the link, then switch back.",
+ "Need more writing space? Press and hold a page thumbnail in GoodNotes and choose Duplicate to add a fresh copy of that page.",
+]
+APP_OTHER = [
+ "Android tablets work well with Samsung Notes, Xodo or Noteshelf. Save the PDF to your device, open it in the app, and write with your stylus or finger.",
+ "On a computer, open your planner in the free Adobe Acrobat Reader and use the Comment or Fill and Sign tools to type your notes.",
+ "Keep your original download saved somewhere safe, such as your email or cloud storage, so you can always print or import a clean copy.",
+]
+
+ECL_SOLAR_HOUSE = {
+ 1: dict(text="A solar eclipse in your 1st house opens a new chapter in who you are. Your body, your appearance, your confidence and the way you introduce yourself to the world are being reset. You may feel a strong pull to reinvent yourself, or life may hand you a role you did not plan for.", work="Let your image change if it wants to. Say yes to the version of you that is trying to come forward, even if it feels unfamiliar at first."),
+ 2: dict(text="A solar eclipse in your 2nd house opens a new chapter in your money, your income and your sense of worth. A new source of income, a change in how you earn, or a shift in what you value can arrive. This eclipse also asks you to look at what you believe you are worth.", work="Watch for new income doors in the months ahead, and avoid big impulsive purchases right around the eclipse. Build slowly and on purpose."),
+ 3: dict(text="A solar eclipse in your 3rd house opens a new chapter in how you think, speak, write and learn. New ideas, classes, conversations, a new neighborhood, a vehicle or changes with siblings can arrive. Your voice is being asked to grow.", work="Start the course, the journal, or the conversation. Double-check plans, travel and paperwork near the eclipse itself."),
+ 4: dict(text="A solar eclipse in your 4th house opens a new chapter at home and with family. A move, a renovation, a change in who lives with you, or a new understanding of your roots can begin. Deep down, your foundation is being rebuilt.", work="Make your home feel like a place you can rest. Pay attention to family stories that surface, since they often carry the healing this eclipse is pointing to."),
+ 5: dict(text="A solar eclipse in your 5th house opens a new chapter in joy, creativity, romance and children. A new love, a creative project, a pregnancy or a child's milestone, or a fresh way of having fun can arrive. Your heart is asking to be seen.", work="Begin the creative project and let it be imperfect. Make room for pleasure without waiting until everything else is done."),
+ 6: dict(text="A solar eclipse in your 6th house opens a new chapter in your health, your daily routines and your work. A new job, a change in duties, or a new way of caring for your body can begin. Your everyday life is being reorganized.", work="Listen to your body early instead of waiting for it to shout. Build one new routine that supports the life you want."),
+ 7: dict(text="A solar eclipse in your 7th house opens a new chapter in your relationships and partnerships. A new partner, a commitment, a business partnership, or a big shift in an existing relationship can arrive. You are learning what true partnership means to you.", work="Notice who enters your life in the months around this eclipse. Be honest about what you need, and let relationships grow or shift as they need to."),
+ 8: dict(text="A solar eclipse in your 8th house opens a new chapter in shared money, intimacy, trust and deep transformation. Changes with debt, taxes, inheritance, a partner's income, or a deep emotional rebirth can begin. Something hidden is ready to come into the light.", work="Get honest with your finances and your fears. Let go of control where you can, and seek support for anything you have been carrying alone."),
+ 9: dict(text="A solar eclipse in your 9th house opens a new chapter in your beliefs, travel, education and the way you see the world. A trip, a move abroad, school, publishing, a legal matter, or a spiritual awakening can begin. Your world is getting bigger.", work="Say yes to learning and travel that widen your view. Let old beliefs that make your life smaller fall away."),
+ 10: dict(text="A solar eclipse in your 10th house opens a new chapter in your career, reputation and public path. A new role, a promotion, a career change, or more visibility can arrive, sometimes suddenly. You are being asked to step into a bigger version of your calling.", work="Get clear on what you want to be known for. Be ready for doors to open, and do not be afraid to walk through them."),
+ 11: dict(text="A solar eclipse in your 11th house opens a new chapter in friendships, community and your hopes for the future. New friends, a group, a cause, or a dream you had forgotten about can come into your life. Your circle is changing.", work="Show up where your people are. Let friendships that no longer fit fade gently, and make room for the ones that match who you are becoming."),
+ 12: dict(text="A solar eclipse in your 12th house opens a new chapter in your inner world. Rest, healing, spirituality, dreams and endings are highlighted. Much of what begins here begins out of sight, and you may feel tired or withdrawn before the new chapter shows itself.", work="Rest more than you think you need to. Journal your dreams, spend time alone, and trust that what is growing in private will show itself in time."),
+}
+ECL_LUNAR_HOUSE = {
+ 1: dict(text="A lunar eclipse in your 1st house brings something about you to a turning point. An old way of showing up, a health matter, or a self-image you have outgrown may come to an end. You may see yourself clearly, maybe for the first time in a long time.", work="Let go of who you were expected to be. Take care of your body and give yourself grace while you shed the old skin."),
+ 2: dict(text="A lunar eclipse in your 2nd house brings money and self-worth to a turning point. A source of income may end, an expense may surface, or you may realize you have been undervaluing yourself. Something about security is being revealed.", work="Look honestly at your money without shame. Release possessions, spending habits or beliefs about worth that keep you small."),
+ 3: dict(text="A lunar eclipse in your 3rd house brings communication, learning or a relationship with a sibling or neighbor to a turning point. News may arrive, a truth may be spoken, or a way of thinking may finally run its course.", work="Say what needs to be said with kindness. Finish what you started learning, and let go of thought patterns that keep you anxious."),
+ 4: dict(text="A lunar eclipse in your 4th house brings home and family to a turning point. A move, a change in your household, or an emotional family matter may come to a head. Something from your past is asking to be acknowledged and laid to rest.", work="Feel what comes up instead of pushing it down. Clear your space and release family roles that no longer belong to you."),
+ 5: dict(text="A lunar eclipse in your 5th house brings romance, creativity or something involving children to a turning point. A creative project may finish, a romance may peak or end, or you may see how much joy you have been denying yourself.", work="Celebrate what you have created. Release perfectionism and any love story that keeps you waiting instead of living."),
+ 6: dict(text="A lunar eclipse in your 6th house brings your health, your job or your daily routines to a turning point. A job may end or change, a health matter may need your attention, or you may realize a routine is wearing you down.", work="Take your body's messages seriously and get checked if something feels off. Release the work and habits that drain more than they give."),
+ 7: dict(text="A lunar eclipse in your 7th house brings a relationship to a turning point. A partnership may deepen, end or be redefined. Truths between you and another person come to the surface so the relationship can become more honest.", work="Be honest about what is and is not working. Release resentment and roles that keep you out of balance, whether you stay or go."),
+ 8: dict(text="A lunar eclipse in your 8th house brings shared money, intimacy and deep feelings to a turning point. A debt may be paid off or revealed, an inheritance or partner's finances may shift, or an old emotional wound may surface to finally heal.", work="Face what has been hidden. Release control, old grief and any power struggle that keeps you stuck."),
+ 9: dict(text="A lunar eclipse in your 9th house brings a belief, a journey or a course of study to a turning point. Education may finish, a trip may change plans, a legal matter may resolve, or a belief you held for years may stop feeling true.", work="Let your truth evolve. Finish what you are studying and release beliefs you took on from others without ever choosing them."),
+ 10: dict(text="A lunar eclipse in your 10th house brings your career and public life to a turning point. A job or role may end, a big project may culminate, or you may be recognized for the work you have done. Something about your direction becomes clear.", work="Honor what you have built. Release goals that belonged to someone else, and let your path change if it needs to."),
+ 11: dict(text="A lunar eclipse in your 11th house brings friendships, groups and future goals to a turning point. A friendship may end or deepen, you may leave a group, or a long-held hope may finally be fulfilled or released.", work="Notice who truly shows up for you. Release connections and dreams that no longer match who you are now."),
+ 12: dict(text="A lunar eclipse in your 12th house brings what is hidden to the surface. Old fears, secrets, patterns of self-sabotage or deep exhaustion may come to light so they can be healed. This is a powerful time to close an old chapter quietly.", work="Rest and be gentle with yourself. Let what surfaces be seen without judging it, and seek support if you need it."),
+}
+ECL_POINT = {
+ "Sun":"your Sun, the core of who you are. This can mark a major turning point in your identity, your direction and your vitality.",
+ "Moon":"your Moon, your emotional center. Feelings, family and home life may go through a deep shift, and you may need more rest and comfort than usual.",
+ "Mercury":"your Mercury, your mind and your voice. Important news, decisions, contracts or changes in how you think and communicate may come through.",
+ "Venus":"your Venus, the planet of love, money and what you value. Relationships and finances may reach a turning point, and you may see clearly what you truly want to receive.",
+ "Mars":"your Mars, your drive and your courage. Energy and motivation can surge, and you may feel pushed to act or stand up for yourself.",
+ "Jupiter":"your Jupiter, the planet of growth and faith. Opportunities can arrive or expand quickly. Just watch for overdoing it.",
+ "Saturn":"your Saturn, the planet of lessons and responsibility. Commitments and structures in your life may be tested, finished or rebuilt to last.",
+ "Uranus":"your Uranus, the planet of change and freedom. Sudden shifts and awakenings are likely, often pointing you toward more freedom.",
+ "Neptune":"your Neptune, the planet of dreams and spirit. Intuition, creativity and spiritual life are heightened. Protect your energy and stay grounded.",
+ "Pluto":"your Pluto, the planet of power and rebirth. Something deep is being transformed so you can reclaim your power.",
+ "North Node":"your Nodes, the axis of your soul's path. Eclipses on your Nodes are often fated, steering you toward your purpose.",
+ "Ascendant":"your Ascendant and Descendant, the axis of self and partnership. Big changes in how you show up and in your close relationships are likely.",
+ "Midheaven":"your Midheaven and IC, the axis of career and home. Your public path and private foundation are both shifting.",
+ "Descendant":"your Descendant and Ascendant, the axis of partnership and self. Important relationships and how you show up in them are changing.",
+ "IC":"your IC and Midheaven, the axis of home and career. Your private foundation and your public path are both shifting.",
+}
