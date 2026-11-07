@@ -226,6 +226,7 @@ def planner():
     """Personalized twelve-month planner PDF. Same body as /v1/chart plus "product" ("moon", "money" or
     "transits"), "name", "start_year" and "start_month" (the first month of the twelve), and
     "current_place_id" (the buyer's current city, used for the time zone of every date and time).
+    With "with_calendar": true the response also carries the planner's dates as an .ics calendar file.
     A birth time is required because every planner reads the houses. Placidus and the True Node
     are always used."""
     from sr11calc import planners
@@ -268,13 +269,18 @@ def planner():
             return jsonify(chart_out), http
         tz_name = (cur or req["place"])["tz"] or "UTC"
         city = (cur or req["place"]).get("label", "")
-        pdf, filename = planners.build(product, chart_out, req["date"], tz_name, city, sy, sm, name)
+        built = planners.build(product, chart_out, req["date"], tz_name, city, sy, sm, name,
+                               with_calendar=body.get("with_calendar") is True)
     except Exception:  # never leak internals or input into logs/responses
         app.logger.error("planner failed (input withheld)")
         return _error("calculation_failed", "Your planner could not be created. Please try again.", 500)
     import base64
-    return jsonify({"status": "ok", "product": product, "pdf_base64": base64.b64encode(pdf).decode("ascii"),
-                    "filename": filename})
+    out = {"status": "ok", "product": product, "pdf_base64": base64.b64encode(built["pdf"]).decode("ascii"),
+           "filename": built["filename"]}
+    if "ics" in built:
+        out["ics_base64"] = base64.b64encode(built["ics"]).decode("ascii")
+        out["ics_filename"] = built["ics_filename"]
+    return jsonify(out)
 
 
 if __name__ == "__main__":  # local development only
