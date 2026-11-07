@@ -1,4 +1,4 @@
-import io, json, os, sys, math, calendar
+import copy, io, json, os, sys, math, calendar
 from datetime import datetime, date, timedelta
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -9,6 +9,7 @@ from reportlab.platypus import Paragraph
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.fonts import addMapping
 from .money_content import *
+from . import nav
 from .moon_content import APP_PRINT, APP_IPAD, APP_OTHER
 
 F = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts") + os.sep
@@ -28,10 +29,13 @@ item = ParagraphStyle("i", parent=body, fontSize=9.6, leading=13.4)
 
 
 
-def render(D, NAME, TZLABEL):
-    """Draw the planner and return the PDF bytes."""
+def render(D, NAME, TZLABEL, _pm=None):
+    """Draw the planner and return the PDF bytes. Drawn twice: the first pass finds the page
+    numbers for the Contents page, the second pass draws them."""
+    D_original = D; D = copy.deepcopy(D); pm = {}
     START_D = date.fromisoformat(D["start"]); END_D = date.fromisoformat(D["end"])
     START = START_D.strftime("%B %Y"); END = END_D.strftime("%B %Y")
+    NAV_MONTHS = nav.months_from(START_D); KEYF = lambda y, m: f"m{y}{m:02d}"
     EV = D["events"]; LUN = D["lunations"]; DAYS = {d["date"]: d for d in D["days"]}
     for e in EV + LUN: e["dtobj"] = datetime.fromisoformat(e["dt"])
     BP = D["blueprint"]
@@ -55,7 +59,8 @@ def render(D, NAME, TZLABEL):
     def newpage(bm=None):
         if state["page"]: c.showPage()
         state["page"] += 1; frame(state["page"] if state["page"] > 1 else None)
-        if bm: c.bookmarkPage(bm)
+        if state["links"]: nav.draw_tabs(c, link, NAV_MONTHS, KEYF, state["month"], M, W, H)
+        if bm: c.bookmarkPage(bm); pm[bm] = state["page"]
     def para(t, st, x, y, w=CW):
         p = Paragraph(t, st); _, h = p.wrap(w, 2000); p.drawOn(c, x, y-h); return y-h
     def heading(t, y, size=28): c.setFont("Serif", size); c.setFillColor(DEEP); c.drawString(M, y, t)
@@ -136,8 +141,19 @@ def render(D, NAME, TZLABEL):
     c.drawCentredString(W/2, H-527, f"Prepared for {NAME}"); c.drawCentredString(W/2, H-547, f"{START} to {END}")
     c.setFont("Sans", 9); c.setFillColor(MUTED); c.drawCentredString(W/2, 70, "sagereality11.com")
 
+    # ---------- CONTENTS ----------
+
+    NAV_BEFORE = [("Welcome", "welcome"), ("Using Your Planner", "using"), ("Your Money Blueprint", "blueprint"), ("Your Money Year", "moneyyear"), ("Green and Caution Days", "guide"), ("Your Money Year at a Glance", "glance")]
+
+    NAV_AFTER = [("Looking Back on Your Money Year", "lookback"), ("Continue Your Journey", "journey")]
+
+    newpage("contents")
+
+    nav.contents_page(c, link, NAV_BEFORE, NAV_AFTER, NAV_MONTHS, KEYF, _pm or {}, M, W, H)
+
+
     # ---------- WELCOME ----------
-    newpage()
+    newpage("welcome")
     eyebrow("A letter before you begin", H-80); heading("Welcome to Your Money Planner", H-112)
     y = H-140
     for t in [f"Hey {NAME},"] + WELCOME + [f"Your planner runs from {START} through {END}, and every date and time is shown for the location you entered."]:
@@ -145,7 +161,7 @@ def render(D, NAME, TZLABEL):
     c.setFont("SerifM", 17); c.setFillColor(DEEP); c.drawString(M, y-14, "With Love & Light,"); c.drawString(M, y-36, "Tiff")
 
     # ---------- USING ----------
-    newpage()
+    newpage("using")
     eyebrow("Print it or go digital", H-80); heading("Using Your Planner", H-112)
     y = para("Your planner is a PDF, so you can print it and write by hand, or use it on a tablet with a digital pen. It also has clickable links: tap a month on your Year at a Glance page to jump straight to it.", body, M, H-130) - 18
     sub("To print your planner", y-4, 19); y = numbered(APP_PRINT[:1] + ["Print it on US Letter paper at 100% or actual size, so nothing gets cut off."] + APP_PRINT[2:], y-16) - 16
@@ -156,7 +172,7 @@ def render(D, NAME, TZLABEL):
     sub("Other tablets and computers", y-4, 19); numbered(APP_OTHER, y-16)
 
     # ---------- BLUEPRINT ----------
-    newpage()
+    newpage("blueprint")
     eyebrow("Where your wealth lives in your chart", H-80); heading("Your Money Blueprint", H-112)
     y = para("These are the core money placements in your birth chart. Every transit in this planner is read against them, so this page is your foundation.", body, M, H-130) - 14
     s2 = BP["second"]; mc = BP["mc"]
@@ -174,7 +190,7 @@ def render(D, NAME, TZLABEL):
     c.linkURL("https://sagereality11.com/shop/wealth-story-reading/", (M, y, W-M, y0), relative=0)
 
     # ---------- MONEY YEAR ----------
-    newpage()
+    newpage("moneyyear")
     eyebrow("The theme of your money year", H-80); heading("Your Money Year", H-112)
     y = para("In traditional astrology, each year of your life activates a different house of your chart, beginning at your birthday. This is called an annual profection. The ruler of that house becomes your Lord of the Year, the planet whose transits matter most for you this year.", body, M, H-130) - 14
     for pr in D["prof"]:
@@ -186,7 +202,7 @@ def render(D, NAME, TZLABEL):
         y = para(f"Your Lord of the Year is {pr['lord']}, which sits in {pr['lord_sign']} in your {ORD[pr['lord_house']]} house natally. That connects this year's money story to " + MONEY_HOUSE[pr["lord_house"]] + f" Pay extra attention to the months when {pr['lord']} is active in your monthly pages.", body, M, y) - 22
 
     # ---------- DAY GUIDE ----------
-    newpage()
+    newpage("guide")
     eyebrow("How to read your calendar", H-80); heading("Green and Caution Days", H-112)
     y = para("Each month begins with a calendar marking the days that support money moves and the days to slow down. These are guides, not rules. Life does not always wait for a green day, and that is okay.", body, M, H-130) - 16
     for (t, d), (f, tc) in zip(DAY_GUIDE, [(GREEN, GREENT), (ROSE, ROSET), (SOFT, MUTED), (SOFT, PURPLE)]):
@@ -336,13 +352,13 @@ def render(D, NAME, TZLABEL):
     state["month"] = None
 
     # ---------- CLOSING ----------
-    newpage()
+    newpage("lookback")
     eyebrow("As your twelve months close", H-80); heading("Looking Back on Your Money Year", H-112)
     prs = ["What was my biggest money win this year?", "What money pattern did I break or begin to heal?", "What do I want my money story to be next year?"]
     top = H-140; seg = (top-64)/3
     for i, pr in enumerate(prs):
         yy = top - i*seg; c.setFont("SerifM", 15); c.setFillColor(PURPLE); c.drawString(M, yy-15, pr); lines(yy-42, yy-seg+14)
-    newpage()
+    newpage("journey")
     eyebrow("Keep going", H-80); heading("Continue Your Journey", H-112)
     y = H-130
     for t, dsc, url in [
@@ -357,6 +373,9 @@ def render(D, NAME, TZLABEL):
     y = para("This planner is based on my own research, methodology and intuitive abilities. It is meant for reflection and planning, and it is not financial, investment, tax, legal or medical advice. Please talk with a licensed professional before making financial decisions. You are always the one who decides what is right for your life and your business.", small, M, y) - 8
     y = para("Because this planner is a personalized digital download, all sales are final.", small, M, y) - 20
     c.setFont("SerifM", 17); c.setFillColor(DEEP); c.drawString(M, y-8, "With Love & Light,"); c.drawString(M, y-30, "Tiff")
+    nav.outline(c, NAV_BEFORE, NAV_AFTER, NAV_MONTHS, KEYF)
     c.save()
+    if _pm is None:
+        return render(D_original, NAME, TZLABEL, _pm=pm)
     return buf.getvalue()
 

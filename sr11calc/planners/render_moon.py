@@ -1,4 +1,4 @@
-import io, json, os, sys, math, calendar
+import copy, io, json, os, sys, math, calendar
 from datetime import datetime, date, timedelta
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -10,6 +10,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.fonts import addMapping
 from .moon_content import *
+from . import nav
 
 F = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts") + os.sep
 for n, f in [("Serif","Cormorant-SemiBold"),("SerifM","Cormorant-Medium"),("Sans","Lato-Regular"),("SansB","Lato-Bold"),("SansI","Lato-Italic")]:
@@ -30,14 +31,17 @@ callout = ParagraphStyle("c", parent=body, fontSize=10, leading=14.5)
 
 
 
-def render(data, NAME, TZLABEL):
-    """Draw the planner and return the PDF bytes."""
+def render(data, NAME, TZLABEL, _pm=None):
+    """Draw the planner and return the PDF bytes. Drawn twice: the first pass finds the page
+    numbers for the Contents page, the second pass draws them."""
+    data_original = data; data = copy.deepcopy(data); pm = {}
     EV = data["events"]; QU = data["quarters"]; DAYS = {d["date"]: d for d in data["days"]}
     for e in EV + QU: e["dtobj"] = datetime.fromisoformat(e["dt"])
     for i, e in enumerate(EV): e["id"] = f"lun{i}"
 
     START_D = date.fromisoformat(data["start"]); END_D = date.fromisoformat(data["end"])
     START = START_D.strftime("%B %Y"); END = END_D.strftime("%B %Y")
+    NAV_MONTHS = nav.months_from(START_D); KEYF = lambda y, m: f"cal{y}{m:02d}"
 
     state = {"page": 0, "cal": None, "links": False}
 
@@ -64,7 +68,8 @@ def render(data, NAME, TZLABEL):
     def newpage(bookmark=None):
         if state["page"]: c.showPage()
         state["page"] += 1; frame(state["page"] if state["page"] > 1 else None)
-        if bookmark: c.bookmarkPage(bookmark)
+        if state["links"]: nav.draw_tabs(c, link, NAV_MONTHS, KEYF, state["cal"], M, W, H)
+        if bookmark: c.bookmarkPage(bookmark); pm[bookmark] = state["page"]
 
     def para(text, style, x, y, w=CW):
         p = Paragraph(text, style); _, h = p.wrap(w, 1000); p.drawOn(c, x, y-h); return y-h
@@ -153,8 +158,19 @@ def render(data, NAME, TZLABEL):
     c.drawCentredString(W/2, H-550, f"{START} to {END}")
     c.setFont("Sans", 9); c.setFillColor(MUTED); c.drawCentredString(W/2, 70, "sagereality11.com")
 
+    # ---------- CONTENTS ----------
+
+    NAV_BEFORE = [("Welcome", "welcome"), ("Using Your Planner", "using"), ("Your Moon Rhythm and Houses", "rhythm"), ("The Eight Phases of the Moon", "phases"), ("Your Year at a Glance", "glance")] + ([("Your Eclipse Seasons", "eclipses")] if any(e["eclipse"] for e in EV) else [])
+
+    NAV_AFTER = [("Looking Back on Your Year", "lookback"), ("Continue Your Journey", "journey")]
+
+    newpage("contents")
+
+    nav.contents_page(c, link, NAV_BEFORE, NAV_AFTER, NAV_MONTHS, KEYF, _pm or {}, M, W, H)
+
+
     # ---------- WELCOME ----------
-    newpage()
+    newpage("welcome")
     eyebrow("A letter before you begin", H-80)
     heading("Welcome to Your Moon Cycles Planner", H-112)
     letter_text = [
@@ -172,7 +188,7 @@ def render(data, NAME, TZLABEL):
     c.drawString(M, y-14, "With Love & Light,"); c.drawString(M, y-36, "Tiff")
 
     # ---------- USING YOUR PLANNER ----------
-    newpage()
+    newpage("using")
     eyebrow("Print it or go digital", H-80)
     heading("Using Your Planner", H-112)
     y = para("Your planner is a PDF, so you can print it and write by hand, or use it on a tablet with a digital pen. It also has clickable links: tap a moon on your Year at a Glance page or your monthly calendar to jump straight to that moon's pages.", body, M, H-130) - 18
@@ -185,7 +201,7 @@ def render(data, NAME, TZLABEL):
     y = numbered(APP_OTHER, y)
 
     # ---------- MOON RHYTHM + HOUSES ----------
-    newpage()
+    newpage("rhythm")
     eyebrow("How this planner works", H-80)
     heading("Your Moon Rhythm", H-112)
     y = para("Each month starts with a calendar showing the Moon's phase every day and which of your houses the Moon is moving through. Then each New Moon and Full Moon gets two pages. The first tells you where the moon lands in your chart and what it is asking of you. The second is yours, with prompts and space to write.", body, M, H-130) - 14
@@ -281,7 +297,7 @@ def render(data, NAME, TZLABEL):
     # ---------- ECLIPSES ----------
     ecl = [e for e in EV if e["eclipse"]]
     if ecl:
-        newpage()
+        newpage("eclipses")
         eyebrow("The bigger story of your year", H-80)
         heading("Your Eclipse Seasons", H-112)
         solar = [e for e in ecl if e["kind"]=="New Moon"]
@@ -420,7 +436,7 @@ def render(data, NAME, TZLABEL):
     state["cal"] = None
 
     # ---------- CLOSING ----------
-    newpage()
+    newpage("lookback")
     eyebrow("As your twelve months close", H-80)
     heading("Looking Back on Your Year", H-112)
     prs = ["Which intention grew more than I expected?", "What did I release that I no longer miss?", "What did the Moon teach me about my own rhythm?"]
@@ -430,7 +446,7 @@ def render(data, NAME, TZLABEL):
         c.setFillColor(PURPLE); c.setFont("SerifM", 15); c.drawString(M, yy-15, pr)
         lines(yy-42, yy-seg+14)
 
-    newpage()
+    newpage("journey")
     eyebrow("Keep going", H-80)
     heading("Continue Your Journey", H-112)
     y = H-130
@@ -448,6 +464,9 @@ def render(data, NAME, TZLABEL):
     y = para("Because this planner is a personalized digital download, all sales are final.", small, M, y) - 20
     c.setFont("SerifM", 17); c.setFillColor(DEEP); c.drawString(M, y-8, "With Love & Light,"); c.drawString(M, y-30, "Tiff")
 
+    nav.outline(c, NAV_BEFORE, NAV_AFTER, NAV_MONTHS, KEYF)
     c.save()
+    if _pm is None:
+        return render(data_original, NAME, TZLABEL, _pm=pm)
     return buf.getvalue()
 

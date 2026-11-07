@@ -1,4 +1,4 @@
-import io, json, os, sys, math, calendar
+import copy, io, json, os, sys, math, calendar
 from datetime import datetime, date, timedelta
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -9,6 +9,7 @@ from reportlab.platypus import Paragraph
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.fonts import addMapping
 from .transit_content import *
+from . import nav
 from .moon_content import APP_PRINT, APP_IPAD, APP_OTHER
 
 F = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts") + os.sep
@@ -28,10 +29,13 @@ item = ParagraphStyle("i", parent=body, fontSize=9.6, leading=13.4)
 
 
 
-def render(D, NAME, TZLABEL):
-    """Draw the planner and return the PDF bytes."""
+def render(D, NAME, TZLABEL, _pm=None):
+    """Draw the planner and return the PDF bytes. Drawn twice: the first pass finds the page
+    numbers for the Contents page, the second pass draws them."""
+    D_original = D; D = copy.deepcopy(D); pm = {}
     START_D = date.fromisoformat(D["start"]); END_D = date.fromisoformat(D["end"])
     START = START_D.strftime("%B %Y"); END = END_D.strftime("%B %Y")
+    NAV_MONTHS = nav.months_from(START_D); KEYF = lambda y, m: f"m{y}{m:02d}"
     DAYS = {d["date"]: d for d in D["days"]}
 
     state = {"page": 0, "links": False, "month": None}
@@ -53,7 +57,8 @@ def render(D, NAME, TZLABEL):
     def newpage(bm=None):
         if state["page"]: c.showPage()
         state["page"] += 1; frame(state["page"] if state["page"] > 1 else None)
-        if bm: c.bookmarkPage(bm)
+        if state["links"]: nav.draw_tabs(c, link, NAV_MONTHS, KEYF, state["month"], M, W, H)
+        if bm: c.bookmarkPage(bm); pm[bm] = state["page"]
     def para(t, st, x, y, w=CW):
         p = Paragraph(t, st); _, h = p.wrap(w, 2000); p.drawOn(c, x, y-h); return y-h
     def heading(t, y, size=28): c.setFont("Serif", size); c.setFillColor(DEEP); c.drawString(M, y, t)
@@ -161,8 +166,19 @@ def render(D, NAME, TZLABEL):
     c.drawCentredString(W/2, H-530, f"Prepared for {NAME}"); c.drawCentredString(W/2, H-550, f"{START} to {END}")
     c.setFont("Sans", 9); c.setFillColor(MUTED); c.drawCentredString(W/2, 70, "sagereality11.com")
 
+    # ---------- CONTENTS ----------
+
+    NAV_BEFORE = [("Welcome", "welcome"), ("Using Your Planner", "using"), ("How Transits Work", "how"), ("Your Year", "year"), ("Your Big Transits at a Glance", "glance"), ("Your Big Transits", "bigtransits"), ("Retrogrades and Eclipses", "turning")]
+
+    NAV_AFTER = [("Looking Back on Your Year", "lookback"), ("Continue Your Journey", "journey")]
+
+    newpage("contents")
+
+    nav.contents_page(c, link, NAV_BEFORE, NAV_AFTER, NAV_MONTHS, KEYF, _pm or {}, M, W, H)
+
+
     # ---------- WELCOME ----------
-    newpage()
+    newpage("welcome")
     eyebrow("A letter before you begin", H-80); heading("Welcome to Your Transits Planner", H-112)
     y = H-140
     for t in [f"Hey {NAME},"] + WELCOME + [f"Your planner runs from {START} through {END}, and every date and time is shown for the location you entered."]:
@@ -170,7 +186,7 @@ def render(D, NAME, TZLABEL):
     c.setFont("SerifM", 17); c.setFillColor(DEEP); c.drawString(M, y-14, "With Love & Light,"); c.drawString(M, y-36, "Tiff")
 
     # ---------- USING ----------
-    newpage()
+    newpage("using")
     eyebrow("Print it or go digital", H-80); heading("Using Your Planner", H-112)
     y = para("Your planner is a PDF, so you can print it and write by hand, or use it on a tablet with a digital pen. It also has clickable links: tap a transit on your Big Transits page to read about it, or tap a month to jump to it.", body, M, H-130) - 18
     sub("To print your planner", y-4, 19); y = numbered(APP_PRINT[:1] + ["Print it on US Letter paper at 100% or actual size, so nothing gets cut off."] + APP_PRINT[2:], y-16) - 16
@@ -181,7 +197,7 @@ def render(D, NAME, TZLABEL):
     sub("Other tablets and computers", y-4, 19); numbered(APP_OTHER, y-16)
 
     # ---------- HOW TRANSITS WORK ----------
-    newpage()
+    newpage("how")
     eyebrow("Reading your transits", H-80); heading("How Transits Work", H-112)
     y = para("A transit happens when a planet moving through the sky today makes an angle, called an aspect, to a planet or point in your birth chart. The planet tells you what kind of energy arrives, the aspect tells you how it feels, and the house tells you where in your life it shows up.", body, M, H-130) - 14
     for t, d in PLANETS_GUIDE:
@@ -193,7 +209,7 @@ def render(D, NAME, TZLABEL):
     box("Other factors to keep in mind", "This planner follows the transits to your natal chart. It does not include progressions, solar arcs, your solar return, midpoints or fixed stars, which can add more layers to your timing. For the bigger picture of this chapter of your life, see my reading What's Happening to Me Right Now? Your Personal Timing Reading.", y, LILAC)
 
     # ---------- YOUR YEAR ----------
-    newpage()
+    newpage("year")
     eyebrow("The theme of your year", H-80); heading("Your Year", H-112)
     y = para("Each year of your life activates a different house of your chart, beginning at your birthday. This is called an annual profection. The ruler of that house becomes your Lord of the Year, and transits involving that planet tend to matter most for you.", body, M, H-130) - 14
     for pr in D["prof"]:
@@ -224,7 +240,7 @@ def render(D, NAME, TZLABEL):
     para("Lighter Jupiter sextiles that open small doors when you take a step toward them: " + "; ".join(f"{b['title']} ({', '.join(short(d) for d in b['exact_d'] if START_D <= d.date() <= END_D) or 'active'})" for b in minors) + ".", small, M, y)
 
     # ---------- BIG TRANSIT WRITE-UPS ----------
-    newpage()
+    newpage("bigtransits")
     eyebrow("What they mean for you", H-80); heading("Your Big Transits", H-112)
     y = H-130
     for b in majors:
@@ -244,7 +260,7 @@ def render(D, NAME, TZLABEL):
         y = box("How to work with it", wk, y, LILAC) - 18
 
     # ---------- RETROGRADES + ECLIPSES ----------
-    newpage()
+    newpage("turning")
     eyebrow("Turning points of your year", H-80); heading("Retrogrades and Eclipses", H-112)
     y = H-136; sub("Planets changing direction", y, 18); y -= 6
     for s_ in STN:
@@ -345,13 +361,13 @@ def render(D, NAME, TZLABEL):
     state["month"] = None
 
     # ---------- CLOSING ----------
-    newpage()
+    newpage("lookback")
     eyebrow("As your twelve months close", H-80); heading("Looking Back on Your Year", H-112)
     prs = ["Which transit changed me the most this year?", "What did I build, release or awaken to?", "What am I carrying into my next year?"]
     top = H-140; seg = (top-64)/3
     for i, pr in enumerate(prs):
         yy = top - i*seg; c.setFont("SerifM", 15); c.setFillColor(PURPLE); c.drawString(M, yy-15, pr); lines(yy-42, yy-seg+14)
-    newpage()
+    newpage("journey")
     eyebrow("Keep going", H-80); heading("Continue Your Journey", H-112)
     y = H-130
     for t, dsc, url in [
@@ -366,6 +382,9 @@ def render(D, NAME, TZLABEL):
     y = para("This planner is based on my own research, methodology and intuitive abilities. It is meant for reflection and personal growth, and it is not medical, legal or financial advice. You are always the one who decides what is right for your life.", small, M, y) - 8
     y = para("Because this planner is a personalized digital download, all sales are final.", small, M, y) - 20
     c.setFont("SerifM", 17); c.setFillColor(DEEP); c.drawString(M, y-8, "With Love & Light,"); c.drawString(M, y-30, "Tiff")
+    nav.outline(c, NAV_BEFORE, NAV_AFTER, NAV_MONTHS, KEYF)
     c.save()
+    if _pm is None:
+        return render(D_original, NAME, TZLABEL, _pm=pm)
     return buf.getvalue()
 
