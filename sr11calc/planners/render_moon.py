@@ -127,10 +127,10 @@ def render(data, NAME, TZLABEL, _pm=None):
     def ctime(d): return d.strftime("%I:%M").lstrip("0") + ("a" if d.hour < 12 else "p")
     def short(d): return d.strftime("%b ") + str(d.day) + d.strftime(", %Y")
 
-    def numbered(items, y, cont_title=None):
+    def numbered(items, y, cont_title=None, floor=70):
         for i, t in enumerate(items, 1):
             p = Paragraph(t, body); _, h = p.wrap(CW-28, 1000)
-            if y - h < 70:
+            if y - h < floor:
                 newpage(); y = H-90
             c.setFont("SansB", 10.5); c.setFillColor(PURPLE); c.drawString(M, y-11, f"{i}.")
             p.drawOn(c, M+22, y-h); y -= h + 5
@@ -191,14 +191,19 @@ def render(data, NAME, TZLABEL, _pm=None):
     newpage("using")
     eyebrow("Print it or go digital", H-80)
     heading("Using Your Planner", H-112)
-    y = para("Your planner is a PDF, so you can print it and write by hand, or use it on a tablet with a digital pen. It also has clickable links: tap a moon on your Year at a Glance page or your monthly calendar to jump straight to that moon's pages.", body, M, H-130) - 18
-    c.setFont("Serif", 19); c.setFillColor(DEEP); c.drawString(M, y-4, "To print your planner"); y -= 16
-    y = numbered(APP_PRINT, y) - 16
-    c.setFont("Serif", 19); c.setFillColor(DEEP); c.drawString(M, y-4, "To use it on an iPad with GoodNotes"); y -= 16
-    y = numbered(APP_IPAD, y) - 16
-    if y < 120: newpage(); y = H-80
-    c.setFont("Serif", 19); c.setFillColor(DEEP); c.drawString(M, y-4, "Other tablets and computers"); y -= 16
-    y = numbered(APP_OTHER, y)
+    y = para("Your planner is a PDF, so you can print it and write by hand, or use it on a tablet with a digital pen. It also has clickable links: tap a moon on your Year at a Glance page or your monthly calendar to jump straight to that moon's pages.", body, M, H-130) - 14
+    y0 = y + 4
+    y = box(None, "<b>How to Use Your Planner</b>, with step-by-step pictures:  <font color='#5B2A86'><b>sagereality11.com/planner-guide</b></font>", y0, LILAC)
+    c.linkURL("https://sagereality11.com/planner-guide/", (M, y, W-M, y0), relative=0)
+    y -= 12
+    c.setFont("Serif", 19); c.setFillColor(DEEP); c.drawString(M, y-4, "To print your planner"); y -= 14
+    y = numbered(APP_PRINT, y) - 10
+    c.setFont("Serif", 19); c.setFillColor(DEEP); c.drawString(M, y-4, "To use it on an iPad with GoodNotes"); y -= 14
+    y = numbered(APP_IPAD, y, floor=54) - 10
+    if y < 110: newpage(); y = H-80
+    c.setFont("Serif", 19); c.setFillColor(DEEP); c.drawString(M, y-4, "Other tablets and computers"); y -= 14
+    y = numbered(APP_OTHER, y, floor=54)
+
 
     # ---------- MOON RHYTHM + HOUSES ----------
     newpage("rhythm")

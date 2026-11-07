@@ -163,13 +163,18 @@ def render(D, NAME, TZLABEL, _pm=None):
     # ---------- USING ----------
     newpage("using")
     eyebrow("Print it or go digital", H-80); heading("Using Your Planner", H-112)
-    y = para("Your planner is a PDF, so you can print it and write by hand, or use it on a tablet with a digital pen. It also has clickable links: tap a month on your Year at a Glance page to jump straight to it.", body, M, H-130) - 18
-    sub("To print your planner", y-4, 19); y = numbered(APP_PRINT[:1] + ["Print it on US Letter paper at 100% or actual size, so nothing gets cut off."] + APP_PRINT[2:], y-16) - 16
+    y = para("Your planner is a PDF, so you can print it and write by hand, or use it on a tablet with a digital pen. It also has clickable links: tap a month on your Year at a Glance page to jump straight to it.", body, M, H-130) - 14
+    y0 = y + 4
+    y = box(None, "<b>How to Use Your Planner</b>, with step-by-step pictures:  <font color='#5B2A86'><b>sagereality11.com/planner-guide</b></font>", y0, LILAC)
+    c.linkURL("https://sagereality11.com/planner-guide/", (M, y, W-M, y0), relative=0)
+    y -= 12
+    sub("To print your planner", y-4, 19); y = numbered(APP_PRINT[:1] + ["Print it on US Letter paper at 100% or actual size, so nothing gets cut off."] + APP_PRINT[2:], y-14) - 10
     sub("To use it on an iPad with GoodNotes", y-4, 19)
     ipad = [t.replace("Tap any moon on your Year at a Glance page or your monthly calendars to jump straight to that moon's pages", "Tap a month on your Year at a Glance page to jump straight to it") for t in APP_IPAD]
-    y = numbered(ipad, y-16) - 16
+    y = numbered(ipad, y-14) - 10
     if y < 120: newpage(); y = H-80
-    sub("Other tablets and computers", y-4, 19); numbered(APP_OTHER, y-16)
+    sub("Other tablets and computers", y-4, 19); y = numbered(APP_OTHER, y-14)
+
 
     # ---------- BLUEPRINT ----------
     newpage("blueprint")
