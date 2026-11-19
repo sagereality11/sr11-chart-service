@@ -46,9 +46,6 @@ if ( ! function_exists( 'sr_ws_order_has_report' ) ) {
 		if ( ! class_exists( 'SR11BC_Rest' ) || ! class_exists( 'SR11BC_Settings' ) ) {
 			return sr_ws_err( 'The calculator is temporarily unavailable. Please try again in a few minutes.', 503 );
 		}
-		if ( isset( $in['time_known'] ) && false === $in['time_known'] ) {
-			return sr_ws_err( 'Your Wealth Story needs a birth time, because it reads your houses, your Part of Fortune and your Midheaven. A birth certificate or hospital record usually has it.', 422 );
-		}
 		$v = SR11BC_Rest::validate( $in );
 		if ( is_wp_error( $v ) ) { return sr_ws_err( $v->get_error_message(), 422 ); }
 		unset( $v['house_system'], $v['points'], $v['asteroids'], $v['aspects'] );
@@ -137,6 +134,8 @@ if ( ! function_exists( 'sr_ws_style' ) ) {
 .sr-wsf .lede{margin:0 0 1.1rem}
 .sr-wsf .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 1rem}
 .sr-wsf label{display:block;font-weight:600;color:var(--p);margin:0 0 1rem;font-size:.92rem}
+.sr-wsf label.nt{display:flex;align-items:center;gap:.5rem;font-weight:400;color:var(--ink,#2e2340);grid-column:1/-1;margin-top:-.4rem}.sr-wsf label.nt input{width:auto;margin:0}.sr-wsf input[type=time]:disabled{opacity:.5}
+.sr-wsf .ntnote{background:#efe7fb;border-left:3px solid var(--p);padding:.6rem .8rem;font-size:.92rem;margin:-.2rem 0 1rem}
 .sr-wsf input[type=text],.sr-wsf input[type=date],.sr-wsf input[type=time]{display:block;width:100%;box-sizing:border-box;margin-top:.35rem;padding:.7rem .8rem;border:1px solid var(--l2);border-radius:3px;font-size:1rem;color:var(--ink);background:#fff}
 .sr-wsf .city{position:relative;display:block}
 .sr-wsf .sugg{position:absolute;left:0;right:0;top:100%;z-index:20;background:#fff;border:1px solid var(--l2);border-radius:3px;max-height:260px;overflow:auto;box-shadow:0 6px 18px rgba(75,42,123,.12)}
@@ -164,8 +163,10 @@ if ( ! function_exists( 'sr_ws_style' ) ) {
 			. '<label for="' . $pre . '-name">' . esc_html( $with_name_label ) . '<input id="' . $pre . '-name" type="text" maxlength="60" autocomplete="given-name"></label>'
 			. '<label for="' . $pre . '-city">Birth city<span class="city"><input id="' . $pre . '-city" type="text" autocomplete="off" placeholder="Start typing, then choose from the list" aria-autocomplete="list"><span class="sugg" id="' . $pre . '-city-s" hidden></span></span></label>'
 			. '<label for="' . $pre . '-date">Birth date<input id="' . $pre . '-date" type="date" min="1800-01-01" max="2026-12-31" required></label>'
-			. '<label for="' . $pre . '-time">Birth time (local)<input id="' . $pre . '-time" type="time" required></label>'
-			. '</div>';
+			. '<label for="' . $pre . '-time">Birth time (local)<input id="' . $pre . '-time" type="time"></label>'
+			. '<label class="nt" for="' . $pre . '-notime"><input id="' . $pre . '-notime" type="checkbox"> I don&#39;t know my birth time</label>'
+			. '</div>'
+			. '<p class="ntnote" id="' . $pre . '-ntnote" hidden>That&#39;s okay. Without a birth time I read your houses from your Sun (solar houses), and I leave out the points that need the exact minute, like your Ascendant, Midheaven and Part of Fortune. If you can find your time later, a birth certificate or hospital record usually has it.</p>';
 	}
 	/** City lookup + request helper shared by both pages. */
 	function sr_ws_js_common() {
@@ -177,10 +178,12 @@ timer=setTimeout(function(){fetch(C.places+"?q="+encodeURIComponent(q),{headers:
 box.innerHTML="";var res=(j&&j.results)||[];if(!res.length){box.innerHTML="<button type=\"button\" disabled>No matches yet. Try the city name only.</button>";box.hidden=false;return;}
 res.slice(0,8).forEach(function(p){var b=document.createElement("button");b.type="button";b.textContent=p.label;b.addEventListener("click",function(){city.sr11Place={tz:p.tz,cc:p.country_code};onPick(p);city.value=p.label;box.hidden=true;});box.appendChild(b);});box.hidden=false;}).catch(function(){box.hidden=true;});},250);});
 document.addEventListener("click",function(e){if(!box.contains(e.target)&&e.target!==city)box.hidden=true;});}
-function srwsBody($,pre,place){var d=$(pre+"-date").value.split("-"),t=$(pre+"-time").value.split(":");
-var b={name:$(pre+"-name").value.trim(),year:parseInt(d[0],10),month:parseInt(d[1],10),day:parseInt(d[2],10),hour:parseInt(t[0],10),minute:parseInt(t[1],10),location:{mode:"place",place_id:place.id}};
+function srwsNoTime($,pre){var n=$(pre+"-notime"),t=$(pre+"-time"),note=$(pre+"-ntnote");if(!n)return;var f=function(){t.disabled=n.checked;if(n.checked)t.value="";if(note)note.hidden=!n.checked;};n.addEventListener("change",f);f();}
+function srwsBody($,pre,place){var d=$(pre+"-date").value.split("-"),nt=$(pre+"-notime")&&$(pre+"-notime").checked,t=$(pre+"-time").value.split(":");
+var b={name:$(pre+"-name").value.trim(),year:parseInt(d[0],10),month:parseInt(d[1],10),day:parseInt(d[2],10),location:{mode:"place",place_id:place.id}};
+if(nt){b.time_known=false;}else{b.hour=parseInt(t[0],10);b.minute=parseInt(t[1],10);}
 return window.SR11Chart?SR11Chart.withRecordOffset(b,$(pre+"-city")):b;}
-function srwsCheck($,pre,place){if(!$(pre+"-date").value)return "Please enter your birth date.";if(!$(pre+"-time").value)return "Please enter your birth time. Your Wealth Story reads your houses, so it needs one.";if(!place)return "Please start typing your birth city and choose it from the list.";return "";}';
+function srwsCheck($,pre,place){if(!$(pre+"-date").value)return "Please enter your birth date.";if(!$(pre+"-time").value&&!($(pre+"-notime")&&$(pre+"-notime").checked))return "Please enter your birth time, or tick \"I don\u2019t know my birth time\".";if(!place)return "Please start typing your birth city and choose it from the list.";return "";}';
 	}
 }
 
@@ -196,7 +199,7 @@ add_shortcode( 'sr_wealth_story_calculator', function () {
 <div id="sr-wsc-app" class="sr-wsf">
 <div class="card">
 <h2>Your Birth Details</h2>
-<p class="lede">Your birth time matters here. Your Wealth Story reads your houses, your Part of Fortune and your Midheaven, and all three move with the clock.</p>
+<p class="lede">If you know your birth time, use it. Your houses, your Part of Fortune and your Midheaven all move with the clock. If you don't know it, tick the box and I'll read your houses from your Sun instead.</p>
 <form id="wsc-form" novalidate>
 <?php echo sr_ws_fields( 'wsc', 'First name' ); ?>
 <button class="go" id="wsc-go" type="submit">Show My Wealth Story</button>
@@ -212,6 +215,7 @@ add_shortcode( 'sr_wealth_story_calculator', function () {
   function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];}); }
   function msg(t, err){ var m=$('wsc-msg'); m.hidden=!t; m.className='msg'+(err?' err':''); m.textContent=t||''; }
   srwsCity(C, $, 'wsc', function(p){ place = p; });
+  srwsNoTime($, 'wsc');
   function show(s, name){
     var rows = (s.rows||[]).map(function(r){ return '<tr><td class="k">'+esc(r[0])+'</td><td>'+esc(r[1])+'</td></tr>'; }).join('');
     var th = (s.thresholds||[]).map(function(t){ return '<li>'+esc(t)+'</li>'; }).join('');
@@ -285,7 +289,6 @@ add_shortcode( 'sr_wealth_story_reading', function () {
 <p class="lede">Enter the birth details for the person this reading is for. It's created in seconds, shows right here on the page with a section menu, and downloads as a PDF you can keep.</p>
 <form id="ws-form" novalidate>
 <?php echo sr_ws_fields( 'ws', 'First name (shown on the reading)' ); ?>
-<input type="checkbox" id="ws-notime" hidden>
 <button class="go" id="ws-go" type="submit">Create My Reading</button>
 <div id="ws-msg" class="msg" hidden></div>
 </form>
@@ -299,6 +302,7 @@ add_shortcode( 'sr_wealth_story_reading', function () {
   <?php echo sr_ws_js_common(); ?>
   function msg(t, err, html){ var m=$('ws-msg'); m.hidden=!t; m.className='msg'+(err?' err':''); if(html){m.innerHTML=t;}else{m.textContent=t||'';} }
   srwsCity(C, $, 'ws', function(p){ place = p; });
+  srwsNoTime($, 'ws');
   function send(extra){
     var body = srwsBody($, 'ws', place); body.order = C.order; body.key = C.key;
     for (var k in (extra||{})) body[k] = extra[k];

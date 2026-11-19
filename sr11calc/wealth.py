@@ -272,22 +272,31 @@ def ingresses(cusp_lons: dict, start: dt.date, days=366):
 # The analysis
 # --------------------------------------------------------------------------------------
 def analyze(chart: dict, birth_date: dt.date, today: dt.date | None = None) -> dict:
-    """Facts for the Wealth Story. Requires a timed Placidus chart with the Part of Fortune."""
+    """Facts for the Wealth Story. A timed chart uses Placidus houses with the Part of Fortune and the Lot of Assets.
+    An untimed chart (cast for local noon) uses solar whole sign houses, with the Sun's sign as the first house, and
+    leaves out everything that needs the birth minute: the angles, the Part of Fortune and the Lot of Assets."""
     today = today or dt.date.today()
     bodies = {b["id"]: b for b in chart["bodies"]}
-    cusps = [c["lon"] for c in chart["houses"]["cusps"]]
-    ang = chart["houses"]["angles"]
-    H = lambda lon: house_of(lon, cusps)
+    untimed = not chart.get("timed", True) or not chart.get("houses")
     lon = {k: bodies[k]["lon"] for k in ALL + ["north_node", "south_node"] if k in bodies}
-    for k in ("asc", "mc", "ic", "dsc"):
-        lon[k] = ang[k]["lon"]
-    night = chart.get("sect") == "night"
-    sun, moon, asc = lon["sun"], lon["moon"], lon["asc"]
-    fortune = bodies["fortune"]["lon"] if "fortune" in bodies else norm(asc + (sun - moon if night else moon - sun))
-    lon["fortune"] = fortune
-    ruler2 = RULER[sign_of(cusps[1])]
-    assets = norm(asc + cusps[1] - lon[ruler2])
-    lon["assets"] = assets
+    if untimed:
+        sun_start = (int(norm(lon["sun"]) // 30)) * 30.0
+        cusps = [norm(sun_start + 30 * i) for i in range(12)]
+        night = None
+    else:
+        cusps = [c["lon"] for c in chart["houses"]["cusps"]]
+        ang = chart["houses"]["angles"]
+        for k in ("asc", "mc", "ic", "dsc"):
+            lon[k] = ang[k]["lon"]
+        night = chart.get("sect") == "night"
+    H = lambda lon: house_of(lon, cusps)
+    sun, moon = lon["sun"], lon["moon"]
+    asc = lon.get("asc", cusps[0])
+    if not untimed:
+        fortune = bodies["fortune"]["lon"] if "fortune" in bodies else norm(asc + (sun - moon if night else moon - sun))
+        lon["fortune"] = fortune
+        ruler2 = RULER[sign_of(cusps[1])]
+        lon["assets"] = norm(asc + cusps[1] - lon[ruler2])
 
     planets = {}
     for pid in ALL + ["north_node", "south_node"]:
@@ -297,12 +306,12 @@ def analyze(chart: dict, birth_date: dt.date, today: dt.date | None = None) -> d
         b = bodies.get(pid, {})
         planets[pid] = {
             "id": pid, "name": NAME[pid], "lon": lon[pid], "sign": s, "deg": deg_of(lon[pid]),
-            "house": b.get("house") or H(lon[pid]), "retro": bool(b.get("retrograde")) and pid not in ("north_node", "south_node"),
+            "house": (H(lon[pid]) if untimed else (b.get("house") or H(lon[pid]))), "retro": bool(b.get("retrograde")) and pid not in ("north_node", "south_node"),
             "speed": b.get("speed"), "dignity": dignity(pid, s),
             "solar": solar_condition(pid, lon[pid], sun) if pid in TRAD else None,
         }
         planets[pid]["angularity"] = angularity(planets[pid]["house"])
-    for pid in ("fortune", "assets"):
+    for pid in [k for k in ("fortune", "assets") if k in lon]:
         planets[pid] = {"id": pid, "name": NAME[pid], "lon": lon[pid], "sign": sign_of(lon[pid]),
                         "deg": deg_of(lon[pid]), "house": H(lon[pid])}
 
@@ -327,10 +336,12 @@ def analyze(chart: dict, birth_date: dt.date, today: dt.date | None = None) -> d
         roles.setdefault(pid, [])
         if role not in roles[pid]:
             roles[pid].append(role)
-    add(rulers[1], "asc")
+    if not untimed:
+        add(rulers[1], "asc")
     add(rulers[2], "second")
-    add(RULER[planets["fortune"]["sign"]], "fortune")
-    add(RULER[planets["assets"]["sign"]], "assets")
+    if not untimed:
+        add(RULER[planets["fortune"]["sign"]], "fortune")
+        add(RULER[planets["assets"]["sign"]], "assets")
     add(rulers[10], "career")
     add(rulers[5], "fifth")
     add(rulers[8], "eighth")
@@ -340,6 +351,12 @@ def analyze(chart: dict, birth_date: dt.date, today: dt.date | None = None) -> d
     pts = {k: lon[k] for k in TRAD + ["uranus", "neptune", "pluto", "chiron", "north_node", "asc", "mc", "ic", "dsc",
                                       "fortune", "assets"] if k in lon}
     asp = aspects_between(pts)
+    if untimed:
+        # Without a birth time the Moon could be anywhere along its path that day, so keep only the Moon
+        # contacts that hold for the whole day.
+        info = (chart.get("untimed") or {}).get("moon") or {}
+        half = float(info.get("travel_degrees") or 13.2) / 2
+        asp = [x for x in asp if "moon" not in (x["a"], x["b"]) or x["orb"] + half <= orb_for(x["a"], x["b"])]
     def aspects_of(pid):
         res = []
         for a in asp:
@@ -353,9 +370,9 @@ def analyze(chart: dict, birth_date: dt.date, today: dt.date | None = None) -> d
     # fixed stars on key points
     jd = chart["time"]["jd_ut"]
     stars = star_positions(jd)
-    key_pts = {k: lon[k] for k in ("asc", "mc", "ic", "dsc", "fortune")}
-    for pid in set([rulers[2], rulers[10], rulers[5], rulers[8], rulers[11], "jupiter", "venus",
-                    RULER[planets["fortune"]["sign"]]]):
+    key_pts = {k: lon[k] for k in ("asc", "mc", "ic", "dsc", "fortune") if k in lon}
+    rf = RULER[planets["fortune"]["sign"]] if "fortune" in planets else rulers[2]
+    for pid in set([rulers[2], rulers[10], rulers[5], rulers[8], rulers[11], "jupiter", "venus", rf]):
         key_pts[pid] = lon[pid]
     star_hits = []
     for s, slon in stars.items():
@@ -375,11 +392,13 @@ def analyze(chart: dict, birth_date: dt.date, today: dt.date | None = None) -> d
 
     # transits to the money points
     tkeys = {}
-    for pid in ("sun", "moon", "venus", "jupiter", "saturn", rulers[2], rulers[10], RULER[planets["fortune"]["sign"]]):
+    for pid in ("sun", "moon", "venus", "jupiter", "saturn", rulers[2], rulers[10], rf):
         tkeys[pid] = lon[pid]
-    for k in ("asc", "mc", "fortune", "assets"):
-        tkeys[k] = lon[k]
-    tkeys["ic"] = lon["ic"]
+    for k in ("asc", "mc", "fortune", "assets", "ic"):
+        if k in lon:
+            tkeys[k] = lon[k]
+    if untimed:
+        tkeys.pop("moon", None)  # the Moon moves too far in a day to time transits to it without a birth time
     hits = find_transits(tkeys, today)
     ing = ingresses({2: cusps[1], 5: cusps[4], 8: cusps[7], 11: cusps[10]}, today)
     window_end = today + dt.timedelta(days=365)
@@ -388,9 +407,10 @@ def analyze(chart: dict, birth_date: dt.date, today: dt.date | None = None) -> d
     ecl_hits = []
     for e in ecl:
         for k in ("mc", "ic", "asc", "dsc", "fortune", rulers[2], rulers[10]):
-            if abs(sep(e["lon"], lon[k])) <= 3.0:
+            if k in lon and abs(sep(e["lon"], lon[k])) <= 3.0:
                 ecl_hits.append({**e, "point": k})
-    recent = recent_jupiter({k: lon[k] for k in ("asc", "fortune", rulers[2], "mc", "sun", "moon", "venus")}, today, 480)
+    recent = recent_jupiter({k: lon[k] for k in ("asc", "fortune", rulers[2], "mc", "sun", "moon", "venus")
+                             if k in lon and not (untimed and k == "moon")}, today, 480)
     # where the slow planets are working right now (money houses only)
     now_rows = window_sky(today.isoformat(), 366)
     now_houses = {}
@@ -400,7 +420,8 @@ def analyze(chart: dict, birth_date: dt.date, today: dt.date | None = None) -> d
 
     phase, elong = moon_phase(moon, sun)
     return {
-        "today": today, "window_end": window_end, "night": night,
+        "today": today, "window_end": window_end, "night": night, "untimed": untimed,
+        "untimed_info": chart.get("untimed") if untimed else None,
         "planets": planets, "lon": lon, "cusps": cusps, "house_sign": house_sign, "rulers": rulers,
         "occupants": occupants, "intercepted": intercepted, "roles": roles, "aspects": asp,
         "stars": star_hits, "moon_phase": phase, "moon_elong": elong,

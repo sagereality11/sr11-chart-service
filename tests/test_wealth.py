@@ -94,5 +94,42 @@ class TestVoiceRules(unittest.TestCase):
                 self.assertTrue(s["paragraphs"], s["heading"])
 
 
+class TestUntimed(unittest.TestCase):
+    """No birth time: noon chart, solar whole sign houses, no angles or lots."""
+
+    def test_tiff_untimed(self):
+        body = {k: v for k, v in TIFF.items() if k not in ("hour", "minute")}
+        a, r = reading_for({**body, "time_known": False})
+        self.assertTrue(a["untimed"])
+        self.assertEqual(a["house_sign"][1], "Cancer")          # Sun sign starts the solar houses
+        self.assertNotIn("fortune", a["planets"])
+        self.assertNotIn("mc", a["lon"])
+        heads = [s["heading"] for s in r["sections"]]
+        self.assertIn("Your Career Path", heads)
+        self.assertNotIn("Your Part of Fortune and Lot of Assets", heads)
+        t = text_of(r)
+        for word in ("Midheaven", "Part of Fortune", "Lot of Assets", "Ascendant"):
+            self.assertNotIn(word, t.replace("your Ascendant, your Midheaven, and your Part of Fortune", ""), word)
+        self.assertIn("solar houses", t)
+        self.assertNotIn("Part of Fortune", " ".join(v for _, v in r["snapshot"]["rows"]))
+
+    def test_many_untimed(self):
+        rnd = random.Random(23)
+        cities = [(40.71, -74.0, "America/New_York"), (51.5, -0.12, "Europe/London"), (-33.87, 151.2, "Australia/Sydney")]
+        for _ in range(12):
+            lat, lon, tz = rnd.choice(cities)
+            body = dict(year=rnd.randint(1950, 2005), month=rnd.randint(1, 12), day=rnd.randint(1, 28), time_known=False,
+                        location={"mode": "manual", "lat": lat, "lon": lon, "tz": tz})
+            _, r = reading_for(body, "Sam")
+            t = text_of(r)
+            self.assertNotIn("—", t)
+            self.assertLessEqual(t.count(":"), 1)
+            self.assertNotRegex(t, r"[{}]|\bNone\b|[.!?] [a-z]")
+            sents = [s for s in re.split(r"(?<=[.!?])\s+", t) if len(s) > 20]
+            self.assertEqual(len(sents), len(set(sents)), "a sentence repeats")
+            for s in r["sections"]:
+                self.assertTrue(s["paragraphs"], s["heading"])
+
+
 if __name__ == "__main__":
     unittest.main()

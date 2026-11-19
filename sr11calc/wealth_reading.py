@@ -97,7 +97,7 @@ def explain_terms(sections):
         if sec["id"] == "next":
             continue
         for pi, para in enumerate(sec["paragraphs"]):
-            if "From there we'll look at" in para:
+            if "From there we'll look at" in para or para.startswith("You didn't have a birth time"):
                 continue
             adds = []
             for i, (pat, expl) in enumerate(T.GLOSS):
@@ -135,13 +135,30 @@ class Writer:
             self.sections[-1]["paragraphs"].append(txt)
 
 
+def untimed_moon_note(a: dict) -> str:
+    """Name the Moon's possible range when the birth time is unknown and it matters."""
+    info = (a.get("untimed_info") or {}).get("moon") or {}
+    changes = {c["id"]: c for c in ((a.get("untimed_info") or {}).get("sign_changes") or [])} if a.get("untimed_info") else {}
+    out = []
+    if "sun" in changes:
+        c = changes["sun"]
+        out.append(f"Your Sun moved from {c['start_sign']} into {c['end_sign']} on the day you were born, so a birth time would confirm "
+                   f"which sign your solar houses start from. I've used {a['planets']['sun']['sign']}, where it was at midday.")
+    if info.get("sign_changes") and "moon" in changes:
+        c = changes["moon"]
+        out.append(f"Your Moon also changed signs that day, moving from {c['start_sign']} into {c['end_sign']}. I read it in "
+                   f"{a['planets']['moon']['sign']}, where it was at midday, and keep the Moon's role light for that reason.")
+    return " ".join(out)
+
+
 def build_reading(a: dict, name: str, birth: dict) -> dict:
     P = a["planets"]
     R = a["rulers"]
     today = a["today"]
     r2 = R[2]
     rc = R[10]
-    rf = W.RULER[P["fortune"]["sign"]]
+    untimed = bool(a.get("untimed"))
+    rf = W.RULER[P["fortune"]["sign"]] if "fortune" in P else None
     roles = a["roles"]
     w = Writer()
     described = {}      # planet -> section id where its full description lives
@@ -256,7 +273,9 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
         concentrated = False
     w.sections[-1]["greeting"] = f"Hey {name}," if name and name != "Friend" else "Hey there,"
     w.para(T.OPENING.format(stand=stand, close=""))
-    w.para(T.CONCENTRATED_NOTE if concentrated else "", T.OPENING_CLOSE)
+    if untimed:
+        w.para(T.UNTIMED_NOTE, untimed_moon_note(a))
+    w.para(T.CONCENTRATED_NOTE if concentrated else "", T.OPENING_CLOSE_UNTIMED if untimed else T.OPENING_CLOSE)
 
     # ------------------------------------------------------------------ How you create value
     w.section("value", "How You Create Value")
@@ -270,6 +289,11 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
                 f"It sits in {loc(r2)}.")
     else:
         lead = f"Your second house begins in {s2}, so {the(r2)} rules your income. {The(r2)} sits in {loc(r2)}."
+    if untimed:
+        lead = (f"In your solar houses, {s2} is your second house, so {the(r2)} rules your income. {The(r2)} sits in {loc(r2)}."
+                if R[1] != r2 else
+                f"In your solar houses, {the(r2)} rules both your first and second houses, which links your identity directly with "
+                f"your income. It sits in {loc(r2)}.")
     dig = p2.get("dignity")
     w.para(lead, T.DIGNITY[dig].format(P=The(r2), S=p2["sign"]) if dig in ("domicile", "exaltation") else "",
            T.MONEY_IN_HOUSE[p2["house"]])
@@ -313,40 +337,41 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
             described["sun"] = described["mercury"] = "value"
 
     # ------------------------------------------------------------------ Fortune and Assets
-    w.section("fortune", "Your Part of Fortune and Lot of Assets")
-    F = P["fortune"]
-    w.para(T.FORTUNE_INTRO.format(deg=F["deg"], sign=F["sign"], ord=T.ORD[F["house"]]), T.FORTUNE_HOUSE[F["house"]])
-    d_fr = abs(W.sep(F["lon"], P[rf]["lon"]))
-    ruler_bits = []
-    if d_fr <= 3 and rf == r2:
-        ruler_bits.append(f"It sits {degs(d_fr)} from its ruler, {the(rf)}, which is also the planet that rules your income. "
-                          "When Fortune and the second house answer to one planet, the message is consistent. "
-                          "Your opportunities and your earning power grow from the same source.")
-    elif d_fr <= 3:
-        ruler_bits.append(T.FORTUNE_RULER_CLOSE.format(orb=degs(d_fr), R=the(rf)))
-    elif rf == r2:
-        ruler_bits.append(T.FORTUNE_RULER_SAME.format(R=the(rf)))
-    elif d_fr > 3:
-        ruler_bits.append(T.FORTUNE_RULER_OTHER.format(R=The(rf), S=P[rf]["sign"], ord=T.ORD[P[rf]["house"]],
-                                                       topic=T.HOUSE_TOPIC[P[rf]["house"]]))
-        if P[rf].get("dignity"):
-            ruler_bits.append(T.DIGNITY[P[rf]["dignity"]].format(P=The(rf), S=P[rf]["sign"]))
-        described.setdefault(rf, "fortune")
-    w.para(*ruler_bits)
-    A = P["assets"]
-    ra = W.RULER[A["sign"]]
-    w.para(T.ASSETS_LINE.format(sign=A["sign"], ord=T.ORD[A["house"]], same=T.ASSETS_SAME if ra == rf == r2 else ""),
-           T.ASSETS_MEANING["same"] if ra == r2 else
-           (f"{The(ra)} rules both, so the same planet guides your opportunities and what you keep." if ra == rf
-            else T.ASSETS_MEANING["other"].format(R=the(ra))))
-    if concentrated or F["house"] == 1 or P[r2]["house"] == 1:
-        w.para(T.CARRY_FORWARD)
-    w.para(stars_for("fortune"))
+    if not untimed:
+        w.section("fortune", "Your Part of Fortune and Lot of Assets")
+        F = P["fortune"]
+        w.para(T.FORTUNE_INTRO.format(deg=F["deg"], sign=F["sign"], ord=T.ORD[F["house"]]), T.FORTUNE_HOUSE[F["house"]])
+        d_fr = abs(W.sep(F["lon"], P[rf]["lon"]))
+        ruler_bits = []
+        if d_fr <= 3 and rf == r2:
+            ruler_bits.append(f"It sits {degs(d_fr)} from its ruler, {the(rf)}, which is also the planet that rules your income. "
+                              "When Fortune and the second house answer to one planet, the message is consistent. "
+                              "Your opportunities and your earning power grow from the same source.")
+        elif d_fr <= 3:
+            ruler_bits.append(T.FORTUNE_RULER_CLOSE.format(orb=degs(d_fr), R=the(rf)))
+        elif rf == r2:
+            ruler_bits.append(T.FORTUNE_RULER_SAME.format(R=the(rf)))
+        elif d_fr > 3:
+            ruler_bits.append(T.FORTUNE_RULER_OTHER.format(R=The(rf), S=P[rf]["sign"], ord=T.ORD[P[rf]["house"]],
+                                                           topic=T.HOUSE_TOPIC[P[rf]["house"]]))
+            if P[rf].get("dignity"):
+                ruler_bits.append(T.DIGNITY[P[rf]["dignity"]].format(P=The(rf), S=P[rf]["sign"]))
+            described.setdefault(rf, "fortune")
+        w.para(*ruler_bits)
+        A = P["assets"]
+        ra = W.RULER[A["sign"]]
+        w.para(T.ASSETS_LINE.format(sign=A["sign"], ord=T.ORD[A["house"]], same=T.ASSETS_SAME if ra == rf == r2 else ""),
+               T.ASSETS_MEANING["same"] if ra == r2 else
+               (f"{The(ra)} rules both, so the same planet guides your opportunities and what you keep." if ra == rf
+                else T.ASSETS_MEANING["other"].format(R=the(ra))))
+        if concentrated or F["house"] == 1 or P[r2]["house"] == 1:
+            w.para(T.CARRY_FORWARD)
+        w.para(stars_for("fortune"))
 
     # ------------------------------------------------------------------ What can block the flow
     w.section("blocks", "What Can Block the Flow")
     blocks = []
-    for pid in dict.fromkeys([r2, rf]):
+    for pid in [x for x in dict.fromkeys([r2, rf]) if x]:
         pp = P[pid]
         if pp.get("solar") in ("combust", "beams", "cazimi"):
             d = abs(W.sep(pp["lon"], P["sun"]["lon"]))
@@ -367,7 +392,7 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
     if not w.sections[-1]["paragraphs"]:
         w.para(T.BLOCK_INTRO)
     hard = contact_text(r2, kinds=("conj", "hard"), only=MALEFIC, limit=2)
-    if not hard and rf != r2:
+    if not hard and rf and rf != r2:
         hard = contact_text(rf, kinds=("conj", "hard"), only=MALEFIC, limit=1,
                             subject=f"{the(rf)}, the ruler of your Part of Fortune,")
         hard = cap(hard)
@@ -386,11 +411,23 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
         w.para(T.BLOCK_EMPTY)
 
     # ------------------------------------------------------------------ Midheaven and career
-    w.section("career", "Your Midheaven and Career Path")
-    mc = a["lon"]["mc"]
+    w.section("career", "Your Career Path" if untimed else "Your Midheaven and Career Path")
+    mc = a["lon"]["mc"] if not untimed else a["cusps"][9] + 15
+    mc_sign_txt = T.MC_SIGN[W.sign_of(mc)].replace("on your Midheaven", "on your solar tenth house") if untimed else T.MC_SIGN[W.sign_of(mc)]
     pc = P[rc]
     rdeg = pc["deg"]
-    if rc == r2:
+    if untimed:
+        dig = pc.get("dignity")
+        same = f" {The(rc)} also rules your income, so career and earning answer to the same planet." if rc == r2 else ""
+        w.para(f"In your solar houses, your tenth house of career and reputation falls in {W.sign_of(mc)}, which makes {the(rc)} "
+               f"the ruler of your career and public direction. {The(rc)} is at {rdeg} degree{'' if rdeg == 1 else 's'} {pc['sign']} "
+               f"in your {T.ORD[pc['house']]} house.{same}",
+               (T.DIGNITY_SHORT[dig] if dig else "") if rc not in described else "",
+               T.PLANET_CAREER[rc] if rc != r2 else T.CAREER_BRIDGE_SAME, T.RETRO.get(rc, "") if pc["retro"] and rc != r2 else "")
+        if rc != r2:
+            w.para(T.CAREER_IN_HOUSE[pc["house"]])
+        described.setdefault(rc, "career")
+    elif rc == r2:
         w.para(f"Your Midheaven sits at {dg(W.deg_of(mc))} {W.sign_of(mc)}, which makes {the(rc)} the traditional ruler of your career as well.",
                T.CAREER_BRIDGE_SAME, T.MC_SIGN[W.sign_of(mc)])
     else:
@@ -432,7 +469,7 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
     for p in on_ic:
         mcs.append(f"{The(p)} sits directly opposite your Midheaven at the base of your chart, which ties {T.KEYWORD.get(p, 'its energy')} "
                    "to home and foundations as much as to career.")
-    w.para(T.MC_SIGN[W.sign_of(mc)] if rc != r2 else "", " ".join(mcs))
+    w.para(mc_sign_txt if (rc != r2 or untimed) else "", " ".join(mcs))
     if rc != r2:
         link = next((x for x in pc["aspects"] if x["other"] == r2), None)
         if link:
@@ -574,7 +611,7 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
         if k == r2:
             return T.TARGET_MEANING["second"]
         if k == rc:
-            return T.TARGET_MEANING["career"]
+            return "the ruler of your career" if untimed else T.TARGET_MEANING["career"]
         if k == rf:
             return T.TARGET_MEANING["fortune"]
         if k == "fortune":
@@ -735,9 +772,9 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
     p = P[r2]
     if p.get("dignity") in ("domicile", "exaltation"):
         strengths.append("strong in its sign")
-    if p["angularity"] == "angular":
+    if p["angularity"] == "angular" and not untimed:
         strengths.append("placed at one of the four main turning points of your chart")
-    if abs(W.sep(P["fortune"]["lon"], P[rf]["lon"])) <= 3:
+    if rf and abs(W.sep(P["fortune"]["lon"], P[rf]["lon"])) <= 3:
         strengths.append(f"closely tied to your Part of Fortune" if rf == r2 else "")
     if p.get("solar") == "combust":
         comps.append(f"{the(r2)} sits close enough to the Sun that its own needs can get lost")
@@ -817,7 +854,11 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
             where = f"{pl.title()}'s work on your {join(nms[:2])}" if nms else f"The season {pl.title()} brings"
             lines.append(f"{where} asks for {T.TRANSIT_ASK[pl][0]}.")
     rname = ("the " + W.NAME[r2]) if r2 in ("sun", "moon") else W.NAME[r2]
-    picks = [T.FINAL_SIGN[P[r2]["sign"]].format(R=rname), T.FINAL_FORT[P["fortune"]["house"]], T.FINAL_NODE[nn["house"]]]
+    picks = [T.FINAL_SIGN[P[r2]["sign"]].format(R=rname),
+             T.FINAL_FORT[P["fortune"]["house"]] if not untimed else
+             ("" if P[r2]["sign"] == P["sun"]["sign"] else T.FINAL_SOLAR[P["sun"]["sign"]]),
+             T.FINAL_NODE[nn["house"]]]
+    picks = [x for x in picks if x]
     if asks:
         w.para(" ".join(lines) + " " + " ".join(picks))
     else:
@@ -870,9 +911,19 @@ def snapshot(a, w, r2, rc, rf):
         watch = " ".join(sents)
     rows = [
         ("The planet that rules your income", f"{W.NAME[r2]} in {P[r2]['sign']}, {T.ORD[P[r2]['house']]} house"),
+    ]
+    if a.get("untimed"):
+        rows += [
+            ("Your houses", f"Solar houses, starting from your {P['sun']['sign']} Sun"),
+            ("The ruler of your career", f"{W.NAME[rc]} in {P[rc]['sign']}, {T.ORD[P[rc]['house']]} house"),
+        ]
+    else:
+        rows += [
         ("Your Part of Fortune", f"{P['fortune']['deg']}° {P['fortune']['sign']}, {T.ORD[P['fortune']['house']]} house"),
         ("The ruler of your career", f"{W.NAME[rc]} in {P[rc]['sign']}, {T.ORD[P[rc]['house']]} house"),
         ("Your Midheaven", f"{W.deg_of(a['lon']['mc'])}° {W.sign_of(a['lon']['mc'])}"),
+        ]
+    rows += [
         ("This year's focus (your birthday-year spotlight)", f"{T.ORD[a['profection']['house']].title()} house, guided by {the(a['profection']['lord'])}"),
     ]
     thresholds = [s["heading"] for s in w.sections if s["level"] == 2]

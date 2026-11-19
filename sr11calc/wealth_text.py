@@ -626,6 +626,27 @@ FINAL_NODE = {
     11: "And your North Node in your eleventh house asks you to belong to something bigger than your own effort.",
     12: "And your North Node in your twelfth house asks you to protect the quiet, because that's where your best work begins.",
 }
+UNTIMED_NOTE = ("You didn't have a birth time, so I've read your houses from your Sun. The sign your Sun is in becomes your first house, "
+                "the next sign becomes your second, and so on around the chart. Astrologers call these solar houses. They show how your "
+                "money story moves through your life without needing the exact hour, though some details can shift once a birth time is known. "
+                "A few points need the minute you were born, like your Ascendant, your Midheaven, and your Part of Fortune, so I've left "
+                "those out rather than guess.")
+OPENING_CLOSE_UNTIMED = ("That's where we'll begin. From there we'll look at what can block the flow, your career path, the houses that add "
+                         "creativity, shared resources, and support, and the transits opening new thresholds over the next year.")
+FINAL_SOLAR = {
+    "Aries": "Your Aries Sun leads your solar houses, which means your wealth story starts the moment you decide to begin.",
+    "Taurus": "Your Taurus Sun leads your solar houses, which means your wealth story grows best at a pace you can actually enjoy.",
+    "Gemini": "Your Gemini Sun leads your solar houses, which means your wealth story keeps opening through curiosity and conversation.",
+    "Cancer": "Your Cancer Sun leads your solar houses, which means your wealth story is strongest when it includes caring for you.",
+    "Leo": "Your Leo Sun leads your solar houses, which means your wealth story grows when you let yourself be seen.",
+    "Virgo": "Your Virgo Sun leads your solar houses, which means your wealth story is built in the details you already handle so well.",
+    "Libra": "Your Libra Sun leads your solar houses, which means your wealth story works best when every exchange feels fair to you too.",
+    "Scorpio": "Your Scorpio Sun leads your solar houses, which means your wealth story deepens when you trust what you already know.",
+    "Sagittarius": "Your Sagittarius Sun leads your solar houses, which means your wealth story widens every time your world does.",
+    "Capricorn": "Your Capricorn Sun leads your solar houses, which means your wealth story is built to last, one steady choice at a time.",
+    "Aquarius": "Your Aquarius Sun leads your solar houses, which means your wealth story is allowed to look different from anyone else's.",
+    "Pisces": "Your Pisces Sun leads your solar houses, which means your wealth story flows best when your intuition has a practical home.",
+}
 FINAL_TRANSITS = "The transits ahead ask for {asks}. {lines} You don't need to rush any of it."
 TRANSIT_ASK = {"saturn": ("structure", "Saturn wants your foundation strong enough to hold the next chapter."),
                "uranus": ("room for change", "Uranus wants room for what's changing."),

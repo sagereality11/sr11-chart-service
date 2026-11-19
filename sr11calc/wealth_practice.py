@@ -214,7 +214,8 @@ def add_practices(a, sections, R, threshold_info):
     """
     P = a["planets"]
     r2, rc = R[2], R[10]
-    rf = W.RULER[P["fortune"]["sign"]]
+    rf = W.RULER[P["fortune"]["sign"]] if "fortune" in P else None
+    untimed = bool(a.get("untimed"))
     by_id = {s["id"]: s for s in sections}
 
     def put(sid, try_txt, prompts, label="Try This"):
@@ -224,12 +225,17 @@ def add_practices(a, sections, R, threshold_info):
     nm = lambda pid: ("the " + W.NAME[pid]) if pid in ("sun", "moon") else W.NAME[pid]
     put("value", VALUE_TRY[r2], [VALUE_PROMPT[P[r2]["house"]],
                                  VALUE_PROMPT_2.format(R=nm(r2), S=P[r2]["sign"], gift=SIGN_GIFT[P[r2]["sign"]])])
-    put("fortune", FORTUNE_TRY[P["fortune"]["house"]],
-        [FORTUNE_PROMPTS[0].format(ord=T.ORD[P["fortune"]["house"]]),
-         FORTUNE_PROMPTS[1].format(asign=P["assets"]["sign"], aord=T.ORD[P["assets"]["house"]])])
+    if not untimed:
+        put("fortune", FORTUNE_TRY[P["fortune"]["house"]],
+            [FORTUNE_PROMPTS[0].format(ord=T.ORD[P["fortune"]["house"]]),
+             FORTUNE_PROMPTS[1].format(asign=P["assets"]["sign"], aord=T.ORD[P["assets"]["house"]])])
+    mc_sign = W.sign_of(a["cusps"][9] + 15) if untimed else W.sign_of(a["lon"]["mc"])
+    career_p0 = CAREER_PROMPTS[0].format(mc=mc_sign, gift=SIGN_GIFT[mc_sign])
+    if untimed:
+        career_p0 = career_p0.replace("Your Midheaven in", "Your solar tenth house in")
     put("blocks", BLOCK_TRY[r2], [BLOCK_PROMPT[r2], BLOCK_PROMPT_2.format(ord=T.ORD[P[r2]["house"]], topic=HOUSE_SHORT[P[r2]["house"]])])
     put("career", CAREER_TRY[P[rc]["house"]],
-        [CAREER_PROMPTS[0].format(mc=W.sign_of(a["lon"]["mc"]), gift=SIGN_GIFT[W.sign_of(a["lon"]["mc"])]), CAREER_PROMPTS[1].format(ord=T.ORD[P[rc]["house"]], topic=HOUSE_SHORT[P[rc]["house"]])])
+        [career_p0, CAREER_PROMPTS[1].format(ord=T.ORD[P[rc]["house"]], topic=HOUSE_SHORT[P[rc]["house"]])])
     for h, sid, TRY, PR in ((5, "fifth", FIFTH_TRY, FIFTH_PROMPTS), (8, "eighth", EIGHTH_TRY, EIGHTH_PROMPTS),
                             (11, "eleventh", ELEVENTH_TRY, ELEVENTH_PROMPTS)):
         el = ELEMENT[a["house_sign"][h]]

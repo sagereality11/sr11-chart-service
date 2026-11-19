@@ -175,16 +175,14 @@ def year_ahead():
 def wealth_story():
     """Your Birth Chart's Wealth Story. Same body as /v1/chart plus "name" and "mode":
     "snapshot" (free calculator result), "full" (reading data plus a web HTML fragment with a
-    section menu) or "pdf" (the finished PDF as base64). A birth time is required because the
-    reading is built on houses, the Part of Fortune and the Midheaven. Placidus and the True Node
-    are always used."""
+    section menu) or "pdf" (the finished PDF as base64). With a birth time the reading uses Placidus
+    houses, the Part of Fortune and the Midheaven. With "time_known": false it is cast for local noon and
+    uses solar whole sign houses (the Sun's sign as the first house), leaving out the angles and lots.
+    The True Node is always used."""
     body = request.get_json(silent=True)
     if not isinstance(body, dict):
         return _error("invalid_input", "Malformed request.", 422)
     mode = body.get("mode") if body.get("mode") in ("snapshot", "full", "pdf") else "snapshot"
-    if body.get("time_known") is False:
-        return _error("time_required", "Your Wealth Story needs a birth time, because it reads your houses, your Part of "
-                      "Fortune and your Midheaven. If you don't know yours, a birth certificate or hospital record usually has it.", 422)
     body = {**body, "house_system": "P", "node": "true", "points": ["fortune"], "asteroids": [], "aspects": []}
     body.pop("orbs", None)
     name = str(body.get("name") or "").strip()[:60] or "Friend"
@@ -198,7 +196,7 @@ def wealth_story():
             http = {"ambiguous": 409, "nonexistent": 422, "needs_confirmation": 409}.get(chart_out["status"], 422)
             return jsonify(chart_out), http
         t = req["time"]
-        btime = t.strftime("%I:%M %p").lstrip("0") if t else ""
+        btime = t.strftime("%I:%M %p").lstrip("0") if (t and req.get("time_known", True)) else "Birth time unknown"
         d = req["date"]
         birth = {"date": f"{wealth.MONTHS[d.month - 1]} {d.day}, {d.year}", "time": btime,
                  "place": req["place"].get("label", "")}
