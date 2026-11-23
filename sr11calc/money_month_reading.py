@@ -189,7 +189,7 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
         if brief or R not in P:
             return ""
         rx = " retrograde" if P[R].get("retro") else ""
-        return D.EMPTY_HOUSE.format(ord=ORD[h], sign=hs[h], R=nm(R), rx=rx, rsign=P[R]["sign"], rord=ORD[P[R]["house"]])
+        return D.EMPTY_HOUSE.format(ord=ORD[h], sign=hs[h], R=the(R), Rn=nm(R), rx=rx, rsign=P[R]["sign"], rord=ORD[P[R]["house"]])
 
     # ------------------------------------------------------------------ gather and score activations
     acts = []
@@ -329,6 +329,9 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
                .replace(" one key financial and professional dates", " one key date"))
         for k, grp in enumerate(thirds):
             if grp:
+                for j in range(len(grp) - 1, 0, -1):
+                    if grp[j][1] == grp[j - 1][1] and grp[j][2].startswith("On "):
+                        grp[j] = (grp[j][0], grp[j][1], "That same day, " + grp[j][2].split(", ", 1)[1])
                 tail = D.GLANCE_TAIL if k == 2 and any("Full Moon" in g[2] for g in grp) and top else ""
                 w.para(*[g[2] for g in grp], tail)
 
@@ -371,7 +374,11 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
         if pl == "venus":
             out.append(D.VENUS_TO.get(r, D.FAST_MEAN.get(("venus", x["cls"]), "")))
         else:
-            out.append(D.FAST_MEAN.get((pl, x["cls"]), ""))
+            mean = D.FAST_MEAN.get((pl, x["cls"]), "")
+            if ("mean", pl, x["cls"]) in introduced:
+                mean = D.FAST_AGAIN.get(pl, "")
+            introduced.add(("mean", pl, x["cls"]))
+            out.append(mean)
             if pl == "mercury" and r in ("second", "career", "both"):
                 out.append(D.MERCURY_TO_RULER.format(T=the(k)))
         if depth(x) >= 2:
@@ -506,7 +513,7 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
            if echo and st in top else "")
     for x in [x for x in pm["aspects"] if x["in_month"]][:2]:
         cls = "conj" if x["aspect"] == 0 else "soft" if x["aspect"] in (60, 120) else "hard"
-        w.para(T.PMOON_ASPECT[x["aspect"]].format(t=ref(x["target"]), date=_date(x["date"])), T.PMOON_ASPECT_MEAN[cls])
+        w.para(T.PMOON_ASPECT[x["aspect"]].format(t=ref(x["target"])[5:], date=_date(x["date"])), T.PMOON_ASPECT_MEAN[cls])
     w.sections[-1]["practice"] = {"label": "Try This",
                                   "try": "Once this month, check in with how you feel about money before you check the numbers. Write one sentence about the feeling, then one about the facts.",
                                   "prompts": [T.PROMPT_PMOON.format(sign=pm["sign"], ord=ORD[pm["house"]])]}
@@ -552,7 +559,7 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
                 x = (watch_slow or open_slow)[0]
                 others.append(f"the {nm(x['planet'])} {ASPECT_NOUN[x['aspect']]} to your {nm(x['target'])}")
             others.append(f"your progressed Moon in {pm['sign']}")
-            pair = D.PAIR.get(frozenset(top[:2])) or D.PAIR_GENERIC.format(A=_cap(D.THEME[top[0]]["noun"]), B=D.THEME[top[1]]["noun"])
+            pair = D.PAIR.get(frozenset(top[:2])) or D.PAIR_GENERIC.format(A=_cap(D.THEME[top[0]]["short"]), B=D.THEME[top[1]]["short"])
             w.para(D.CONVERGE.format(others=_join(others), pair=pair), D.THEME[top[0]]["lesson"])
 
     # ------------------------------------------------------------------ 9. what the month is preparing you for

@@ -639,6 +639,7 @@ PAIR = {
     frozenset(("value", "income")): "What you value and what you earn are being asked to match a little more closely.",
 }
 PAIR_GENERIC = "{A} and {B} are both being activated, and they're part of the same story."
+FAST_AGAIN = {"sun": "It's another day to step forward and be seen.", "mercury": "Use it for a second round of conversations or follow-ups.", "venus": "It adds more goodwill to the month.", "mars": "Use the energy, and pace yourself."}
 
 # Planet and sign themes.
 PLANET_THEME = {"uranus": "freedom", "saturn": "structure", "jupiter": "growth", "neptune": "vision", "pluto": "power",
@@ -685,7 +686,7 @@ INCOME_ALIGN = ("The more closely your work reflects your natural instincts, kno
                 "relationship with money can become.")
 
 LORD_SAME_R2 = ("{Lord} already rules your income, so its importance this month is amplified. This is a period to examine how "
-                "your emotional needs influence your financial decisions, where you're taking initiative, and whether your current "
+                "you're earning, where you're taking initiative, and whether your current "
                 "responsibilities support the future you're building.")
 LORD_SAME_RC = ("{Lord} also rules your career, so this month's spotlight lands squarely on your professional direction and how "
                 "you're being seen.")
@@ -714,9 +715,9 @@ GLANCE_TAIL = ("What begins with practical decisions about work and income may e
 MOVING_INTRO = ("The Sun, Venus, and Mars each describe a different side of your financial life. The Sun shows where your attention "
                 "goes, Venus shows how you relate to value and exchange, and Mars shows where effort, initiative, and sometimes "
                 "frustration gather. Their movements mean the most when we connect them to what's already in your chart.")
-SUN_SHINES = "With the Sun moving through your {ord} house this month, {noun} becomes an important part of the financial story."
+SUN_SHINES = "With the Sun moving through your {ord} house this month, the financial story turns toward {noun}."
 OCC_LINE = "Your natal {names} {verb} this house in {sign}{extra}."
-EMPTY_HOUSE = "Your {ord} house begins in {sign}, which makes {R} an important part of this story. Natal {R} sits{rx} in {rsign} in your {rord} house."
+EMPTY_HOUSE = "Your {ord} house begins in {sign}, which makes {R} an important part of this story. Your natal {Rn} sits{rx} in {rsign} in your {rord} house."
 MOVING_SYNTH = ("Together, these movements connect {a}, {b}, and {c}. {month} asks you to consider whether those areas are working "
                 "together or competing for your attention.")
 MOVING_SYNTH2 = ("Financial stability matters, and the deeper lesson may involve learning how to create stability without letting it "
