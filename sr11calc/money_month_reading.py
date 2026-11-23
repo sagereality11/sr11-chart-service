@@ -606,7 +606,7 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
                 said_not_event = True
             w.para(*parts)
         for x in progs[:1]:
-            w.para(T.SLOWPROG_LINE.format(p=nm(x["planet"]), a=T.ASPECT_WORD[x["aspect"]], t=ref(x["target"])))
+            w.para(T.SLOWPROG_LINE.format(p=nm(x["planet"]), a=T.ASPECT_WORD[x["aspect"]], t=ref(x["target"])[5:]))
         if mids:
             m = mids[0]
             w.para(D.MIDPOINT_DEEP.format(a=nm(m["pair"][0]), b=nm(m["pair"][1]), mean=T.MIDPOINT_MEAN[m["pair"]],
@@ -618,7 +618,7 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
                 others.append(f"the {nm(x['planet'])} {ASPECT_NOUN[x['aspect']]} to your {nm(x['target'])}")
             others.append(f"your progressed Moon in {pm['sign']}")
             pair = D.PAIR.get(frozenset(top[:2])) or D.PAIR_GENERIC.format(A=_cap(D.THEME[top[0]]["short"]), B=D.THEME[top[1]]["short"])
-            w.para(D.CONVERGE.format(others=_join(others), pair=pair), D.THEME[top[0]]["lesson"])
+            w.para(D.CONVERGE.format(others=_join(others), pair=pair).replace("When these directions are", "When these slower movements are" if not arcs else "When these directions are"), D.THEME[top[0]]["lesson"])
 
     # ------------------------------------------------------------------ 9. what the month is preparing you for
     w.section("prepare", D.PREP_HEAD.format(month=MONTH))
@@ -660,7 +660,9 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
     w.para((D.FINAL_CONVERGE if top else D.FINAL_SIMPLE).format(month=MONTH, list=sig_line))
     stel = [h for h in range(1, 13) if len(occ[h]) >= 3]
     a_bits = list(dict.fromkeys([T.SHORT_TOPIC[h2], T.SHORT_TOPIC[pc["house"]]] + [T.SHORT_TOPIC[h] for h in stel]))
-    b_line = (f"With {the(r2)} ruling your income from your {ORD[h2]} house and {the(rc)} connecting your career to your "
+    b_line = (f"With {the(r2)} ruling your income and {the(rc)} ruling your career, both from your {ORD[h2]} house, your money and "
+              f"your reputation draw on the same source." if rc != r2 and pc["house"] == h2 else
+              f"With {the(r2)} ruling your income from your {ORD[h2]} house and {the(rc)} connecting your career to your "
               f"{ORD[pc['house']]} house, the way you earn is tied to who you are and how you spend your days."
               if rc != r2 else f"With {the(r2)} ruling both your income and your career from your {ORD[h2]} house, your money and "
                                f"your reputation move together.")
