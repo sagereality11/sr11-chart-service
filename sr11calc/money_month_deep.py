@@ -802,3 +802,12 @@ LUN_SYNTH_TAIL_V = ["Both are connected to your financial life, because lasting 
 CAL_INTRO = ("Here's your month on one page. Each day lists what's moving in the sky and the point in your natal chart it touches, "
              "so you can plan around it. Gold notes are openings, rose notes ask for a little more care, purple marks the New and "
              "Full Moons, lilac notes are slower inner shifts, and gray notes show a planet moving into a new house of your chart.")
+
+# Closing lines for younger readers (under 30), whose career and money story is still taking shape.
+YOUNG = {
+    "tail": ["Your money story is still taking shape, and this is the season to learn what kind of work turns who you are into something that supports you.",
+             "You're still early in your money story, which means the habits you build now carry a long way."],
+    "career": "You don't need to have it all figured out yet. Each choice you make now teaches you what kind of work truly fits you.",
+    "income": "Financial security grows from small, steady choices, and the ones you make at this age compound for years.",
+    "open_synth": 1,
+}

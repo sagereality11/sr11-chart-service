@@ -73,6 +73,7 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
     w = Writer()
     occ = {h: [p for p in a["occupants"].get(h, []) if p in CLASSIC] for h in range(1, 13)}
     lord = f["monthly"]["lord"]
+    young = (a.get("profection") or {}).get("age", 40) < 30
 
     # ------------------------------------------------------------------ names and roles
     def nm(k):
@@ -479,7 +480,7 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
                    *(D.VENUS_TO.get(role(x["target"]), "") for x in small[:1]))
     n_open = len(open_slow[:2]) + len(open_days)
     if n_open >= 2:
-        w.para(rng.choice(D.OPEN_SYNTH_V))
+        w.para(D.OPEN_SYNTH_V[1] if young else rng.choice(D.OPEN_SYNTH_V))
     elif not n_open:
         w.para(D.QUIET_OPEN)
     top_open = (open_slow[0]["planet"] if open_slow else open_days[0]["planet"] if open_days else None)
@@ -496,7 +497,7 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
         watched = True
         if d >= 3 and not pattern_done and "saturn" in P:
             ps = P["saturn"]
-            mates = [nm(p) for p in occ[ps["house"]] if p != "saturn" and abs(W.sep(P[p]["lon"], ps["lon"])) <= 8]
+            mates = [the(p) for p in occ[ps["house"]] if p != "saturn" and abs(W.sep(P[p]["lon"], ps["lon"])) <= 8]
             sat = "Your natal Saturn" + (f", joined by {_join(mates)}," if mates else "")
             w.para(D.WATCH_DEEPER.format(sat=sat, sign=ps["sign"], ord=ORD[ps["house"]],
                                          topic=T.SHORT_TOPIC[ps["house"]]),
@@ -667,9 +668,10 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
               if rc != r2 else f"With {the(r2)} ruling both your income and your career from your {ORD[h2]} house, your money and "
                                f"your reputation move together.")
     disrupt = big and big[0]["planet"] in ("uranus", "pluto", "neptune") and D.PLANET_THEME[big[0]["planet"]] in top
-    w.para(D.FINAL_NATAL.format(a=_join(a_bits + ["your material security"]), b=b_line, tail=rng.choice(D.FINAL_NATAL_TAIL_V)),
+    w.para(D.FINAL_NATAL.format(a=_join(a_bits + ["your material security"]), b=b_line, tail=rng.choice(D.YOUNG["tail"] if young else D.FINAL_NATAL_TAIL_V)),
            D.FINAL_YET if disrupt else "", D.THEME[D.PLANET_THEME[big[0]["planet"]]]["final"] if disrupt else "")
-    fin = [D.THEME[t]["final"] for t in top[:2] if not (disrupt and t == D.PLANET_THEME[big[0]["planet"]])]
+    fin = [(D.YOUNG.get(t) if young and t in ("career", "income") else D.THEME[t]["final"]) for t in top[:2]
+           if not (disrupt and t == D.PLANET_THEME[big[0]["planet"]])]
     w.para(*(fin or [D.THEME[lt]["final"]]))
 
     # ------------------------------------------------------------------ offers
