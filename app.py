@@ -281,5 +281,67 @@ def planner():
     return jsonify(out)
 
 
+@app.post("/v1/money-month")
+def money_month():
+    """Your Monthly Money Forecast. Same body as /v1/chart plus "name", "forecast_year", "forecast_month"
+    (from last month through two months ahead) and optional "forecast_tz" (an IANA time zone for the dates;
+    defaults to the birth place's zone). Returns the PDF as base64 and, with "with_html", the web version.
+    Works with or without a birth time (solar houses when "time_known" is false)."""
+    import base64
+    import datetime as _dt
+    from zoneinfo import ZoneInfo
+    from sr11calc import money_month as mm, money_month_reading as mmr
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return _error("invalid_input", "Malformed request.", 422)
+    try:
+        fy, fm = int(body.get("forecast_year")), int(body.get("forecast_month"))
+    except (TypeError, ValueError):
+        return _error("invalid_input", "Please choose the month for your forecast.", 422)
+    today = _dt.date.today()
+    idx, now_idx = fy * 12 + fm - 1, today.year * 12 + today.month - 1
+    if not (1 <= fm <= 12) or not (now_idx - 1 <= idx <= now_idx + 2):
+        return _error("invalid_month", "Please choose this month or next month for your forecast.", 422)
+    ftz = str(body.get("forecast_tz") or "")[:64]
+    if ftz:
+        try:
+            ZoneInfo(ftz)
+        except Exception:
+            ftz = ""
+    body = {**body, "house_system": "P", "node": "true", "points": ["fortune"], "asteroids": [], "aspects": []}
+    body.pop("orbs", None)
+    name = str(body.get("name") or "").strip()[:60] or "Friend"
+    try:
+        req = parse_request(body, places)
+    except InputError as e:
+        return _error(e.code, e.message, 422)
+    try:
+        chart_out = build_chart(req)
+        if chart_out["status"] != "ok":
+            http = {"ambiguous": 409, "nonexistent": 422, "needs_confirmation": 409}.get(chart_out["status"], 422)
+            return jsonify(chart_out), http
+        t = req["time"]
+        btime = t.strftime("%I:%M %p").lstrip("0") if (t and req.get("time_known", True)) else "Birth time unknown"
+        d = req["date"]
+        birth = {"date": f"{wealth.MONTHS[d.month - 1]} {d.day}, {d.year}", "time": btime,
+                 "place": req["place"].get("label", "")}
+        tz_name = ftz or req["place"].get("tz") or "America/New_York"
+        analysis = wealth.analyze(chart_out, d, _dt.date(fy, fm, 1))
+        facts = mm.month_facts(analysis, chart_out, fy, fm, tz_name, d)
+        reading = mmr.build_money_month(analysis, facts, name, birth)
+        out = {"status": "ok", "product": "money-month", "name": name, "birth": birth,
+               "month": f"{wealth.MONTHS[fm - 1]} {fy}", "forecast_year": fy, "forecast_month": fm,
+               "pdf_base64": base64.b64encode(wealth_render.render_pdf(reading)).decode("ascii")}
+        if body.get("with_html"):
+            out["html"] = wealth_render.render_web(reading)
+        safe = "".join(c for c in name if c.isalnum() or c in "-_")[:40]
+        tail = f"{wealth.MONTHS[fm - 1]}-{fy}"
+        out["filename"] = f"Monthly-Money-Forecast-{safe}-{tail}.pdf" if name != "Friend" and safe else f"Monthly-Money-Forecast-{tail}.pdf"
+    except Exception:  # never leak internals or input into logs/responses
+        app.logger.error("money month failed (input withheld)")
+        return _error("calculation_failed", "Your forecast could not be created. Please try again.", 500)
+    return jsonify(out)
+
+
 if __name__ == "__main__":  # local development only
     app.run(host="127.0.0.1", port=int(os.environ.get("PORT", "8080")))
