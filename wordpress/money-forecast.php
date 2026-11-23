@@ -249,7 +249,7 @@ add_shortcode( 'sr_money_forecast_reading', function () {
     var body = srmonBody($, 'mon', place); body.order = C.order; body.key = C.key; body.forecast = $('mon-month').value;
     try { body.forecast_tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { body.forecast_tz = ''; }
     for (var k in (extra||{})) body[k] = extra[k];
-    busy = true; $('mon-go').disabled = true; msg('Reading your chart against this month's sky. This takes a few seconds....');
+    busy = true; $('mon-go').disabled = true; msg('Reading your chart against this month\u2019s sky. This takes a few seconds....');
     fetch(C.endpoint, { method:'POST', credentials:'same-origin',
       headers:{ 'Content-Type':'application/json', 'X-SR11-Request':'1', 'X-WP-Nonce': C.nonce }, body: JSON.stringify(body) })
     .then(function(r){ return r.json().then(function(j){ return { s:r.status, j:j }; }); })
