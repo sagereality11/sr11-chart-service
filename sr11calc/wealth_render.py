@@ -70,6 +70,14 @@ def _calendar_html(s):
             f'<tbody>{"".join(rows)}</tbody></table></div>')
 
 
+def _affirm_html(s):
+    items = s.get("affirmations")
+    if not items:
+        return ""
+    li = "".join(f'<div class="af"><p class="afw">{esc(i["when"])}</p><p class="aft">{esc(i["text"])}</p></div>' for i in items)
+    return f'<div class="affs">{li}</div>'
+
+
 def _body_html(r, for_pdf=True, breaks=(), lines=True):
     out = []
     for s in r["sections"]:
@@ -86,6 +94,7 @@ def _body_html(r, for_pdf=True, breaks=(), lines=True):
         out.append(f'<div class="keep">{lead}</div>')
         for p in paras:
             out.append(f"<p>{esc(p)}</p>")
+        out.append(_affirm_html(s))
         out.append(_calendar_html(s))
         out.append(_practice_html(s, lines))
         out.append(_offers_html(s))
@@ -132,6 +141,10 @@ p {{ orphans:3; widows:3; }}
 .site {{ font-size:9pt; letter-spacing:2px; text-transform:uppercase; color:{GOLD}; }}
 .disc {{ font-size:8.6pt; color:#7a6d8d; line-height:1.5; border-top:1px solid {LILAC2}; padding-top:10px; margin-top:28px; }}
 section#calendar {{ page-break-before:always; page-break-after:always; }}
+.affs {{ border:1px solid {LILAC2}; border-top:4px solid {GOLD}; padding:10px 20px 2px 20px; margin:10px 0 6px 0; }}
+.af {{ page-break-inside:avoid; margin:0 0 10px 0; }}
+.afw {{ font-family:'Inter','DejaVu Sans',sans-serif; font-size:8.8pt; font-weight:600; letter-spacing:1.8px; text-transform:uppercase; color:{GOLD}; margin:0 0 2px 0; }}
+.aft {{ font-style:italic; color:{PURPLE}; font-size:13pt; margin:0; }}
 section#calendar p {{ font-size:11.5pt; line-height:1.5; }}
 .calwrap {{ page-break-inside:avoid; }}
 .cal-all {{ background:{LILAC}; border-left:4px solid {PURPLE}; padding:8px 14px 4px 14px; margin:6px 0 10px 0; }}
@@ -418,6 +431,9 @@ WEB_CSS = f"""
 .sr-ws .site{{font-size:.8rem;letter-spacing:2px;text-transform:uppercase;color:var(--g);margin-top:1.4rem}}
 .sr-ws .totop{{display:inline-block;margin-top:.6rem;font-size:.85rem;color:var(--p)}}
 .sr-ws .calwrap{{overflow-x:auto;margin:.6rem 0 1.4rem}}
+.sr-ws .affs{{border:1px solid var(--l2);border-top:4px solid var(--g);padding:.8rem 1.2rem .2rem;margin:.6rem 0 1.2rem;border-radius:3px}}
+.sr-ws .af{{margin:0 0 .8rem}}.sr-ws .afw{{font-family:Inter,Arial,sans-serif;font-size:.74rem;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:#a07f2c;margin:0 0 .15rem!important}}
+.sr-ws .aft{{font-style:italic;color:var(--p);font-size:1.08rem;margin:0!important}}
 .sr-ws .cal-all{{background:var(--l);border-left:4px solid var(--p);padding:.6rem 1rem .2rem;margin:0 0 .8rem;border-radius:3px}}
 .sr-ws .cal-all ul{{margin:0 0 .5rem;padding-left:1.1rem;font-size:.92rem}}
 .sr-ws table.cal{{width:100%;min-width:640px;border-collapse:collapse;table-layout:fixed;font-family:Inter,Arial,sans-serif}}

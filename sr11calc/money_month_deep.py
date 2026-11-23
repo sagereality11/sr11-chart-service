@@ -811,3 +811,135 @@ YOUNG = {
     "income": "Financial security grows from small, steady choices, and the ones you make at this age compound for years.",
     "open_synth": 1,
 }
+
+# --------------------------------------------------------------------------------------------------
+# Affirmations, each tied to a moment in the month
+# --------------------------------------------------------------------------------------------------
+AFF_INTRO = ("Affirmations work best when they're tied to timing. Here's one for each turning point in your month. Read it on "
+             "the day, say it out loud, or write it somewhere you'll see it every morning.")
+AFF_LORD = {
+    "sun": "I let myself be seen for what I do well, and I stand behind my work with confidence.",
+    "moon": "I make money decisions from a calm, rested place, and I take care of myself as well as I take care of others.",
+    "mercury": "My words carry value. I say clearly what I offer and what it's worth.",
+    "venus": "I welcome money, support, and good people into my life, and I receive as easily as I give.",
+    "mars": "I act with courage, I ask directly, and I put my energy where it builds something.",
+    "jupiter": "I say yes to the opportunities that expand my life, and no to the ones that only add to my load.",
+    "saturn": "I build steadily, and every commitment I keep strengthens the foundation under my life.",
+}
+AFF_WATCH = {
+    "saturn": "I build at a pace I can sustain, and the boundaries I set protect what I'm creating.",
+    "uranus": "I make room for change, and I trust that freedom and security can grow together.",
+    "neptune": "I trust my intuition and I check the details, and both lead me somewhere true.",
+    "pluto": "I take back my power around money, one clear decision at a time.",
+    "jupiter": "I choose growth that fits my life, and I let better matter more than more.",
+    "mars": "I pause before I react, and my energy goes where it does the most good.",
+    "mercury": "I slow down, double-check the details, and trust that the right timing is working for me.",
+}
+AFF_VENUS = "I'm open to receiving. I ask for what my work is worth, and I let the answer be yes."
+AFF_OPEN_SLOW = {
+    "jupiter": "Doors are opening for me, and I'm ready to walk through the ones that are meant for me.",
+    "saturn": "My steady effort is paying off, and what I build now will last.",
+    "uranus": "I welcome the unexpected. Something new is finding its way to me.",
+}
+AFF_NEW = {
+    1: "I begin something for myself, and I don't wait for permission to start.",
+    2: "I begin a new relationship with money, rooted in what I truly value.",
+    3: "I share what I know, and my ideas open new doors.",
+    4: "I build a home base that supports everything I'm creating.",
+    5: "I give my creativity room to grow, and I let joy be part of my work.",
+    6: "I create routines that support me, and my daily work moves me toward the life I want.",
+    7: "I welcome partnerships that are fair, generous, and good for both of us.",
+    8: "I set clear terms with money, and shared resources flow with trust.",
+    9: "I'm ready to grow, learn, and let my work reach farther than before.",
+    10: "I set a clear intention for my career and take one visible step toward it.",
+    11: "I'm surrounded by people who believe in me, and I let them help.",
+    12: "I rest, I reflect, and I let something new take root quietly.",
+}
+AFF_FULL = {
+    1: "I release what I've been giving away, and I keep what's mine.",
+    2: "I see my worth clearly, and I let go of undercharging myself.",
+    3: "I release the words I've held back, and I speak with confidence.",
+    4: "I release old family patterns around money that no longer fit me.",
+    5: "I celebrate what I've created and let myself enjoy the response.",
+    6: "I release the routines that drain me and keep the ones that serve me.",
+    7: "I let go of agreements that ask more than they give.",
+    8: "I release old debts and old fears, and I let money move with ease.",
+    9: "I honor what I've learned and let it shape what comes next.",
+    10: "I let myself be recognized for what I've built.",
+    11: "I release connections that hold me back and make room for the ones that lift me.",
+    12: "I let go of the money worries I've carried alone, and I trust myself to be supported.",
+}
+AFF_PMOON = {
+    "Aries": "I trust myself to go first.", "Taurus": "I build security that grows from what I value.",
+    "Gemini": "My curiosity is valuable, and I focus it where it matters.", "Cancer": "I'm allowed to be one of the people I take care of.",
+    "Leo": "Being seen is part of being paid, and I let myself shine.", "Virgo": "My skill is valuable, and I charge for it with confidence.",
+    "Libra": "A fair exchange includes what I need too.", "Scorpio": "I trust myself with power, depth, and the truth about money.",
+    "Sagittarius": "I follow what feels meaningful, and abundance follows me.", "Capricorn": "I build with patience, and I let myself rest on what I've built.",
+    "Aquarius": "I can be free and secure at the same time.", "Pisces": "I give from fullness, and I let myself be supported.",
+}
+
+# --------------------------------------------------------------------------------------------------
+# Career paths (readers under 30)
+# --------------------------------------------------------------------------------------------------
+CP_INTRO = ("Because you're early in your working life, I want to show you what your birth chart says about the kinds of work "
+            "that suit you. This isn't a list of jobs you have to choose from. It's a map of where your natural strengths "
+            "tend to feel at home, so you can test a few paths with more confidence.")
+CP_INTRO_SOLAR = ("Because you're early in your working life, I want to show you what your birth chart says about the kinds of work "
+                  "that suit you. Without a birth time I read this from your solar houses, so treat it as a strong starting point "
+                  "rather than the full picture.")
+MC_CAREERS = {
+    "Aries": "Your Midheaven is in Aries, which favors work where you lead, compete, or start things. Think entrepreneurship, sports and fitness, emergency services, the military, sales, or any role where you're trusted to act fast.",
+    "Taurus": "Your Midheaven is in Taurus, which favors work with tangible results and lasting value. Think finance and banking, real estate, design, food and hospitality, music, beauty, or building something people can hold.",
+    "Gemini": "Your Midheaven is in Gemini, which favors work built on words, ideas, and connection. Think writing, media, marketing, teaching, sales, social media, translation, or any role that keeps your mind moving.",
+    "Cancer": "Your Midheaven is in Cancer, which favors work that cares for people and creates security. Think healthcare, counseling, education, hospitality, real estate, family businesses, or anything that helps people feel at home.",
+    "Leo": "Your Midheaven is in Leo, which favors work where you're seen and your creativity matters. Think performing, entertainment, leadership roles, design, teaching young people, or starting a business with your name on it.",
+    "Virgo": "Your Midheaven is in Virgo, which favors skilled, useful, detail-minded work. Think healthcare, analysis, accounting, editing, research, technology, operations, or any craft you can keep getting better at.",
+    "Libra": "Your Midheaven is in Libra, which favors work built on fairness, beauty, and partnership. Think law, mediation, design, fashion, the arts, client relations, human resources, or diplomacy.",
+    "Scorpio": "Your Midheaven is in Scorpio, which favors deep, investigative, high-trust work. Think psychology, research, investigation, finance and investing, medicine, crisis work, or anything that handles what others avoid.",
+    "Sagittarius": "Your Midheaven is in Sagittarius, which favors work with meaning, movement, and a bigger view. Think teaching, publishing, travel, law, coaching, ministry, international work, or anything that helps people grow.",
+    "Capricorn": "Your Midheaven is in Capricorn, which favors work with structure, responsibility, and a long ladder to climb. Think management, business, government, engineering, finance, construction, or building something of your own over time.",
+    "Aquarius": "Your Midheaven is in Aquarius, which favors innovative, independent, future-minded work. Think technology, science, engineering, nonprofits, community organizing, social media, or anything that does things a new way.",
+    "Pisces": "Your Midheaven is in Pisces, which favors creative, intuitive, compassionate work. Think the arts, music, film, healing work, counseling, nursing, spiritual work, or anything that serves people quietly and deeply.",
+}
+CP_RULER = {
+    1: "Your career ruler, {R}, sits in your first house, so your career is shaped by your own initiative. You may do best working for yourself, or in roles where your personal style is the product.",
+    2: "Your career ruler, {R}, sits in your second house, so your career and your income are closely tied. Fields that deal with money, resources, or valuable skills suit you well.",
+    3: "Your career ruler, {R}, sits in your third house, so communication is central to your path. Writing, teaching, sales, media, and local or community work tend to fit.",
+    4: "Your career ruler, {R}, sits in your fourth house, so home and roots shape your work. Real estate, family business, working from home, or caring professions can all fit.",
+    5: "Your career ruler, {R}, sits in your fifth house, so your career wants creativity and joy in it. The arts, entertainment, working with children, or anything you'd make for fun can grow into a path.",
+    6: "Your career ruler, {R}, sits in your sixth house, so your career grows through skill, service, and daily craft. Health, trades, operations, and any role where you get better with practice suit you.",
+    7: "Your career ruler, {R}, sits in your seventh house, so your career grows through other people. Client work, partnerships, counseling, law, and anything one-to-one tend to fit.",
+    8: "Your career ruler, {R}, sits in your eighth house, so your career may involve other people's resources. Finance, insurance, investing, research, psychology, and crisis work can fit.",
+    9: "Your career ruler, {R}, sits in your ninth house, so your career is tied to learning and a larger purpose. Higher education, teaching, publishing, travel, and law tend to fit.",
+    10: "Your career ruler, {R}, sits in your tenth house, its own territory, so career is a strong, visible theme for you. Leadership and public-facing roles tend to suit you.",
+    11: "Your career ruler, {R}, sits in your eleventh house, so your career grows through networks and communities. Technology, nonprofits, group projects, and audience-based work tend to fit.",
+    12: "Your career ruler, {R}, sits in your twelfth house, so some of your best work happens behind the scenes. Research, healthcare, institutions, the arts, and quiet independent work can fit.",
+}
+CP_ACTION_INTRO = ("The ancient astrologer Ptolemy taught that one of three planets, Mercury, Venus, or Mars, describes the kind of "
+                   "work a person does best. In your chart, {P} is the strongest of the three{why}.")
+CP_ACTION = {
+    "mercury": "Mercury points to work with your mind and your words, writing, teaching, business, accounting, technology, sales, or anything that runs on information and skill.",
+    "venus": "Venus points to work with beauty, people, and pleasure, design, the arts, music, fashion, beauty, hospitality, or anything that makes life more lovely.",
+    "mars": "Mars points to work with energy, courage, and your hands, trades, engineering, the military, emergency services, surgery, athletics, or anything that takes nerve.",
+}
+CP_PAIR = {
+    frozenset(("mercury", "venus")): "{Q} is close behind, which blends the two. Ptolemy linked Mercury and Venus to the arts, music, writing, and teaching anything beautiful.",
+    frozenset(("mercury", "mars")): "{Q} is close behind, which blends the two. Ptolemy linked Mercury and Mars to skilled hands-on work, building, surgery, and sharp, strategic thinking.",
+    frozenset(("venus", "mars")): "{Q} is close behind, which blends the two. Ptolemy linked Venus and Mars to crafts that combine beauty and force, like design, cooking, dyeing, and making things by hand.",
+}
+CP_IN10 = {
+    "sun": "The Sun sits in your tenth house, a sign that leadership and visibility are part of your path.",
+    "moon": "The Moon sits in your tenth house, so work that serves the public or cares for people suits you.",
+    "mercury": "Mercury sits in your tenth house, so your voice and your ideas can become your reputation.",
+    "venus": "Venus sits in your tenth house, so charm, beauty, and good relationships help your career grow.",
+    "mars": "Mars sits in your tenth house, so ambition is strong and competitive fields can suit you.",
+    "jupiter": "Jupiter sits in your tenth house, one of the luckiest placements for career growth and public success.",
+    "saturn": "Saturn sits in your tenth house, so you're built for responsibility and long-term achievement, even if success takes time.",
+    "uranus": "Uranus sits in your tenth house, so unconventional, independent, or tech-driven careers suit you.",
+    "neptune": "Neptune sits in your tenth house, so creative, healing, or spiritual work can become your calling.",
+    "pluto": "Pluto sits in your tenth house, so you're drawn to work with real power and impact.",
+}
+CP_CLOSE = ("You don't have to pick one forever. Try the paths where these themes overlap, notice which ones give you energy, and "
+            "let your chart be a guide rather than a rule.")
+CP_TRY = "Pick two fields from this section that interest you, and talk to one person who works in each before the month ends."
+CP_PROMPT = "Which of these career themes already shows up in what you love doing, and what's one small way to test it this year?"
