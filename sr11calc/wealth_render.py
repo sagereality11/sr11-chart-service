@@ -154,8 +154,9 @@ def render_cover_pdf(r) -> bytes:
     top = H * 0.66
     centered("SAGE REALITY 11", top, "SR11Lora", 10.5, purple, 4.2)
     rule(top - 18)
-    centered("Your Birth Chart's", top - 76, "SR11Lora", 44, purple)
-    centered("Wealth Story", top - 128, "SR11Lora", 44, purple)
+    l1, l2 = r.get("cover_lines") or ("Your Birth Chart's", "Wealth Story")
+    centered(l1, top - 76, "SR11Lora", 44, purple)
+    centered(l2, top - 128, "SR11Lora", 44, purple)
     centered(r["subtitle"], top - 166, "SR11LoraI", 15, soft)
     rule(top - 192)
     b = r.get("birth") or {}
@@ -271,7 +272,7 @@ def _contents_pdf(sections, pages, first_body_page):
     return buf.getvalue(), links
 
 
-def _footer_pdf(n_pages, first_number=1):
+def _footer_pdf(n_pages, first_number=1, footer_title="Your Birth Chart's Wealth Story"):
     from reportlab.lib.colors import HexColor
     from reportlab.lib.pagesizes import letter
     from reportlab.pdfgen import canvas
@@ -282,7 +283,7 @@ def _footer_pdf(n_pages, first_number=1):
     for i in range(n_pages):
         c.setFont("SR11Lora", 7.5)
         c.setFillColor(HexColor("#9a8db0"))
-        c.drawCentredString(W / 2, 26, f"Sage Reality 11  \u00b7  Your Birth Chart's Wealth Story  \u00b7  {i + first_number}")
+        c.drawCentredString(W / 2, 26, f"Sage Reality 11  \u00b7  {footer_title}  \u00b7  {i + first_number}")
         c.showPage()
     c.save()
     return buf.getvalue()
@@ -316,7 +317,7 @@ def render_pdf(r) -> bytes:
             breaks |= stranded
         n = len(body_pdf.pages)
         pages = _find_pages(body_pdf, r["sections"])
-        footer = PdfReader(io.BytesIO(_footer_pdf(n)))
+        footer = PdfReader(io.BytesIO(_footer_pdf(n, footer_title=r.get("footer_title", "Your Birth Chart's Wealth Story"))))
         for i, pg in enumerate(body_pdf.pages):
             pg.merge_page(footer.pages[i])
         contents, links = _contents_pdf(r["sections"], pages, 2)

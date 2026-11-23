@@ -90,11 +90,11 @@ def prof_next(prof):
     return f"That birthday begins {yr}, {who}, so most of the coming year carries that new theme."
 
 
-def explain_terms(sections):
+def explain_terms(sections, skip=("next",)):
     """Add a plain explanation right after the first sentence that uses each astrology term."""
     done = set()
     for sec in sections:
-        if sec["id"] == "next":
+        if sec["id"] in skip:
             continue
         for pi, para in enumerate(sec["paragraphs"]):
             if "From there we'll look at" in para or para.startswith("You didn't have a birth time"):
