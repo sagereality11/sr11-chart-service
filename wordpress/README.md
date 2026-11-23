@@ -5,6 +5,9 @@ alongside the service it calls.
 
 * `wealth-story.php` (PHP, Run Everywhere): Your Birth Chart's Wealth Story free calculator `[sr_wealth_story_calculator]`, the paid
   reading page `[sr_wealth_story_reading]`, order links, and the `sr11ws/v1` REST routes that forward to `/v1/wealth-story`.
+* `money-forecast.php` (PHP, Run Everywhere): Your Monthly Money Forecast ($22.22) reading page `[sr_money_forecast_reading]`,
+  month picker (this month or next; the first forecast locks the order to its month), order links, and the `sr11mf/v1/reading`
+  REST route that forwards to `/v1/money-month`. `assets/money-forecast/` holds the product images.
 * `your-2027-reading.php` (PHP, Run Everywhere): Your 2027 Reading access gate, order links,
   birth-data form shortcode `[sr_your_2027_reading]`, and the `sr11y27/v1/reading` REST route that
   forwards to `/v1/year-ahead` using the SR11 Birth Chart plugin's saved service URL and key.
