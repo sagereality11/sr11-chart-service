@@ -122,10 +122,33 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
 
     introduced = set()
 
+    pc_n = [0]
+
     def placed(k):
         p = P[k]
-        rx = " retrograde" if p.get("retro") and k in CLASSIC else ""
-        return f"sits{rx} in {p['sign']} in your {ORD[p['house']]} house"
+        retro = p.get("retro") and k in CLASSIC
+        pc_n[0] += 1
+        i = pc_n[0] % 3
+        if retro:
+            return [f"sits retrograde in {p['sign']} in your {ORD[p['house']]} house",
+                    f"is retrograde in {p['sign']} in your {ORD[p['house']]} house",
+                    f"was retrograde at your birth, in {p['sign']} in your {ORD[p['house']]} house"][i]
+        return [f"sits in {p['sign']} in your {ORD[p['house']]} house",
+                f"is in {p['sign']} in your {ORD[p['house']]} house",
+                f"falls in {p['sign']} in your {ORD[p['house']]} house"][i]
+
+    rot = defaultdict(int)
+
+    def pick(key, opts):
+        i = rot[key] % len(opts)
+        rot[key] += 1
+        return opts[i]
+
+    noun_used = defaultdict(int)
+
+    def tnoun(t):
+        noun_used[t] += 1
+        return D.THEME[t]["noun"] if noun_used[t] == 1 else D.THEME_NOUN2[t]
 
     def intro_pt(k):
         """Natal description of a point, given once."""
@@ -189,8 +212,10 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
         R = rulers[h]
         if brief or R not in P:
             return ""
-        rx = " retrograde" if P[R].get("retro") else ""
-        return D.EMPTY_HOUSE.format(ord=ORD[h], sign=hs[h], R=the(R), Rn=nm(R), rx=rx, rsign=P[R]["sign"], rord=ORD[P[R]["house"]])
+        if R in introduced:
+            return pick("empty_known", D.EMPTY_HOUSE_KNOWN).format(ord=ORD[h], sign=hs[h], R=the(R))
+        introduced.add(R)
+        return pick("empty", D.EMPTY_HOUSE_V).format(ord=ORD[h], sign=hs[h], R=the(R), Rn=nm(R), placed=placed(R))
 
     # ------------------------------------------------------------------ gather and score activations
     acts = []
@@ -248,7 +273,8 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
     top = [t for t in sorted(src, key=lambda t: (-len(src[t]), THEME_ORDER.index(t))) if len(src[t]) >= 2][:3]
 
     def theme_nouns(ts):
-        return _join(D.THEME[t]["noun"] for t in ts)
+        ns = [tnoun(t) for t in ts]
+        return f"{ns[0]}, along with {ns[1]}" if len(ns) == 2 else _join(ns)
 
     # ------------------------------------------------------------------ 1. opening
     w.section("begins", "Your Money Month Begins")
@@ -303,9 +329,10 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
     items = []
     for x in acts:
         if x["tech"] == "day" and x["score"] >= 3:
-            verb = "crosses" if x["aspect"] == 0 else D.VERB[x["aspect"]]
-            items.append((x["score"], x["date"], f"On {_date(x['date'])}, {the(x['planet'])} {verb} your {nm(x['target'])}, "
-                                               f"{D.GLANCE_TARGET.get(role(x['target']), D.GLANCE_TARGET['other'])}."))
+            verb = "crosses" if x["aspect"] == 0 else pick("gverb" + str(x["aspect"]), [D.VERB[x["aspect"]], D.VERBS3[x["aspect"]]])
+            gl = (pick("gh", D.GLANCE_HARD_V).format(t=D.GLANCE_HARD.get(role(x["target"]), D.GLANCE_HARD["other"])) if x["cls"] == "hard"
+                  else pick('gt' + role(x['target']), D.GLANCE_TARGET.get(role(x['target']), D.GLANCE_TARGET['other'])))
+            items.append((x["score"], x["date"], f"On {_date(x['date'])}, {the(x['planet'])} {verb} your {nm(x['target'])}, {gl}."))
         elif x["tech"] == "transit" and x["date"]:
             items.append((x["score"], x["date"], f"On {_date(x['date'])}, {nm(x['planet'])}'s {ASPECT_NOUN[x['aspect']]} to "
                                                f"your {nm(x['target'])} is exact."))
@@ -314,7 +341,7 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
         o = [nm(p) for p in occ[h]]
         where = f", where your natal {_join(o)} already {'lives' if len(o) == 1 else 'live'}" if o else ""
         ecl = "eclipse " if L["eclipse"] else ""
-        items.append((9, L["date"], f"The {'New' if L['kind'] == 'new' else 'Full'} Moon {ecl}on {_date(L['date'])} falls in "
+        items.append((9, L["date"], f"{_date(L['date'])} brings the {'New' if L['kind'] == 'new' else 'Full'} Moon {ecl}in "
                                     f"{L['sign']}, turning attention toward your {ORD[h]} house of {T.HOUSE_OF[h]}{where}."))
     for s in f["stations"]:
         items.append((6, s["date"], f"On {_date(s['date'])}, Mercury turns {s['kind']} in {s['sign']}, so slow down on contracts and double-check the details."))
@@ -332,7 +359,7 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
             if grp:
                 for j in range(len(grp) - 1, 0, -1):
                     if grp[j][1] == grp[j - 1][1] and grp[j][2].startswith("On "):
-                        grp[j] = (grp[j][0], grp[j][1], "That same day, " + grp[j][2].split(", ", 1)[1])
+                        grp[j] = (grp[j][0], grp[j][1], pick("sameday", D.SAME_DAY_V) + grp[j][2].split(", ", 1)[1])
                 tail = D.GLANCE_TAIL if k == 2 and any("Full Moon" in g[2] for g in grp) and top else ""
                 w.para(*[g[2] for g in grp], tail)
 
@@ -448,8 +475,8 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
         d = depth(x)
         k, pl = x["target"], x["planet"]
         verb = D.VERB_SLOW[x["aspect"]]
-        exact = f" The aspect is exact on {_date(x['date'])}." if x["date"] else ""
-        first = f"This month {nm(pl)} {verb} {ref(k)}.{exact}"
+        exact = (" " + pick("exact", ["The aspect is exact on {d}.", "It peaks on {d}.", "It's exact on {d}."]).format(d=_date(x["date"]))) if x["date"] else ""
+        first = pick("slowopen" + w.sections[-1]["id"], D.SLOW_OPEN_V).format(P=nm(pl), verb=verb, verb_also=verb.replace("is ", "is also ", 1), T=ref(k)) + exact
         w.para(first, intro_pt(k), D.SLOW_MEAN.get((pl, x["cls"]), ""))
         if d >= 2:
             w.para(natal_depth(k), role_deep(k), D.SLOW_DEEP.get((pl, x["cls"]), ""))
@@ -462,7 +489,13 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
     def day_para(x, lead=True):
         k, pl = x["target"], x["planet"]
         verb = "crosses" if x["aspect"] == 0 else D.VERB[x["aspect"]]
-        out = [f"On {_date(x['date'])}, {the(pl)} {verb} {ref(k)}." if lead else "", intro_pt(k)]
+        noun = ASPECT_NOUN[x["aspect"]]
+        _r = ref(k)
+        lead_opts = D.DAY_LEAD_V[:1] if "," in _r else D.DAY_LEAD_V[:2]
+        lead_t = pick("daylead", lead_opts).format(date=_date(x["date"]), the=the(pl), The=The(pl), an="an" if noun[0] in "aeiou" else "a",
+                                                          noun=noun, T=_r, verbs=D.VERBS3[x["aspect"]], verb=verb)
+        lead_t = lead_t.replace("into a conjunction with", "across")
+        out = [_cap(lead_t) if lead else "", intro_pt(k)]
         r = role(k)
         if pl == "venus":
             out.append(D.VENUS_TO.get(r, D.FAST_MEAN.get(("venus", x["cls"]), "")))
@@ -496,12 +529,14 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
         grp = [v for v in venus[i:] if (v["date"] - venus[i]["date"]).days <= 7]
         if len(grp) > len(best):
             best = grp
-    if len(best) >= 2:
+    if len(best) >= 2 and len({v["date"] for v in best}) >= 2:
         cluster = best
         venus = [v for v in venus if v not in best]
-    for x in sorted(venus + rest, key=lambda x: x["date"]):
-        w.para(*day_para(x))
-    if cluster:
+    singles = sorted(venus + rest, key=lambda x: x["date"])
+    cl_date = cluster[0]["date"] if cluster else None
+    done_cluster = False
+
+    def write_cluster():
         w.para(D.VENUS_CLUSTER.format(d1=_date(cluster[0]["date"]), d2=_date(cluster[-1]["date"])))
         small = []
         for x in cluster:
@@ -510,8 +545,16 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
             else:
                 small.append(x)
         if small:
-            w.para(*(f"On {_date(x['date'])}, Venus {'crosses' if x['aspect'] == 0 else D.VERB[x['aspect']]} {ref(x['target'])}." for x in small),
+            w.para(*(f"On {_date(x['date'])}, Venus also {D.VERBS3[x['aspect']]} {ref(x['target'])}." for x in small),
                    *(D.VENUS_TO.get(role(x["target"]), "") for x in small[:1]))
+
+    for x in singles:
+        if cluster and not done_cluster and x["date"] > cl_date:
+            write_cluster()
+            done_cluster = True
+        w.para(*day_para(x))
+    if cluster and not done_cluster:
+        write_cluster()
     n_open = len(open_slow[:2]) + len(open_days)
     if n_open >= 2:
         w.para(D.OPEN_SYNTH_V[1] if young else rng.choice(D.OPEN_SYNTH_V))
@@ -539,7 +582,12 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
             pattern_done = True
     hard_days = sorted([x for x in acts if x["tech"] == "day" and x["cls"] == "hard" and x["planet"] in ("mars", "venus")], key=lambda x: x["date"])[:3]
     if hard_days:
-        w.para(*(f"On {_date(x['date'])}, {the(x['planet'])} {D.VERB[x['aspect']]} {ref(x['target'])}." for x in hard_days),
+        sents = []
+        for x in hard_days:
+            _r = ref(x["target"])
+            sents.append(f"On {_date(x['date'])}, {the(x['planet'])} {D.VERBS3[x['aspect']]} {_r}." if "," in _r
+                         else f"{The(x['planet'])} {D.VERBS3[x['aspect']]} {_r} on {_date(x['date'])}.")
+        w.para(*sents,
                D.FAST_MEAN[("mars", "hard")] if any(x["planet"] == "mars" for x in hard_days) else D.FAST_MEAN[("venus", "hard")])
         watched = True
     if f["mercury_retro"]:
@@ -570,7 +618,7 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
         w.para(D.LUN_LINE[L["kind"]].format(date=_date(L["date"]), deg=L["deg"], sign=L["sign"], ord=ORD[h], hof=T.HOUSE_OF[h]),
                T.ECLIPSE_NOTE if L["eclipse"] else "",
                angle,
-               D.LUN_SIGN_JOIN.format(flavor=D.LUN_SIGN[L["sign"]], ord=ORD[h], topic=HOUSE_TOPIC[h]),
+               pick("lunjoin", [D.LUN_SIGN_JOIN, D.LUN_SIGN_JOIN_2]).format(flavor=D.LUN_SIGN[L["sign"]], ord=ORD[h], topic=HOUSE_TOPIC[h]),
                weave(h, brief=True),
                T.LUNATION_HIT[hit["aspect"]].format(t=ref(hit["target"])[5:]) if hit else "",
                (T.NEW_HOUSE if L["kind"] == "new" else T.FULL_HOUSE)[h])
@@ -695,7 +743,7 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
         if acts_pl[order[1]] >= acts_pl[order[0]] - 1:
             pair = D.CP_PAIR[frozenset(order[:2])].format(Q=nm(order[1]))
         w.para(D.CP_ACTION_INTRO.format(P=nm(order[0]), why=why_s), D.CP_ACTION[order[0]], pair)
-        in10 = [D.CP_IN10[p] for p in occ[10] if p in D.CP_IN10][:2]
+        in10 = [D.CP_IN10[p] for p in occ[10] if p in D.CP_IN10 and not (p == order[0] and house_c)][:2]
         w.para(*in10, D.CP_CLOSE)
         w.sections[-1]["practice"] = {"label": "Try This", "try": D.CP_TRY, "prompts": [D.CP_PROMPT]}
 
@@ -704,10 +752,10 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
     parts = []
     if top:
         parts.append(D.PREP_OPEN.format(month=MONTH, themes=_join(D.THEME[t]["short"] for t in top)))
-    parts.append(f"The monthly spotlight on {the(lord)} connects {D.THEME[lt]['noun']} with this month's choices"
-                 + (f", while the transits highlight the relationship between {D.THEME[target_theme(watch_slow[0]['target'])]['noun']} "
-                    f"and {D.THEME[D.PLANET_THEME[watch_slow[0]['planet']]]['noun']}." if watch_slow else "."))
-    parts.append(f"Your progressed Moon in {pm['sign']} reinforces the importance of {D.THEME[st]['noun']}"
+    parts.append(f"The monthly spotlight on {the(lord)} connects {tnoun(lt)} with this month's choices"
+                 + (f", while the transits highlight the relationship between {tnoun(target_theme(watch_slow[0]['target']))} "
+                    f"and {tnoun(D.PLANET_THEME[watch_slow[0]['planet']])}." if watch_slow else "."))
+    parts.append(f"Your progressed Moon in {pm['sign']} reinforces the importance of {tnoun(st)}"
                  + (f", and your solar arc directions suggest that questions around "
                     f"{_join(sorted({D.THEME[target_theme(x['target'])]['short'] for x in arcs}))} are developing over a longer period." if arcs else "."))
     w.para(*parts)
@@ -732,13 +780,13 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
         who = {"second": "your income ruler", "career": "your career ruler", "both": "the ruler of your income and career",
                "mc": "your Midheaven", "fortune": "your Part of Fortune", "assets": "your Lot of Assets"}.get(r, f"your {nm(x['target'])}")
         sig.append(f"{who} is receiving {ADJ[x['planet']]} activation")
-    sig.append(f"your progressed Moon is moving through a chapter of {D.THEME[st]['noun']}")
+    sig.append(f"your progressed Moon is moving through {pm['sign']}")
     if arcs:
         sig.append(f"your solar arc directions are emphasizing {_join(sorted({D.THEME[target_theme(x['target'])]['short'] for x in arcs}))}")
     sig_line = _cap(_join(sig)) + "."
     w.para((D.FINAL_CONVERGE if top else D.FINAL_SIMPLE).format(month=MONTH, list=sig_line))
     stel = [h for h in range(1, 13) if len(occ[h]) >= 3]
-    a_bits = list(dict.fromkeys([T.SHORT_TOPIC[h2], T.SHORT_TOPIC[pc["house"]]] + [T.SHORT_TOPIC[h] for h in stel]))
+    a_bits = list(dict.fromkeys([D.HOUSE_NOUN[h2], D.HOUSE_NOUN[pc["house"]]] + [D.HOUSE_NOUN[h] for h in stel]))
     b_line = (f"With {the(r2)} ruling your income and {the(rc)} ruling your career, both from your {ORD[h2]} house, your money and "
               f"your reputation draw on the same source." if rc != r2 and pc["house"] == h2 else
               f"With {the(r2)} ruling your income from your {ORD[h2]} house and {the(rc)} connecting your career to your "

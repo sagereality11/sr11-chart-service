@@ -70,7 +70,7 @@ ROLE_DEEP = {
                 "looking at what's making life feel easier and doing more of that."),
     "assets": ("Your Lot of Assets is a traditional point tied to what you accumulate, own, and keep. Activations here bring "
                "attention to the resources you're building, not only the money passing through."),
-    "mc": ("Your Midheaven is the very top of your chart, the public role you're developing and the contribution you want to be "
+    "mc": ("Your Midheaven marks the public role you're developing and the contribution you want to be "
            "known for. It's about reputation and direction more than any single job."),
     "eighth": ("Because {P} rules your eighth house, it speaks for shared money, debt, taxes, and the agreements that tie your "
                "resources to someone else's."),
@@ -358,16 +358,16 @@ FAST_MEAN = {
 
 # Short glance meaning by target role.
 GLANCE_TARGET = {
-    "second": "bringing attention to how you earn and what you receive",
-    "career": "putting your career direction in the spotlight",
-    "both": "touching your income and your career at once",
-    "mc": "connecting with your professional direction and reputation",
-    "fortune": "bringing ease to the place where opportunity tends to find you",
-    "assets": "drawing attention to what you're building and keeping",
-    "venus": "touching your sense of value",
-    "jupiter": "touching your capacity for growth",
-    "sun": "touching your confidence and visibility",
-    "other": "adding a small spark to your money story",
+    "second": ["bringing attention to how you earn and what you receive", "a good day for anything to do with income", "touching the planet behind your income"],
+    "career": ["putting your career direction in the spotlight", "a good day for career conversations", "touching the planet that steers your career"],
+    "both": ["touching your income and your career at once", "a day that moves both money and reputation"],
+    "mc": ["connecting with your professional direction and reputation", "a good day to be seen at work", "touching your public direction"],
+    "fortune": ["bringing ease to the place where opportunity tends to find you", "a day when opportunity is closer than usual"],
+    "assets": ["drawing attention to what you're building and keeping", "a good day to look after what you own"],
+    "venus": ["touching your sense of value", "a day that favors pleasure and value"],
+    "jupiter": ["touching your capacity for growth", "a day that favors growth"],
+    "sun": ["touching your confidence and visibility", "a day to step forward"],
+    "other": ["adding a small spark to your money story", "a smaller but useful day"],
 }
 
 # Venus to a specific point, deeper.
@@ -691,7 +691,7 @@ LORD_SAME_R2 = ("{Lord} already rules your income, so its importance this month 
                 "responsibilities support the future you're building.")
 LORD_SAME_RC = ("{Lord} also rules your career, so this month's spotlight lands squarely on your professional direction and how "
                 "you're being seen.")
-LORD_OTHER = "In your chart, {lord} sits in {sign} in your {ord} house, so this month's money story runs through {topic}."
+LORD_OTHER = "In your chart, {lord} is placed in {sign} in your {ord} house, so this month's money story runs through {topic}."
 
 CAREER_OPEN = ("There's another layer to this month's story. Your natal Midheaven is in {mcsign}, connecting your career direction "
                "to {R}, which sits{rx} in {sign} in your {ord} house of {hof}.")
@@ -742,8 +742,8 @@ QUIET_OPEN = ("The openings this month are quieter, which makes them easy to mis
 LUN_INTRO = ("The lunar cycle adds an emotional rhythm to the financial themes of the month. The New Moon marks a beginning, when "
              "something is being started or reconsidered, while the Full Moon brings a culmination, greater awareness, or a chance "
              "to release what has reached its natural end. Where they land in your chart shows where those developments matter most.")
-LUN_LINE = {"new": "The New Moon on {date} falls at {deg} degrees {sign} in your {ord} house of {hof}.",
-            "full": "The Full Moon on {date} falls at {deg} degrees {sign} in your {ord} house of {hof}."}
+LUN_LINE = {"new": "The New Moon on {date} falls at {deg} degrees {sign} in your {ord} house.",
+            "full": "The Full Moon on {date} falls at {deg} degrees {sign} in your {ord} house."}
 LUN_OCC = "Your natal {names} {verb} here, so this lunation stirs {themes} as well."
 LUN_SIGN_JOIN = "{flavor}, while the {ord} house concerns {topic}, and this lunation brings them together."
 
@@ -943,3 +943,29 @@ CP_CLOSE = ("You don't have to pick one forever. Try the paths where these theme
             "let your chart be a guide rather than a rule.")
 CP_TRY = "Pick two fields from this section that interest you, and talk to one person who works in each before the month ends."
 CP_PROMPT = "Which of these career themes already shows up in what you love doing, and what's one small way to test it this year?"
+
+# Variation helpers (repeats within a reading get fresh wording)
+LUN_SIGN_JOIN_2 = "{flavor}, and here it meets the {ord} house of {topic}."
+EMPTY_HOUSE_V = [
+    "Your {ord} house begins in {sign}, which makes {R} an important part of this story. Your natal {Rn} {placed}.",
+    "This house begins in {sign}, so {R} has a say here, and your natal {Rn} {placed}.",
+    "Its ruler is {R}, because the house begins in {sign}, and your natal {Rn} {placed}.",
+]
+EMPTY_HOUSE_KNOWN = [
+    "Your {ord} house begins in {sign}, which links it back to {R}.",
+    "This house begins in {sign}, so it answers to {R}, a planet you've already met in this reading.",
+    "It begins in {sign}, which hands this part of the story to {R}.",
+]
+SLOW_OPEN_V = ["This month {P} {verb} {T}.", "{P} {verb_also} {T}.", "Alongside that, {P} {verb} {T}."]
+DAY_LEAD_V = ["{date} brings {the} into {an} {noun} with {T}.", "{The} {verbs} {T} on {date}.", "On {date}, {the} {verb} {T}."]
+VERBS3 = {0: "crosses", 60: "sextiles", 90: "squares", 120: "trines", 180: "opposes"}
+THEME_NOUN2 = {"income": "how you earn", "career": "your career path", "freedom": "your independence",
+               "structure": "your responsibilities", "growth": "growth", "vision": "your sense of meaning",
+               "power": "who holds the power around your money", "drive": "your drive", "value": "what you're worth",
+               "security": "your sense of safety", "identity": "who you're becoming", "voice": "your ideas"}
+
+GLANCE_HARD = {"second": "income", "career": "your career", "both": "money and career", "mc": "work and reputation",
+               "fortune": "new opportunities", "assets": "what you own", "venus": "spending and value", "jupiter": "big commitments",
+               "sun": "your confidence", "other": "money matters"}
+GLANCE_HARD_V = ["a day to move carefully with {t}", "so give {t} a little extra care", "a day to slow down around {t}"]
+SAME_DAY_V = ["That same day, ", "Also that day, ", "On the same day, "]
