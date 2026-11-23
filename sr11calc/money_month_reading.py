@@ -753,8 +753,8 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
     if top:
         parts.append(D.PREP_OPEN.format(month=MONTH, themes=_join(D.THEME[t]["short"] for t in top)))
     parts.append(f"The monthly spotlight on {the(lord)} connects {tnoun(lt)} with this month's choices"
-                 + (f", while the transits highlight the relationship between {tnoun(target_theme(watch_slow[0]['target']))} "
-                    f"and {tnoun(D.PLANET_THEME[watch_slow[0]['planet']])}." if watch_slow else "."))
+                 + (f", while the transits highlight the relationship between {D.THEME_NOUN2[target_theme(watch_slow[0]['target'])]} "
+                    f"and {D.THEME_NOUN2[D.PLANET_THEME[watch_slow[0]['planet']]]}." if watch_slow else "."))
     parts.append(f"Your progressed Moon in {pm['sign']} reinforces the importance of {tnoun(st)}"
                  + (f", and your solar arc directions suggest that questions around "
                     f"{_join(sorted({D.THEME[target_theme(x['target'])]['short'] for x in arcs}))} are developing over a longer period." if arcs else "."))
