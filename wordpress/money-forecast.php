@@ -9,7 +9,7 @@
  * - Adds the "Create My Forecast" link to the order confirmation page and the customer's order emails.
  * The "Instant reports" snippets handle the emailed copies, saved birth details and auto-complete (prefix mf).
  */
-if ( ! defined( 'SR_MF_PRODUCT_ID' ) ) { define( 'SR_MF_PRODUCT_ID', 0 ); }
+if ( ! defined( 'SR_MF_PRODUCT_ID' ) ) { define( 'SR_MF_PRODUCT_ID', 10609 ); }
 if ( ! defined( 'SR_MF_PORTAL_PATH' ) ) { define( 'SR_MF_PORTAL_PATH', '/your-monthly-money-forecast/' ); }
 
 if ( ! function_exists( 'sr_mf_order_has_report' ) ) {
