@@ -316,7 +316,8 @@ SLOW_DEEP = {
     ("jupiter", "conj"): ("Growth under Jupiter works best when you give it a direction. Say yes to what expands your life, not just "
                           "your workload."),
     ("jupiter", "soft"): "The best use of a supportive Jupiter is to ask for something a little bigger than usual and see what comes back.",
-    ("jupiter", "hard"): "The question is whether more is actually better right now, or whether better is better.",
+    ("jupiter", "hard"): ("Before you say yes to the next opportunity, ask whether taking on more will truly improve your "
+                         "situation, or whether doing fewer things well would serve you better."),
     ("saturn", "conj"): "Saturn rewards the commitments you're willing to keep, and it shows you which ones you're not.",
     ("saturn", "soft"): "This is a good month for the unglamorous work, the budget, the contract, the plan, that makes the next year easier.",
     ("saturn", "hard"): ("It can feel like a slowdown, and it's often when you set the boundaries and prices you'll later be grateful "
@@ -797,3 +798,7 @@ PREP_LUN_TAIL_V = ["This creates an opportunity to recognize that building wealt
 LUN_SYNTH_TAIL_V = ["Both are connected to your financial life, because lasting change often needs a different relationship with security before it can produce a different relationship with money.",
     "Read together, they show you where to begin and what to let go of, in that order.",
     "One opens a door, the other shows you what's on the other side of it."]
+
+CAL_INTRO = ("Here's your month on one page. Each day lists what's moving in the sky and the point in your natal chart it touches, "
+             "so you can plan around it. Gold notes are openings, rose notes ask for a little more care, purple marks the New and "
+             "Full Moons, lilac notes are slower inner shifts, and gray notes show a planet moving into a new house of your chart.")

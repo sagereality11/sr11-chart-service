@@ -49,6 +49,27 @@ def _practice_html(s, for_pdf=True):
     return "".join(out)
 
 
+def _calendar_html(s):
+    cal = s.get("calendar")
+    if not cal:
+        return ""
+    banner = "".join(f'<li class="k-{esc(b["k"])}">{esc(b["t"])}</li>' for b in cal.get("allmonth", []))
+    banner = f'<div class="cal-all"><p class="plabel">All Month</p><ul>{banner}</ul></div>' if banner else ""
+    head = "".join(f"<th>{d}</th>" for d in ("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"))
+    rows = []
+    for wk in cal["weeks"]:
+        cells = []
+        for c in wk:
+            if not c:
+                cells.append('<td class="off"></td>')
+                continue
+            items = "".join(f'<div class="ci k-{esc(i["k"])}">{esc(i["t"])}</div>' for i in c["items"])
+            cells.append(f'<td><div class="cd">{c["day"]}</div>{items}</td>')
+        rows.append("<tr>" + "".join(cells) + "</tr>")
+    return (f'<div class="calwrap">{banner}<table class="cal"><thead><tr>{head}</tr></thead>'
+            f'<tbody>{"".join(rows)}</tbody></table></div>')
+
+
 def _body_html(r, for_pdf=True, breaks=(), lines=True):
     out = []
     for s in r["sections"]:
@@ -65,6 +86,7 @@ def _body_html(r, for_pdf=True, breaks=(), lines=True):
         out.append(f'<div class="keep">{lead}</div>')
         for p in paras:
             out.append(f"<p>{esc(p)}</p>")
+        out.append(_calendar_html(s))
         out.append(_practice_html(s, lines))
         out.append(_offers_html(s))
         if s["id"] == "final":
@@ -75,6 +97,7 @@ def _body_html(r, for_pdf=True, breaks=(), lines=True):
     return "".join(out)
 
 
+CAL_H = "{CAL_H}"
 PDF_CSS = f"""
 body {{ margin:0; font-family:'Lora','DejaVu Serif',serif; color:{INK}; font-size:13.6pt; line-height:1.62; background:#fff; }}
 h1,h2,.kicker,.hint,.toc1,.toc2,.site,.disc {{ font-family:'Inter','DejaVu Sans',sans-serif; }}
@@ -108,6 +131,23 @@ p {{ orphans:3; widows:3; }}
 .signoff {{ font-style:italic; color:{PURPLE}; font-size:14pt; margin-top:24px; }}
 .site {{ font-size:9pt; letter-spacing:2px; text-transform:uppercase; color:{GOLD}; }}
 .disc {{ font-size:8.6pt; color:#7a6d8d; line-height:1.5; border-top:1px solid {LILAC2}; padding-top:10px; margin-top:28px; }}
+section#calendar {{ page-break-before:always; page-break-after:always; }}
+section#calendar p {{ font-size:11.5pt; line-height:1.5; }}
+.calwrap {{ page-break-inside:avoid; }}
+.cal-all {{ background:{LILAC}; border-left:4px solid {PURPLE}; padding:8px 14px 4px 14px; margin:6px 0 10px 0; }}
+.cal-all ul {{ margin:0 0 4px 0; padding-left:16px; font-family:'Inter','DejaVu Sans',sans-serif; font-size:9.5pt; line-height:1.45; }}
+table.cal {{ width:100%; border-collapse:collapse; table-layout:fixed; font-family:'Inter','DejaVu Sans',sans-serif; }}
+table.cal th {{ background:{PURPLE}; color:#fff; font-size:8.5pt; font-weight:600; padding:4px 0; letter-spacing:1px; text-transform:uppercase; }}
+table.cal td {{ border:1px solid {LILAC2}; vertical-align:top; height:{CAL_H}px; padding:3px 4px; }}
+table.cal td.off {{ background:#faf8fd; }}
+.cd {{ font-size:10pt; font-weight:600; color:{PURPLE}; margin-bottom:2px; }}
+.ci {{ font-size:7.3pt; line-height:1.25; padding:2px 3px; margin:0 0 2px 0; border-radius:2px; }}
+.k-open {{ background:#f6ecd2; color:#5c4410; }}
+.k-watch {{ background:#f7dfe3; color:#6e2433; }}
+.k-moon {{ background:{PURPLE}; color:#fff; }}
+.k-inner {{ background:{LILAC}; color:{PURPLE}; }}
+.k-move {{ background:#eeedf0; color:#4a4458; }}
+.cal-all li.k-move, .cal-all li.k-open, .cal-all li.k-watch, .cal-all li.k-moon, .cal-all li.k-inner {{ background:none; color:{INK}; }}
 """
 
 
@@ -299,7 +339,9 @@ def render_pdf(r) -> bytes:
     with tempfile.TemporaryDirectory() as td:
         hp, pp = os.path.join(td, "body.html"), os.path.join(td, "body.pdf")
         for _ in range(5):
-            body = f'<!doctype html><html><head><meta charset="utf-8"><style>{PDF_CSS}</style></head><body>{_body_html(r, False, breaks)}</body></html>'
+            nweeks = max([len(x["calendar"]["weeks"]) for x in r["sections"] if x.get("calendar")] or [5])
+            css = PDF_CSS.replace("{CAL_H}", "150" if nweeks <= 5 else "122")
+            body = f'<!doctype html><html><head><meta charset="utf-8"><style>{css}</style></head><body>{_body_html(r, False, breaks)}</body></html>'
             with open(hp, "w", encoding="utf-8") as f:
                 f.write(body)
             subprocess.run(["wkhtmltopdf", "-q", "--page-size", "Letter", "--disable-local-file-access", "--disable-javascript",
@@ -375,6 +417,18 @@ WEB_CSS = f"""
 .sr-ws .offer p{{margin:.2rem 0 0}}
 .sr-ws .site{{font-size:.8rem;letter-spacing:2px;text-transform:uppercase;color:var(--g);margin-top:1.4rem}}
 .sr-ws .totop{{display:inline-block;margin-top:.6rem;font-size:.85rem;color:var(--p)}}
+.sr-ws .calwrap{{overflow-x:auto;margin:.6rem 0 1.4rem}}
+.sr-ws .cal-all{{background:var(--l);border-left:4px solid var(--p);padding:.6rem 1rem .2rem;margin:0 0 .8rem;border-radius:3px}}
+.sr-ws .cal-all ul{{margin:0 0 .5rem;padding-left:1.1rem;font-size:.92rem}}
+.sr-ws table.cal{{width:100%;min-width:640px;border-collapse:collapse;table-layout:fixed;font-family:Inter,Arial,sans-serif}}
+.sr-ws table.cal th{{background:var(--p);color:#fff;font-size:.72rem;letter-spacing:1px;text-transform:uppercase;padding:.3rem 0}}
+.sr-ws table.cal td{{border:1px solid var(--l2);vertical-align:top;height:5.4rem;padding:.2rem .3rem}}
+.sr-ws table.cal td.off{{background:#faf8fd}}
+.sr-ws .cd{{font-size:.85rem;font-weight:700;color:var(--p)}}
+.sr-ws .ci{{font-size:.66rem;line-height:1.25;padding:.12rem .2rem;margin:0 0 .15rem;border-radius:2px}}
+.sr-ws .k-open{{background:#f6ecd2;color:#5c4410}}.sr-ws .k-watch{{background:#f7dfe3;color:#6e2433}}
+.sr-ws .k-moon{{background:var(--p);color:#fff}}.sr-ws .k-inner{{background:var(--l);color:var(--p)}}.sr-ws .k-move{{background:#eeedf0;color:#4a4458}}
+.sr-ws .cal-all li{{background:none!important;color:var(--ink)!important}}
 @media (max-width:820px){{
  .sr-ws .ws-grid{{display:block}}
  .sr-ws nav.ws-nav{{position:sticky;top:0;z-index:30;max-height:none;border-radius:0;margin:0 -16px 1.2rem;padding:.6rem 16px;border-left:0;border-right:0}}

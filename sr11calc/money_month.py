@@ -256,6 +256,15 @@ def month_facts(a: dict, chart: dict, year: int, month: int, tz_name: str = "Ame
     events += [{"kind": "midpoint", "jd": None, **m} for m in mids]
     events.sort(key=lambda e: e["date"])
 
+    # house ingresses of the faster planets (for the calendar)
+    house_moves = []
+    for pid in ("sun", "mercury", "venus", "mars"):
+        prev = None
+        for jd, l, _ in sky[pid]:
+            h = H(l)
+            if prev is not None and h != prev and in_month(jd):
+                house_moves.append({"planet": pid, "house": h, "date": when(jd), "retro": _ < 0})
+            prev = h
     midjd = (jd0 + jd1) / 2
     moving = {pid: {"house": H(_pos(midjd, pid)[0]), "sign": W.sign_of(_pos(midjd, pid)[0])} for pid in ("sun", "venus", "mars")}
 
@@ -264,7 +273,7 @@ def month_facts(a: dict, chart: dict, year: int, month: int, tz_name: str = "Ame
             "currents": currents, "events": events, "lunations": lunations, "stations": stations,
             "mercury_retro": retro_in_month, "mercury_mid": {"sign": W.sign_of(merc_mid), "house": H(merc_mid)},
             "monthly": monthly, "pmoon": pmoon, "slow_prog": slow_prog, "solar_arcs": sa[:3], "arc": arc,
-            "midpoints": mids, "next_new_moon": nxt}
+            "midpoints": mids, "next_new_moon": nxt, "house_moves": house_moves}
 
 
 def chart_jd(chart: dict) -> float:

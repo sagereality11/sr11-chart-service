@@ -335,6 +335,64 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
                 tail = D.GLANCE_TAIL if k == 2 and any("Full Moon" in g[2] for g in grp) and top else ""
                 w.para(*[g[2] for g in grp], tail)
 
+    # ------------------------------------------------------------------ 2b. calendar
+    import calendar as _cal
+    SHORTN = {"fortune": "Fortune", "assets": "Assets", "mc": "Midheaven", "asc": "Ascendant"}
+    CALW = {0: "meets", 60: "sextile", 90: "square", 120: "trine", 180: "opposite"}
+    good_slow = {("jupiter", "conj"), ("jupiter", "soft"), ("saturn", "soft"), ("uranus", "conj")}
+    cal = defaultdict(list)
+
+    def sn(k):
+        return SHORTN.get(k, nm(k))
+
+    for x in acts:
+        if x["tech"] == "day":
+            kind = "watch" if x["cls"] == "hard" else "open"
+            cal[x["date"]].append((x["score"], kind, f"{nm(x['planet'])} {CALW[x['aspect']]} your {sn(x['target'])}"))
+        elif x["tech"] == "transit" and x["date"]:
+            kind = "open" if (x["planet"], x["cls"]) in good_slow else "watch"
+            cal[x["date"]].append((x["score"] + 5, kind, f"{nm(x['planet'])} {CALW[x['aspect']]} your {sn(x['target'])}, exact"))
+    for L in f["lunations"]:
+        what = ("Solar Eclipse" if L["kind"] == "new" else "Lunar Eclipse") if L["eclipse"] else ("New Moon" if L["kind"] == "new" else "Full Moon")
+        cal[L["date"]].append((99, "moon", f"{what} in {L['sign']}, your {ORD[L['house']]} house"))
+    for st_ in f["stations"]:
+        cal[st_["date"]].append((50, "watch", f"Mercury turns {st_['kind']}"))
+    for x in pm["aspects"]:
+        if x["in_month"]:
+            cal[x["date"]].append((3, "inner", f"Progressed Moon {CALW[x['aspect']]} your {sn(x['target'])}"))
+    for m_ in f["midpoints"]:
+        cal[m_["date"]].append((4, "open", f"{nm(m_['planet'])} on your {nm(m_['pair'][0])}/{nm(m_['pair'][1])} midpoint"))
+    for hm in f.get("house_moves", []):
+        back = " (retrograde)" if hm["retro"] else ""
+        cal[hm["date"]].append((2, "move", f"{The(hm['planet'])} enters your {ORD[hm['house']]} house{back}"))
+    allmonth = [{"k": "inner", "t": f"{The(lord)} guides the month, with the spotlight on your {ORD[f['monthly']['house']]} house"}]
+    for x in acts:
+        if x["tech"] == "transit":
+            kind = "open" if (x["planet"], x["cls"]) in good_slow else "watch"
+            r_ = role(x["target"])
+            tag = {"second": ", your income ruler", "career": ", your career ruler", "both": ", your income and career ruler"}.get(r_, "")
+            allmonth.append({"k": kind, "t": f"{nm(x['planet'])} {CALW[x['aspect']]} your {sn(x['target'])}{tag}"})
+    if f["mercury_retro"] and not f["stations"]:
+        allmonth.append({"k": "watch", "t": "Mercury is retrograde all month"})
+    weeks = []
+    for wk in _cal.Calendar(firstweekday=6).monthdatescalendar(f["year"], f["month"]):
+        row = []
+        for d_ in wk:
+            if d_.month != f["month"]:
+                row.append(None)
+                continue
+            its = sorted(cal.get(d_, []), key=lambda i: -i[0])
+            seen_t, items_ = set(), []
+            for sc, k_, t_ in its:
+                if t_ not in seen_t:
+                    seen_t.add(t_)
+                    items_.append({"k": k_, "t": t_})
+            row.append({"day": d_.day, "items": items_[:4]})
+        weeks.append(row)
+    w.section("calendar", f"Your {MONTH} Calendar")
+    w.para(D.CAL_INTRO)
+    w.sections[-1]["calendar"] = {"weeks": weeks, "allmonth": allmonth}
+
     # ------------------------------------------------------------------ 3. moving
     mv = f["moving"]
     w.section("moving", "Where the Money Planets Are Moving")
@@ -617,7 +675,7 @@ def build_money_month(a: dict, f: dict, name: str, birth: dict, first_time: bool
     w.para(T.OFFERS_INTRO)
     w.sections[-1]["offers"] = [{"title": OFFERS[k][0], "url": OFFERS[k][1], "why": OFFERS[k][2]} for k in ("wealth", "timing", "moon", "manifest")]
 
-    explain_terms(w.sections, skip=("next", "glance", "begins", "current", "pmoon"))
+    explain_terms(w.sections, skip=("next", "glance", "begins", "current", "pmoon", "calendar"))
     if untimed:
         for sec in w.sections:
             sec["paragraphs"] = [p.replace("your Midheaven and career", "your solar tenth house of career")
