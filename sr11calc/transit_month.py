@@ -135,7 +135,7 @@ def _min_in(sky, pid, target, asp, jd0, jd1, step):
             best = (o, j)
         j += step
     # refine
-    a, b = best[1] - step, best[1] + step
+    a, b = max(jd0, best[1] - step), min(jd1, best[1] + step)
     for _ in range(30):
         m1, m2 = a + (b - a) / 3, b - (b - a) / 3
         if abs(sep(sky.lon(m1, pid), target) - asp) < abs(sep(sky.lon(m2, pid), target) - asp):
