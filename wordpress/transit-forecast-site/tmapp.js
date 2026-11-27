@@ -122,19 +122,20 @@
     var months = (C.months || []).map(function (m) { return '<option value="' + esc(m[0]) + '">' + esc(m[1]) + '</option>'; }).join('');
     var h = '';
     if (mode === 'both') h += '<div class="tm-tabs" role="tablist"><button type="button" class="tm-tab on" data-m="solo">Just me</button><button type="button" class="tm-tab" data-m="pair">Two of us</button></div>';
-    h += personHtml('tm-a', 'You', false);
+    var PA = C.pre || 'tm-a';
+    h += personHtml(PA, 'You', false);
     h += '<div id="tm-pairbits"' + (mode === 'pair' ? '' : ' hidden') + '><div class="tm-field tm-wide"><label for="tm-rel">How are the two of you connected?</label><select id="tm-rel">' + REL.map(function (x) { return '<option value="' + x[0] + '">' + x[1] + '</option>'; }).join('') + '</select></div>' + personHtml('tm-b', 'The other person', true) + '</div>';
     h += '<div class="tm-grid"><div class="tm-field"><label for="tm-month">Your forecast month</label><select id="tm-month">' + months + '</select></div>'
       + '<div class="tm-field"><label for="tm-node">Lunar Node</label><select id="tm-node"><option value="true">True Node (recommended)</option><option value="mean">Mean Node</option></select></div></div>';
     if (C.locked) h += '<p class="tm-note">This order is for your ' + esc(C.locked) + ' forecast. You can create it again here anytime, for example to correct birth details.</p>';
     h += '<button type="button" class="tm-btn" id="tm-go">Create My Forecast</button><p class="tm-status" id="tm-status" role="status"></p>';
     app.innerHTML = h;
-    var sa = setupPerson('tm-a'), sb = setupPerson('tm-b'), cur = mode === 'pair' ? 'pair' : 'solo', last = null;
+    var sa = setupPerson(PA), sb = setupPerson('tm-b'), cur = mode === 'pair' ? 'pair' : 'solo', last = null;
     app.querySelectorAll('.tm-tab').forEach(function (b) { b.addEventListener('click', function () { cur = b.getAttribute('data-m'); app.querySelectorAll('.tm-tab').forEach(function (x) { x.classList.toggle('on', x === b); }); $('tm-pairbits').hidden = cur !== 'pair'; }); });
     var status = $('tm-status'), btn = $('tm-go');
     function msg(t, html) { if (html) status.innerHTML = t; else status.textContent = t; }
     function send(extra) {
-      var a = personBody('tm-a', sa, 'you'); if (typeof a === 'string') return msg(a);
+      var a = personBody(PA, sa, 'you'); if (typeof a === 'string') return msg(a);
       var body = a; body.order = C.order; body.key = C.key; body.forecast = $('tm-month').value; body.node = $('tm-node').value;
       try { body.forecast_tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { body.forecast_tz = ''; }
       if (cur === 'pair') { var b = personBody('tm-b', sb, 'the other person'); if (typeof b === 'string') return msg(b); body.partner = b; body.relationship = $('tm-rel').value; }

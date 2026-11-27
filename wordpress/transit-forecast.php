@@ -8,7 +8,8 @@
  *   /v1/transit-month with the SR11 Birth Chart plugin's saved service URL and key.
  * - The reading is written by the chart service (Swiss Ephemeris); the private page "transit-forecast-code"
  *   holds the CSS and scripts that draw the wheels, the web view and the PDF ([sr_tm_core] prints it once).
- * - Order confirmation box and order email link. Prefix "tm" everywhere; app container #sr-tm-app.
+ * - Order confirmation box and order email link. Prefix "tm" everywhere; app container #sr-tm-app (one person) or
+ *   #sr-tmp-app (two people), which the shared "Instant reports" snippets map to products 'tm' and 'tmp'.
  */
 if ( ! defined( 'SR_TM_PORTAL_PATH' ) ) { define( 'SR_TM_PORTAL_PATH', '/your-monthly-transit-forecast/' ); }
 
@@ -227,8 +228,9 @@ add_shortcode( 'sr_transit_reading', function () {
 	$title  = $pair ? 'Create Your Shared Soul Journey' : 'Create Your Monthly Transit Forecast';
 	$lede   = $pair ? 'Enter both people\'s birth details, choose how you are connected and pick your month. Your forecast is written from your relationship\'s lens, shows right here with a section menu and downloads as a PDF. Each order covers one month.'
 		: 'Enter your birth details and choose your month. Your forecast shows right here with a section menu and downloads as a PDF you can keep. Each order covers one month.';
-	return sr_tm_fonts() . sr_tm_config( array( 'order' => $o ? $o->get_id() : 0, 'key' => $o ? $key : '', 'mode' => $acc['mode'], 'months' => $months, 'locked' => $locked ? sr_tm_month_label( $locked ) : '' ) )
-		. '<div id="sr-tm-app"></div><div class="tm-page"><div class="tm-card"><h2>' . esc_html( $title ) . '</h2><p class="tm-lede">' . esc_html( $lede ) . '</p>'
+	$pre    = $pair ? 'tmp' : 'tm'; // matches the "Instant reports" snippets (email copy + order note); fields use this prefix
+	return sr_tm_fonts() . sr_tm_config( array( 'order' => $o ? $o->get_id() : 0, 'key' => $o ? $key : '', 'mode' => $acc['mode'], 'months' => $months, 'locked' => $locked ? sr_tm_month_label( $locked ) : '', 'pre' => $pre ) )
+		. '<div id="sr-' . $pre . '-app"></div><div class="tm-page"><div class="tm-card"><h2>' . esc_html( $title ) . '</h2><p class="tm-lede">' . esc_html( $lede ) . '</p>'
 		. '<div id="tm-app"></div><p class="tm-fine">Calculated with the Swiss Ephemeris. Birthplace search uses GeoNames (CC BY 4.0). Your details are used only to create your forecast. Because this is an instant digital download, all sales are final.</p></div>'
 		. '<div id="tm-out" hidden></div></div>' . sr_tm_core();
 } );
