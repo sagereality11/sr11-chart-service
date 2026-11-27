@@ -17,3 +17,8 @@ alongside the service it calls.
 * `planners.php` (PHP, Run Everywhere): Personalized Planners (Moon Cycles, Money & Business, Transits) create-your-planner
   pages `[sr_planner product="moon|money|transits"]`, order links, and the `sr11pl/v1/create` REST route that forwards
   to `/v1/planner`. Birth details are saved on the order; one correction is allowed, then the saved planner is re-created.
+* `transit-forecast.php` (PHP, Run Everywhere): Your Monthly Transit Forecast ($33.33) and Your Shared Soul Journey ($55.55).
+  Buyer page `[sr_transit_reading]`, free calculator `[sr_transit_calculator]`, REST `sr11tm/v1/reading` and `sr11tm/v1/preview`
+  forwarding to `/v1/transit-month`, order links. `transit-forecast-site/` holds the browser code (wheels with glyph paths,
+  configuration diagrams, the PDF kit, the app and CSS); `code-page.html` is the minified bundle that goes on the private page
+  `transit-forecast-code`. `assets/transit-forecast/` holds the product images.
