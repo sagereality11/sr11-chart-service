@@ -343,5 +343,104 @@ def money_month():
     return jsonify(out)
 
 
+TM_RELATIONS = ("romantic", "spouse", "mother_son", "mother_daughter", "father_son", "father_daughter", "parent_child",
+                "siblings", "grandparent", "friends", "business")
+
+
+def _tm_person(body, places_):
+    """Validate one person's birth details and build the chart. Returns (chart, req, label) or an error response."""
+    from sr11calc import wealth as _w
+    body = {**body, "house_system": "P", "points": [], "asteroids": [], "aspects": []}
+    body.pop("orbs", None)
+    try:
+        req = parse_request(body, places_)
+    except InputError as e:
+        return None, _error(e.code, e.message, 422)
+    chart_out = build_chart(req)
+    if chart_out["status"] != "ok":
+        http = {"ambiguous": 409, "nonexistent": 422, "needs_confirmation": 409}.get(chart_out["status"], 422)
+        return None, (jsonify(chart_out), http)
+    d, t = req["date"], req["time"]
+    when_ = f"{_w.MONTHS[d.month - 1]} {d.day}, {d.year}"
+    place = req["place"].get("label", "")
+    if t and req.get("time_known", True):
+        when_ += " at " + t.strftime("%I:%M %p").lstrip("0").replace("AM", "am").replace("PM", "pm")
+    else:
+        when_ += " (birth time unknown)"
+    label = when_ + (f" in {place}" if place and place != "Manual coordinates" else "")
+    return (chart_out, req, label), None
+
+
+@app.post("/v1/transit-month")
+def transit_month():
+    """Your Monthly Transit Forecast (one person) and Your Shared Soul Journey (two people).
+
+    Body: the same birth fields as /v1/chart for the buyer, plus "name", "pronoun" (she/he/they), "node"
+    ("true", the default, or "mean"), "forecast_year", "forecast_month" (last month through two months ahead)
+    and optional "forecast_tz". For the two-person reading add "partner" (an object with the same birth fields,
+    "name" and "pronoun") and "relationship" (one of TM_RELATIONS). Returns the reading as JSON; the website
+    draws the wheels and the PDF in the browser."""
+    import datetime as _dt
+    import re as _re
+    from zoneinfo import ZoneInfo
+    from sr11calc import transit_month as tm, transit_month_reading as tmr, transit_pair_reading as tpr
+    from sr11calc import wealth as _w
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return _error("invalid_input", "Malformed request.", 422)
+    try:
+        fy, fm = int(body.get("forecast_year")), int(body.get("forecast_month"))
+    except (TypeError, ValueError):
+        return _error("invalid_input", "Please choose the month for your forecast.", 422)
+    today = _dt.date.today()
+    idx, now_idx = fy * 12 + fm - 1, today.year * 12 + today.month - 1
+    if not (1 <= fm <= 12) or not (now_idx - 1 <= idx <= now_idx + 2):
+        return _error("invalid_month", "Please choose this month or next month for your forecast.", 422)
+    ftz = str(body.get("forecast_tz") or "")[:64]
+    if ftz:
+        try:
+            ZoneInfo(ftz)
+        except Exception:
+            ftz = ""
+    node = "mean" if str(body.get("node") or "").lower() == "mean" else "true"
+    pron = lambda v: v if v in ("she", "he", "they") else "they"
+    clean_name = lambda v, d: (_re.sub(r"[^\w .'-]", "", str(v or ""), flags=_re.UNICODE).strip()[:40] or d)
+    name = clean_name(body.get("name"), "Friend")
+    partner = body.get("partner")
+    try:
+        a, err = _tm_person({**body, "node": node}, places)
+        if err:
+            return err
+        chart_a, req_a, label_a = a
+        tz_name = ftz or req_a["place"].get("tz") or "America/New_York"
+        fa = tm.month_facts(chart_a, req_a["date"], fy, fm, tz_name, node=node)
+        tail = f"{_w.MONTHS[fm - 1]}-{fy}"
+        safe = "".join(c for c in name if c.isalnum() or c in "-_")[:30]
+        if isinstance(partner, dict):
+            rel = body.get("relationship") if body.get("relationship") in TM_RELATIONS else "parent_child"
+            name_b = clean_name(partner.get("name"), "Your Person")
+            b, err = _tm_person({**partner, "node": node}, places)
+            if err:
+                return err
+            chart_b, req_b, label_b = b
+            fb = tm.month_facts(chart_b, req_b["date"], fy, fm, tz_name, node=node)
+            pf = tm.pair_facts(fa, fb, node=node)
+            reading = tpr.build_pair(fa, fb, pf, name, name_b, label_a, label_b, pron(body.get("pronoun")),
+                                     pron(partner.get("pronoun")), rel)
+            safe_b = "".join(c for c in name_b if c.isalnum() or c in "-_")[:30]
+            fn = f"Shared-Soul-Journey-{safe}-{safe_b}-{tail}.pdf" if safe and safe_b else f"Shared-Soul-Journey-{tail}.pdf"
+            product = "transit-month-pair"
+        else:
+            reading = tmr.build_solo(fa, name, label_a, pron(body.get("pronoun")))
+            fn = f"Monthly-Transit-Forecast-{safe}-{tail}.pdf" if name != "Friend" and safe else f"Monthly-Transit-Forecast-{tail}.pdf"
+            product = "transit-month"
+        out = {"status": "ok", "product": product, "month": f"{_w.MONTHS[fm - 1]} {fy}", "forecast_year": fy,
+               "forecast_month": fm, "node": node, "reading": reading, "filename": fn}
+    except Exception:  # never leak internals or input into logs/responses
+        app.logger.error("transit month failed (input withheld)")
+        return _error("calculation_failed", "Your forecast could not be created. Please try again.", 500)
+    return jsonify(out)
+
+
 if __name__ == "__main__":  # local development only
     app.run(host="127.0.0.1", port=int(os.environ.get("PORT", "8080")))
