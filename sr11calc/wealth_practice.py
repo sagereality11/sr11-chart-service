@@ -37,6 +37,11 @@ VALUE_PROMPT = {
 HOUSE_SHORT = {1: "self and initiative", 2: "income and worth", 3: "communication and learning", 4: "home and family",
                5: "creativity and pleasure", 6: "daily work", 7: "partnership", 8: "shared resources",
                9: "travel, teaching, and belief", 10: "career and reputation", 11: "friends and community", 12: "rest and the unseen"}
+# What a house holds, said the way you'd say it about your own life (used where a prompt points back at a house).
+HOUSE_LIFE = {1: "the way you show up and start things", 2: "your income and what you own", 3: "your conversations, writing, and learning",
+              4: "your home and family", 5: "your creative work and what you enjoy", 6: "your daily work and routines",
+              7: "your partnerships and clients", 8: "shared money, debt, and agreements", 9: "teaching, travel, and what you believe",
+              10: "your career and public role", 11: "your friendships, networks, and community", 12: "your quiet, behind-the-scenes life"}
 SIGN_GIFT = {"Aries": "courage and starting things", "Taurus": "patience and quality", "Gemini": "ideas and connection",
              "Cancer": "care and instinct", "Leo": "warmth and presence", "Virgo": "skill and precision",
              "Libra": "fairness and beauty", "Scorpio": "depth and focus", "Sagittarius": "vision and teaching",
@@ -59,8 +64,8 @@ FORTUNE_TRY = {
     12: "Set aside quiet time this week with no phone and no plan, and write down whatever comes up. Your fortune works behind the scenes, and solitude is where you notice it.",
 }
 FORTUNE_PROMPTS = [
-    "Your Part of Fortune sits in your {ord} house. Think of a time luck seemed to find you in that part of life. What were you doing, and what made it feel easy?",
-    "Your Lot of Assets falls in {asign} in your {aord} house. What have you kept and grown in that part of life so far, and what would you like to keep more of?",
+    "Your Part of Fortune sits in your {ord} house. Think of a time luck seemed to find you through {life}. What were you doing, and what made it feel easy?",
+    "Your Lot of Assets falls in {asign} in your {aord} house. What have you kept and grown in {alife} so far, and what would you like to keep more of?",
 ]
 
 # ---------------------------------------------------------------- What Can Block the Flow
@@ -82,7 +87,7 @@ BLOCK_PROMPT = {
     "jupiter": "Where has trusting that more will come helped you, and where has it cost you?",
     "saturn": "What would safe enough actually look like for you, in real numbers?",
 }
-BLOCK_PROMPT_2 = "Your income ruler sits in your {ord} house of {topic}. Which habit in that part of your life quietly costs you money or energy?"
+BLOCK_PROMPT_2 = "Your income ruler sits in your {ord} house of {topic}. Which habit in {life} quietly costs you money or energy?"
 
 # ---------------------------------------------------------------- Career
 CAREER_TRY = {
@@ -101,7 +106,7 @@ CAREER_TRY = {
 }
 CAREER_PROMPTS = [
     "Your Midheaven in {mc} is tied to {gift}. If you were already respected for that, what would an ordinary Tuesday look like?",
-    "Your career ruler sits in your {ord} house of {topic}. Where does that part of life already show up in your work, and where is it missing?",
+    "Your career ruler sits in your {ord} house of {topic}. Where does {life} already show up in your career, and where is it missing?",
 ]
 
 # ---------------------------------------------------------------- Fifth, Eighth, Eleventh
@@ -129,7 +134,7 @@ EIGHTH_PROMPTS = [
      "earth": "What did you learn about debt, borrowing, and sharing money from the people who raised you?",
      "air": "Which money agreements in your life have never been said out loud?",
      "water": "Where does sharing money with someone feel emotionally heavy, and what would make it lighter?"},
-    "{R} rules your eighth house from your {ord} house of {topic}. Which shared arrangement in that part of your life feels balanced right now, and which one doesn't?",
+    "{R} rules your eighth house from your {ord} house of {topic}. Which shared arrangement tied to {life} feels balanced right now, and which one doesn't?",
 ]
 ELEVENTH_TRY = {
     "fire": "Start something that brings people together around the work you care about, like a group chat, a meetup, or a collaboration. You're good at lighting the spark.",
@@ -142,7 +147,7 @@ ELEVENTH_PROMPTS = [
      "earth": "Who has quietly supported your work over the years, and have they heard that from you?",
      "air": "Who are the people you'd call first with good news about your work? What does that tell you about your circle?",
      "water": "Where do you give support easily but find it hard to receive it?"},
-    "{R} rules your eleventh house from your {ord} house of {topic}. Who in that part of your life could you ask for support this year?",
+    "{R} rules your eleventh house from your {ord} house of {topic}. Who in {life} could you ask for support this year?",
 ]
 
 # ---------------------------------------------------------------- The pattern (nodes)
@@ -181,24 +186,27 @@ WORK = {
     ("pluto", "hard"): "Notice where money and power are tangled in your life, and take back one decision that belongs to you. Quiet, steady changes at the root last longer than dramatic ones.",
 }
 WORK_INGRESS = {
-    "jupiter": "Treat this as the start of a growth chapter in that part of your life. Notice what opens up over the next few months, and follow the openings that feel like a fit.",
-    "saturn": "Treat this as the start of a building chapter. Choose one commitment in that part of your life and give it steady attention, even when progress feels slow.",
-    "uranus": "Treat this as the start of a long season of change. Stay curious, try one new approach, and keep your plans loose enough to adjust.",
-    "neptune": "Treat this as the start of a long, dreamy season. Follow what inspires you there, and keep your practical details clear and written down.",
-    "pluto": "Treat this as the start of a deep, slow transformation. Let what no longer fits fall away a little at a time.",
+    "jupiter": "Treat this as the start of a growth chapter in {life}. Notice what opens up over the next few months, and follow the openings that feel like a fit.",
+    "saturn": "Treat this as the start of a building chapter. Choose one commitment in {life} and give it steady attention, even when progress feels slow.",
+    "uranus": "Treat this as the start of a long season of change in {life}. Stay curious, try one new approach, and keep your plans loose enough to adjust.",
+    "neptune": "Treat this as the start of a long, dreamy season in {life}. Follow what inspires you there, and keep your practical details clear and written down.",
+    "pluto": "Treat this as the start of a deep, slow transformation in {life}. Let what no longer fits fall away a little at a time.",
 }
 WORK_TARGET = {
-    "money": "Because this touches the points that carry your money story, keep a simple record of what changes in your income during this window. Patterns are easier to see on paper.",
-    "career": "Because it touches your career, pay attention to what people start asking you for. That's often where the window is pointing.",
+    "money": "Because your {names} carry your money story, keep a simple record of what changes in your income during this window. Patterns are easier to see on paper.",
+    "career": "Because your {names} speaks for your career, pay attention to what people start asking you for during this window. That's often where it's pointing.",
     "asc": "Because it touches your Ascendant, take care of your body and your energy first. Everything else moves more easily from there.",
 }
 THRESH_PROMPT = {
-    "jupiter": "If this window could grow one thing in your financial life, what would you want it to be?",
-    "saturn": "What are you ready to commit to, and what are you ready to stop carrying?",
-    "uranus": "Which part of your work or money life feels ready for a change, even if it scares you a little?",
-    "neptune": "Where are you hoping something will work out without looking closely at it? What would looking closely change?",
-    "pluto": "What would you let go of if you trusted that something better could grow in its place?",
+    "jupiter": "If this window could grow one thing in {life}, what would you want it to be?",
+    "saturn": "In {life}, what are you ready to commit to, and what are you ready to stop carrying?",
+    "uranus": "What in {life} feels ready for a change, even if it scares you a little?",
+    "neptune": "Where in {life} are you hoping something will work out without looking closely at it? What would looking closely change?",
+    "pluto": "What in {life} would you let go of if you trusted that something better could grow in its place?",
 }
+TARGET_HOUSE = {"asc": 1, "ic": 4, "dsc": 7, "mc": 10}
+TNAME = {"fortune": "Part of Fortune", "assets": "Lot of Assets", "asc": "Ascendant", "mc": "Midheaven", "ic": "IC", "dsc": "Descendant",
+         "north_node": "North Node", "south_node": "South Node"}
 THRESH_LEAD = "With {P} touching your {names}, "
 
 
@@ -227,34 +235,37 @@ def add_practices(a, sections, R, threshold_info):
                                  VALUE_PROMPT_2.format(R=nm(r2), S=P[r2]["sign"], gift=SIGN_GIFT[P[r2]["sign"]])])
     if not untimed:
         put("fortune", FORTUNE_TRY[P["fortune"]["house"]],
-            [FORTUNE_PROMPTS[0].format(ord=T.ORD[P["fortune"]["house"]]),
-             FORTUNE_PROMPTS[1].format(asign=P["assets"]["sign"], aord=T.ORD[P["assets"]["house"]])])
+            [FORTUNE_PROMPTS[0].format(ord=T.ORD[P["fortune"]["house"]], life=HOUSE_LIFE[P["fortune"]["house"]]),
+             FORTUNE_PROMPTS[1].format(asign=P["assets"]["sign"], aord=T.ORD[P["assets"]["house"]], alife=HOUSE_LIFE[P["assets"]["house"]])])
     mc_sign = W.sign_of(a["cusps"][9] + 15) if untimed else W.sign_of(a["lon"]["mc"])
     career_p0 = CAREER_PROMPTS[0].format(mc=mc_sign, gift=SIGN_GIFT[mc_sign])
     if untimed:
         career_p0 = career_p0.replace("Your Midheaven in", "Your solar tenth house in")
-    put("blocks", BLOCK_TRY[r2], [BLOCK_PROMPT[r2], BLOCK_PROMPT_2.format(ord=T.ORD[P[r2]["house"]], topic=HOUSE_SHORT[P[r2]["house"]])])
+    put("blocks", BLOCK_TRY[r2], [BLOCK_PROMPT[r2], BLOCK_PROMPT_2.format(ord=T.ORD[P[r2]["house"]], topic=HOUSE_SHORT[P[r2]["house"]], life=HOUSE_LIFE[P[r2]["house"]])])
     put("career", CAREER_TRY[P[rc]["house"]],
-        [career_p0, CAREER_PROMPTS[1].format(ord=T.ORD[P[rc]["house"]], topic=HOUSE_SHORT[P[rc]["house"]])])
+        [career_p0, CAREER_PROMPTS[1].format(ord=T.ORD[P[rc]["house"]], topic=HOUSE_SHORT[P[rc]["house"]], life=HOUSE_LIFE[P[rc]["house"]])])
     for h, sid, TRY, PR in ((5, "fifth", FIFTH_TRY, FIFTH_PROMPTS), (8, "eighth", EIGHTH_TRY, EIGHTH_PROMPTS),
                             (11, "eleventh", ELEVENTH_TRY, ELEVENTH_PROMPTS)):
         el = ELEMENT[a["house_sign"][h]]
         rr = R[h]
-        second = PR[1].format(R=nm(rr), ord=T.ORD[P[rr]["house"]], topic=HOUSE_SHORT[P[rr]["house"]])
+        second = PR[1].format(R=nm(rr), ord=T.ORD[P[rr]["house"]], topic=HOUSE_SHORT[P[rr]["house"]], life=HOUSE_LIFE[P[rr]["house"]])
         put(sid, TRY[el], [PR[0][el], second[0].upper() + second[1:]])
     put("pattern", PATTERN_TRY[P["north_node"]["house"]],
         [PATTERN_PROMPTS[0].format(sn=P["south_node"]["sign"]), PATTERN_PROMPTS[1].format(nn=P["north_node"]["sign"])])
 
     money = {r2, rf, "fortune", "assets"}
     used_target = set()
-    for sid, (pl, cls, ingress, targets, names) in threshold_info.items():
+    for sid, (pl, cls, ingress, targets, names, ing_house) in threshold_info.items():
+        hmap = {(TNAME.get(t) or W.NAME.get(t, t)): (TARGET_HOUSE.get(t) or (P[t]["house"] if t in P else None)) for t in targets}
+        th = next((hmap[n] for n in (names or []) if hmap.get(n)), None) or next((h for h in hmap.values() if h), None) or ing_house
+        life = HOUSE_LIFE.get(th, "your work and money life")
         if cls and (pl, cls) in WORK:
             txt = WORK[(pl, cls)]
             if names:
                 lead = THRESH_LEAD.format(P=pl.title(), names=_join(names[:2]))
                 txt = lead + txt[0].lower() + txt[1:]
         elif ingress and pl in WORK_INGRESS:
-            txt = WORK_INGRESS[pl]
+            txt = WORK_INGRESS[pl].format(life=HOUSE_LIFE.get(ing_house, "this part of your chart"))
         else:
             txt = WORK.get((pl, "conj"), "")
         extra = ""
@@ -266,4 +277,11 @@ def add_practices(a, sections, R, threshold_info):
             extra, kind = WORK_TARGET["asc"], "asc"
         if extra:
             used_target.add(kind)
-        put(sid, (txt + " " + extra).strip(), [THRESH_PROMPT.get(pl, "")], label="How to Work With It")
+            tn = lambda t: TNAME.get(t) or W.NAME.get(t, t)
+            if kind == "money":
+                mt = list(dict.fromkeys(tn(t) for t in targets if t in money))[:2]
+                extra = extra.format(names=_join(mt)).replace(" carry your money", " carries your money" if len(mt) == 1 else " carry your money")
+            else:
+                ct = [tn(t) for t in targets if t in ("mc", rc)][:1]
+                extra = extra.format(names=ct[0] if ct else "Midheaven")
+        put(sid, (txt + " " + extra).strip(), [THRESH_PROMPT.get(pl, "").format(life=life)], label="How to Work With It")
