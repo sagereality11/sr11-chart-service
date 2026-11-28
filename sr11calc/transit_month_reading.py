@@ -146,6 +146,44 @@ class Builder:
         self.prof = f["profection"]
         self.sections_used = set()
         self.done = []
+        self._cyc = {}
+        self.groups_told = {}
+        self.oct_used = set()
+
+    def cyc(self, key, opts):
+        """Each call for the same key takes the next option, so a phrase pattern isn't reused until all are used."""
+        i = self._cyc.get(key)
+        if i is None:
+            i = self.pk.r.randrange(len(opts))
+        self._cyc[key] = i + 1
+        return opts[i % len(opts)]
+
+    def mhouse(self):
+        sh = self.prof["month_shift"]
+        return sh["house"] if sh else self.prof["month_house"]
+
+    def top_theme(self):
+        if not hasattr(self, "_tt"):
+            conv = self.part_converge()
+            self._tt = conv["sections"][0]["table"]["rows"][0][0].lower() if conv else ""
+        return self._tt
+
+    def octave(self, tp, oc, tg):
+        base = T.OCTAVE.get((tp, oc), T.OCTAVE[("saturn", "hard")])
+        seen = base[0] in self.oct_used
+        if seen:
+            alt = [T.OCTAVE[(tp, k)] for k in ("hard", "conj", "soft") if (tp, k) in T.OCTAVE and T.OCTAVE[(tp, k)][0] not in self.oct_used]
+            if alt:
+                base, seen = alt[0], False
+        self.oct_used.add(base[0])
+        for t in ([tg] if isinstance(tg, str) else list(tg)):
+            if t in T.TGT_OCT and t not in self.oct_used:
+                self.oct_used.add(t)
+                lo, hi = T.TGT_OCT[t]
+                if seen:
+                    return [lo.replace("that can look like", "the shadow can look like"), hi.replace("it looks like", "the gift looks like")]
+                return [base[0] + " " + lo, base[1] + " " + hi]
+        return list(base)
 
     # ---------------------------------------------------------- helpers
     def H(self, lon):
@@ -274,6 +312,9 @@ class Builder:
                 continue
             if s["planet"] == "north_node" and s["target"] in ("north_node", "south_node"):
                 continue
+            # the same planet on one end of the nodal axis is one story, not two
+            if s["target"] in ("north_node", "south_node") and any(o["planet"] == s["planet"] and o["target"] in ("north_node", "south_node") for o in out):
+                continue
             # skip a planet aspecting itself here, cycles cover it
             if s["planet"] == s["target"] and s["aspect"] in (0, 90, 180):
                 continue
@@ -327,6 +368,9 @@ class Builder:
             eyebrow = (f"All month, within {s['orb']:.1f}° to {hi:.1f}° of exact" if hi <= 1.0
                        else f"Closest {self.dt_(s['closest'])}, within {s['orb']:.1f}° of exact")
         sub = T.SUB.get((tp, oc if oc != "hard" else "hard"), "")
+        if sub and sub in self.oct_used:
+            sub = f"What {pn(tp)} asks of {T.PT[tg]['short']}."
+        self.oct_used.add(sub)
         tpos = f"{s['pos'].split('°')[0]}° {s['sign']}"
         npos = P[tg]
         paras = []
@@ -377,30 +421,46 @@ class Builder:
         for st_ in self.f["natal"].get("stelliums", []):
             if tg in st_["points"] and first:
                 p2.append(f"It's part of your {st_['sign']} stellium with your {join([self.nm(k) for k in st_['points'] if k != tg])}, so this contact stirs that whole group.")
+        if first and tg in T.PIH and self.timed:
+            p2.append(T.PIH[tg].format(h=T.ORD[npos["house"]], focus=T.FOCUS[npos["house"]]))
+        elif first and tg in T.PIH:
+            p2.append(f"In your solar chart it falls in your {hname(npos['house'])}, among {T.FOCUS[npos['house']]}.")
         rh = self.rules(tg)
-        if rh:
-            rr = [f"your {hname(h)} (its cusp falls in {self.f['natal']['cusp_signs'][h - 1]}), the area of {T.HOUSE[h]['area']}" for h in rh[:2]]
-            p2.append(f"In your chart your {np_} lives in your {hname(npos['house'])}. It also rules {rr[0]}" + (f", and {rr[1]}." if len(rr) > 1 else ".")
-                      + " " + pk.one(["So whatever touches it this month reaches into those parts of your life too.",
-                                       "That means this contact ripples out into those areas as well.",
-                                       "Those areas feel this contact too, even if less directly.",
-                                       "So the effects of this contact travel further than its own house."]))
-            if not first:
-                p2 = p2[-1:]
-        elif tg not in ("uranus", "neptune", "pluto") and first:
-            p2.append(f"It lives in your {hname(npos['house'])}, the area of {T.HOUSE[npos['house']]['area']}.")
+        if rh and first:
+            cs = self.f["natal"]["cusp_signs"]
+            hs = [f"your {cs[h - 1]} {hname(h)}" for h in rh[:2]]
+            sh = join([T.HOUSE_ONE[h] for h in rh[:2]])
+            pl = len(rh[:2]) > 1
+            p2.append(self.cyc("rules", [f"It also rules {join(hs)}, so {sh} {'feel' if pl else 'feels'} this contact too.",
+                                         f"Because it rules {join(hs)}, {sh} {'are' if pl else 'is'} part of this story as well.",
+                                         f"It's also the ruler of {join(hs)}, which brings {sh} into the picture."]))
+        br = self.bridge(s)
+        if not first and not br and not (grp and frozenset((tg, grp[0]["target"])) in self.groups_told):
+            prev = next((d for d in self.done if d["target"] == tg or tg in [g["target"] for g in d.get("group_items", [])]), None)
+            if prev:
+                p2 = [f"You met your {np_} earlier in this reading, with {pn(prev['planet'])}. This time {pn(tp)} reaches it from your {hname(s['house'])}, "
+                      f"so two planets are working on {T.PT[tg]['short']} at once this month."]
         if p2:
             paras.append(" ".join(p2))
-        if grp:
+        if grp and frozenset((tg, grp[0]["target"])) in self.groups_told:
             g2 = grp[0]["target"]
+            pv = self.groups_told[frozenset((tg, g2))]
+            paras.append(f"Because your {self.nm(g2)} sits beside your {np_}, {pn(tp)} reaches both of them, the same pair {pn(pv)} is touching this month. "
+                         f"That's a sign of how much attention this part of your chart is getting right now.")
+            grp_done = True
+        else:
+            grp_done = False
+        if grp and not grp_done:
+            g2 = grp[0]["target"]
+            self.groups_told[frozenset((tg, g2))] = tp
             gp = self.P[g2]
-            t = (f"Your {self.nm(g2)} sits with your {np_} in {gp['sign']}, so {T.PT[g2]['ess']} and {T.PT[tg]['ess']} have always worked as one story in your life. "
+            t = (f"Your {self.nm(g2)} sits with your {np_} in {gp['sign']}, so {T.PT[g2]['short']} and {T.PT[tg]['short']} have always worked as one story in your life. "
                  + self.pk.one(["When one of them is touched, the other answers.", "You rarely feel one without the other.", "What moves one tends to move both."]))
             if self.is_year_lord(g2):
                 t += f" Your {self.nm(g2)} also rules your year, which gives this pattern even more weight right now."
             rh2 = self.rules(g2)
             if rh2:
-                t += f" It rules your {join([hname(h) for h in rh2[:2]])} too, so {join([T.HOUSE[h]['short'] for h in rh2[:2]])} are part of this story as well."
+                t += f" It rules your {join([hname(h) for h in rh2[:2]])} too, so {join([T.HOUSE_ONE[h] for h in rh2[:2]])} {'are' if len(rh2[:2]) > 1 else 'is'} part of this story as well."
             paras.append(t)
         key = (tp, c) if (tp, c) in T.ASPECT_TEXT else (tp, "sq" if c == "opp" else c)
         txt = pk.one(T.ASPECT_TEXT.get(key, T.ASPECT_TEXT[("saturn", "sq")]))
@@ -413,10 +473,10 @@ class Builder:
             p4.append(pk.one(th).format(h=T.ORD[h], area=T.HOUSE[h]["area"], ask=T.HOUSE[h]["ask"]))
             nh = npos["house"]
             if tp in T.VERB and nh != h:
-                p4.append(pk.one([f"Your {np_} answers from your {hname(nh)}, the realm of {T.FOCUS[nh]}, so the story runs between those two parts of your life.",
-                                  f"Meanwhile your {np_} lives in your {hname(nh)}, among {T.FOCUS[nh]}. What shifts out there is felt in here.",
-                                  f"And because your {np_} sits in your {hname(nh)}, this reaches {T.FOCUS[nh]} as well.",
-                                  f"Your {np_} carries the conversation back to your {hname(nh)}, to {T.FOCUS[nh]}."]))
+                p4.append(self.cyc("hlink", [f"Your {np_} answers from your {hname(nh)}, the realm of {T.FOCUS[nh]}, so the story runs between those two parts of your life.",
+                                             f"Meanwhile your {np_} lives in your {hname(nh)}, so what changes in {T.HOUSE[h]['short']} is felt in {T.HOUSE[nh]['short']} too.",
+                                             f"And because your {np_} sits in your {hname(nh)}, this reaches {T.FOCUS[nh]} as well.",
+                                             f"Your {np_} carries the conversation back to your {hname(nh)}, to {T.FOCUS[nh]}."]))
         passes = [d for d in s["passes"]]
         near = s.get("near") or []
         if len(passes) >= 2:
@@ -430,14 +490,17 @@ class Builder:
             if near:
                 t += f", and {pn(tp)} comes back within a whisker of exact when it stations around {when(near[0]['date'], self.year)}, so this is a theme to finish rather than begin."
             else:
-                t += ", so you may already be feeling it settle." if past else ", so you'll feel it building."
+                if past and st_here:
+                    t += (f", and this station brings {pn(tp)} back to the same degree, so the lesson of that first pass returns at full strength. "
+                          f"Expect the days around {self.dt_(st['date'])} to feel like the heart of it.")
+                else:
+                    t += ", so you may already be feeling it settle." if past else ", so you'll feel it building."
             p4.append(t)
         elif near and not passes:
             p4.append(f"{pn(tp, True)} never quite perfects this aspect. It stations within a whisker of exact around {when(near[0]['date'], self.year)}, which makes the near miss just as strong as an exact pass.")
         if p4:
             paras.append(" ".join(p4))
-        br = self.bridge(s)
-        if br:
+        if br and not grp_done:
             paras.append(br)
         self.done.append(s)
         stage = self.stage(s)
@@ -449,7 +512,7 @@ class Builder:
         if tp in T.EVOLVE:
             paras.append(pk.one(T.EVOLVE[tp]).format(ess=T.PT[tg]["ess"]))
         sec = {"title": title, "eyebrow": eyebrow, "sub": sub, "paras": paras,
-               "octave": T.OCTAVE.get((tp, oc), T.OCTAVE[("saturn", "hard")])}
+               "octave": self.octave(tp, oc, [tg] + [g["target"] for g in grp])}
         if idx % 2 == 0:
             sec["close"] = pk.one(T.CLOSE[tp])
         sec["prompt"] = pk.one(T.PROMPT.get(tg, T.PROMPT["sun"]))
@@ -527,16 +590,31 @@ class Builder:
                                                          h=T.ORD[h], area=T.HOUSE[h]["area"])
         paras = [txt + " " + self.pk.one(T.STATION_NOTE)]
         nat = [k for k, v in self.P.items() if v["house"] == h and k not in ("asc", "mc")]
-        if nat:
-            paras.append(f"Your natal {join([self.nm(k) for k in nat[:3]])} live{'s' if len(nat) == 1 else ''} in this house, so the station wakes up {'that part' if len(nat) == 1 else 'those parts'} of you too. "
-                         + T.HOUSE[h]["long"].split(". ")[0].rstrip(".") + ".")
+        if not hasattr(self, "st_houses"):
+            self.st_houses = {}
+        prev = self.st_houses.get(h)
+        self.st_houses.setdefault(h, s)
+        if prev:
+            paras.append(f"This is the same house {pn(prev['planet'])} turned in on {self.dt_(prev['date'])}, so two stations land in {T.HOUSE[h]['short']} within days of each other. "
+                         f"When that happens I read it as one turning point told twice, and it's worth giving this part of your life some real attention this month.")
+        elif nat:
+            t = (f"Your natal {join([self.nm(k) for k in nat[:3]])} live{'s' if len(nat) == 1 else ''} in this house, so the station wakes up {'that part' if len(nat) == 1 else 'those parts'} of you too. "
+                 + T.HOUSE[h]["long"].split(". ")[0].rstrip(".") + ".")
+            k0 = next((k for k in nat if k in T.PIH and k not in self.sections_used), None)
+            if k0 and self.timed:
+                self.sections_used.add(k0)
+                t += " " + T.PIH[k0].format(h=T.ORD[h], focus=T.FOCUS[h])
+            paras.append(t)
         else:
-            paras.append(T.HOUSE[h]["long"].split(". ")[0] + ". " + T.HOUSE[h]["long"].split(". ")[1].rstrip(".") + ".")
+            t = T.HOUSE[h]["long"].split(". ")[0].rstrip(".") + "."
+            if h == self.prof["house"]:
+                t += " " + T.HOUSE[h]["long"].split(". ")[1].rstrip(".") + ", and it's the house of your year, so this station speaks directly to the year you're in."
+            paras.append(t)
         if self.is_year_lord(s["planet"]):
             paras.append(f"Because {NAME[s['planet']]} rules your year, its station carries extra weight. The choices you're turning over right now are part of a much bigger change unfolding through {self.yr()}.")
         return {"title": f"{NAME[s['planet']]} Turns {s['kind'].capitalize()} in Your {T.ORD[h]} House", "eyebrow": self.dt_(s["date"]),
-                "sub": f"A turning point for {T.HOUSE[h]['short']}.", "paras": paras,
-                "octave": T.OCTAVE.get((s["planet"], "hard"), T.OCTAVE[("saturn", "soft")]) if s["planet"] in SLOWP else None}
+                "sub": f"{'Another' if prev else 'A'} turning point for {T.HOUSE[h]['short']}.", "paras": paras,
+                "octave": self.octave(s["planet"], "hard", [k for k in nat if k in T.TGT_OCT]) if s["planet"] in SLOWP else None}
 
     def midpoint_section(self, m):
         a, b = m["pair"]
@@ -550,9 +628,20 @@ class Builder:
                      "When a slow planet touches the point between them, they start working as one theme, and you may notice them showing up together in your life.",
                      "With this point activated, the two can't be separated this month. What affects one tends to stir the other.",
                      "For now they move as a pair, so pay attention to moments where both show up at once."])]
+        mh = m.get("house")
+        extra = []
+        if mh and self.timed:
+            extra.append(f"In your chart this point falls in your {hname(mh)}, so it plays out through {T.FOCUS[mh]}.")
+        also = [c for c in getattr(self, "cur", []) if c["target"] in (a, b) and c["planet"] != tp and (c["planet"], c["target"]) not in self.oct_used]
+        if also:
+            self.oct_used.add((also[0]["planet"], also[0]["target"]))
+            c0 = also[0]
+            extra.append(f"{pn(c0['planet'], True)} is also making {an(T.ASP_NOUN[c0['aspect']])} {T.ASP_NOUN[c0['aspect']]} to your {self.nm(c0['target'])} this month, so this midpoint adds another layer to that story rather than starting a new one.")
+        if extra:
+            paras.append(" ".join(extra))
         return {"title": f"{NAME[tp]} {T.ASP_WORD[m['aspect']].capitalize()} Your {self.nm(a)} and {self.nm(b)} Midpoint",
                 "eyebrow": f"Closest {self.dt_(m['closest'])}", "sub": f"Where your {self.nm(a)} and {self.nm(b)} meet.", "paras": paras,
-                "octave": T.OCTAVE.get((tp, ocls(m["aspect"])), T.OCTAVE[("saturn", "hard")])}
+                "octave": self.octave(tp, ocls(m["aspect"]), (a, b))}
 
     # ---------------------------------------------------------- parts
     def build(self):
@@ -588,9 +677,12 @@ class Builder:
         hard = bool(cur) and ocls(cur[0]["aspect"]) in ("hard", "conj")
         p1 = f"Hey {self.name},"
         bd = dt.date.fromisoformat(pr["since"])
-        p2 = ("There are months when life asks you to build something new, and months when it asks you to reconsider what you've already built. "
-              + (f"{M} feels much more like the second kind, not because what you've created has lost its value, but because the person you're becoming is beginning to outgrow some of the shapes your life has taken."
-                 if hard else f"{M} feels more like the first kind. Doors are opening, and the invitation is to walk through the ones that are truly yours."))
+        if cur and cur[0]["planet"] in T.LETTER_HOOK:
+            p2 = T.LETTER_HOOK[cur[0]["planet"]].format(M=M, short=T.PT[cur[0]["target"]]["short"])
+        else:
+            p2 = ("There are months when life asks you to build something new, and months when it asks you to reconsider what you've already built. "
+                  + (f"{M} feels much more like the second kind, not because what you've created has lost its value, but because the person you're becoming is beginning to outgrow some of the shapes your life has taken."
+                     if hard else f"{M} feels more like the first kind. Doors are opening, and the invitation is to walk through the ones that are truly yours."))
         acts = []
         for s in cur[:3]:
             verb = {0: "sits on", 180: "opposes", 90: "squares", 120: "trines", 60: "sextiles"}[s["aspect"]]
@@ -601,10 +693,30 @@ class Builder:
             acts.append(lead)
         p3 = (f"Since your birthday in {T_MONTHS[bd.month - 1]}, you've been moving through {an(T.ORD[pr['house']])} {hname(pr['house'])} profection year, a year that brings {T.FOCUS[pr['house']]} into focus. "
               + (f"{M} sharpens that focus as {join(acts)}. " if acts else "")
-              + "When I bring these movements together with your progressions and solar arcs, I see a larger transition unfolding.")
-        p4 = (f"This isn't a month that requires you to have every answer. It's a month that invites you to notice which parts of your life belong to the person you're becoming, and which parts you keep carrying simply because you always have. "
-              f"As we move through your reading, pay attention to what feels familiar, what stirs something in you and what suddenly feels heavier or lighter than it used to. Those reactions are part of the message.")
+              + self.letter_stations())
+        focus = [T.PT[cur[0]["target"]]["short"]] if cur else []
+        mh = self.mhouse()
+        if T.HOUSE_ONE[mh] not in focus:
+            focus.append(T.HOUSE_ONE[mh])
+        p4 = (f"In the pages that follow I'll walk you through the season you're in, the big currents of {M}, the karmic pattern underneath them and the days that matter most. "
+              f"As you read, notice what comes up around {join(focus)}: what feels familiar, what stirs something in you and what suddenly feels heavier or lighter than it used to. Those reactions are part of the message.")
         return [p1, p2, p3, p4]
+
+    def letter_stations(self):
+        sts = sorted(self.f["stations"], key=lambda x: x["date"])
+        out = ""
+        if len(sts) >= 2:
+            d0, d1 = dt.date.fromisoformat(sts[0]["date"]), dt.date.fromisoformat(sts[-1]["date"])
+            span = (d1 - d0).days
+            out = (f"{cap(T.NUM.get(len(sts), str(len(sts))))} planets stand still this month"
+                   + (f", all within {T.NUM.get(span + 1, str(span + 1))} days of each other" if span <= 5 else "")
+                   + ", and a station is where a planet's energy is at its loudest.")
+        elif len(sts) == 1:
+            out = f"{pn(sts[0]['planet'], True)} stands still on {self.dt_(sts[0]['date'])}, and a station is where a planet's energy is at its loudest."
+        th = self.top_theme()
+        if th:
+            out += (" " if out else "") + f"When I bring in your progressions and solar arcs, the theme they keep returning to is {th}."
+        return out or "When I bring these movements together with your progressions and solar arcs, I see a larger transition unfolding."
 
     def headline(self, s):
         return (f"{NAME[s['planet']] if s['planet'] != 'north_node' else 'The North Node'} {T.ASP_WORD[s['aspect']]} your natal {self.nm(s['target'])} is the strongest current, "
@@ -641,7 +753,7 @@ class Builder:
                     t += f" Because this is tied to the ruler of your year, it belongs to the bigger story of {self.yr()}."
             elif i == 1:
                 t = (f"Meanwhile, {pn(tp)}'s {noun} to your natal {self.nm(tg)} opens another doorway. "
-                     + (f"With {pn(tp)} moving through your {hname(th)} and your {self.nm(tg)} in your {hname(nh)}, the connection between {T.HOUSE[th]['short']} and {T.HOUSE[nh]['short']} becomes more important. " if th != nh else f"It all happens in your {hname(nh)}, among {T.FOCUS[nh]}. ")
+                     + (f"With {pn(tp)} moving through your {hname(th)} and your {self.nm(tg)} in your {hname(nh)}, the connection between {T.HOUSE_ONE[th]} and {T.HOUSE_ONE[nh]} becomes more important. " if th != nh else f"It all happens in your {hname(nh)}, among {T.FOCUS[nh]}. ")
                      + f"Where {pn(cur[0]['planet'])} asks {T.VOICE[cur[0]['planet']]}, {pn(tp)} asks {T.VOICE[tp]}.")
             else:
                 t = (f"{pn(tp, True)}'s {noun} to your natal {self.nm(tg)} adds an even deeper dimension. It invites you to explore {T.PT[tg]['ess']}, "
@@ -650,8 +762,14 @@ class Builder:
         if len(cur) >= 2:
             a = cur[0]["planet"]
             c1, c2 = T.CENTRAL[a]
-            paras.append(f"What makes {self.M} significant is that these aren't isolated experiences. They're different expressions of the same transition, "
-                         f"and the areas of your life they touch are becoming more connected as you decide what deserves a place in your future. "
+            hs = []
+            for s_ in cur[:3]:
+                h_ = self.P[s_["target"]]["house"]
+                if h_ not in hs:
+                    hs.append(h_)
+            reach = (f"Between them, these contacts reach into your {join([T.ORD[h] for h in hs])} houses, so {join([T.HOUSE_ONE[h] for h in hs])} are all being asked the same question from different sides. "
+                     if len(hs) >= 2 else f"All of them come back to your {hname(hs[0])}, so {T.HOUSE_ONE[hs[0]]} is where this month really lives. ")
+            paras.append(f"What makes {self.M} significant is that these aren't isolated experiences. {reach}"
                          f"The central question of {self.M} isn't {c1}. It's {c2}.")
         if not paras:
             paras.append(f"{self.M} is a quieter month in the big picture, with no slow planet making a close contact to your chart. That makes it a month of integration, a chance to let what you've learned settle into who you are, while the faster planets and the Moon mark the days that matter.")
@@ -671,7 +789,8 @@ class Builder:
         for h in sorted(seen):
             rows.append([T.ORD[h], cap(T.HOUSE[h]["area"]), cap(join(seen[h][:3]))])
         sec2 = {"title": f"Where {self.M} Lands in Your Chart",
-                "paras": [f"Your chart holds twelve areas of life, but not every area gets the same attention each month. In {self.M} the energy gathers around the houses below, and what matters most isn't how many are lit up. It's how they talk to each other."
+                "paras": [f"Your chart holds twelve areas of life, but not every area gets the same attention each month. In {self.M} the energy gathers around the houses below."
+                          + (lambda b: f" Your {hname(b)} is the busiest, with {T.NUM.get(len(seen[b]), str(len(seen[b])))} things touching it, so {T.HOUSE_ONE[b]} is where you're most likely to feel the month." if len(seen[b]) >= 2 else " What matters most isn't how many are lit up. It's how they talk to each other.")(max(seen, key=lambda h: len(seen[h])))
                           + ("" if self.timed else " Because your birth time isn't known, I'm reading your houses from your Sun sign, which still tells a true story about where the month's energy lands.")],
                 "table": {"head": ["House", "Area of life", "What is touching it"], "widths": [0.16, 0.42, 0.42], "rows": rows}}
         return {"title": "Your Month's Soul Theme", "intro": f"What {self.M} is asking of you, and where it lands in your chart.",
@@ -856,10 +975,10 @@ class Builder:
         tn = self.f["sky"]["north_node"]
         acts.append(f"the transiting North Node is moving through your {hname(tn['house'])}")
         paras.append(f"{self.M} lights up this axis in a few ways. {cap(join(acts[:4]))}. All of this gives you a chance to notice where old patterns are running the show, and where you're ready to choose something new.")
-        paras.append(f"You're not being asked to give up what you're good at. You're being invited to change the place inside you that those gifts come from.")
+        paras.append(f"You're not being asked to give up {snp[1]}. You're being invited to let it come from choice rather than habit, and to give {nnp[0]} a little more room.")
         return {"title": "The Karmic Pattern You're Invited to Transform", "intro": "Your nodes and the soul pattern underneath the month.",
                 "sections": [{"title": f"Your Nodes and the {self.node_title(sn['house'])}", "paras": paras,
-                              "close": "When your gifts become an expression of who you are rather than proof of your worth, everything changes.",
+                              "close": f"When your {sn['sign']} gifts become an expression of who you are rather than proof of your worth, everything changes.",
                               "prompt": self.pk.one(T.PROMPT["south_node"])}]}
 
     def node_title(self, h):
@@ -882,7 +1001,9 @@ class Builder:
             ing = [i for i in self.f["ingresses"] if i["planet"] == pid]
             for i in ing[:2]:
                 if i["kind"] == "sign":
-                    p1.append(f"{'The Sun' if pid == 'sun' else NAME[pid]} moves into {i['sign']} on {self.dt_(i['date'])}, turning your attention toward {T.SIGN_WORLD[i['sign']]}.")
+                    ih = self.H(SIGNS.index(i["sign"]) * 30 + 15)
+                    p1.append(f"{'The Sun' if pid == 'sun' else NAME[pid]} moves into {i['sign']} on {self.dt_(i['date'])}, turning your attention toward {T.SIGN_WORLD[i['sign']]}"
+                              + (f", and in your chart toward {T.HOUSE[ih]['short']}." if ih != h else "."))
                 else:
                     p1.append(f"On {self.dt_(i['date'])} it crosses into your {hname(i['house'])}, bringing {T.HOUSE[i['house']]['area']} into focus.")
             st = [x for x in self.f["stations"] if x["planet"] == pid]
@@ -1016,9 +1137,9 @@ class Builder:
                 big = len([e for e in es if e["w"] >= 7])
                 opener = ""
                 if big >= 3:
-                    opener = f"This is the most concentrated stretch of {self.M}. "
+                    opener = self.cyc("wbig", T.WINDOW_OPEN_BIG).format(M=self.M)
                 elif not [e for e in es if e["w"] >= 5]:
-                    opener = "These are gentler days in your chart. "
+                    opener = self.cyc("wgentle", T.WINDOW_OPEN_GENTLE)
                 atts = []
                 for e in es[:3]:
                     a = e.get("att") or ""
@@ -1142,9 +1263,12 @@ class Builder:
             planets = ["north_node"]
         lean = join([T.LEAN[p] for p in planets[:4]])
         gentle = join([T.GENTLE[p] for p in planets[:3]])
-        lp = (f"{self.M} supports {lean}. Give your attention to what is already working, and let each step be one you've chosen rather than one you feel pushed into. "
-              f"Let yourself enjoy pleasure, connection and rest without making them earn their place. Your ability to receive matters just as much as your ability to give.")
-        gp = (f"Be gentle with {gentle}. When you notice them, pause before you react, and ask what you actually need. "
+        mh = self.mhouse()
+        moon = self.P["moon"]["sign"]
+        lp = (f"{self.M} supports {lean}. Give your attention to what is already working in {T.HOUSE[mh]['short']}, and let each step be one you've chosen rather than one you feel pushed into. "
+              f"Your {moon} Moon is restored by {T.SIGN[moon]['need']}, so let yourself have that without making it earn its place.")
+        tg0 = cur[0]["target"] if cur else "moon"
+        gp = (f"Be gentle with {gentle}. When you notice them, especially around {T.PT[tg0]['short']}, pause before you react, and ask what you actually need. "
               f"Not every feeling this month is an instruction. Some of them are simply showing you what has been asking for your care.")
         ints = [T.INTENTION[p] for p in planets[:2]] + [T.INTENTION["year"]]
         qs, used = [], set()
@@ -1154,10 +1278,12 @@ class Builder:
                     qs.append(q)
                     used.add(q)
                     break
-        extra = ["What have I learned about the relationship between my responsibilities and my identity?",
-                 "Where have I recognized a pattern that no longer supports my growth?",
-                 "What does freedom mean to me at this stage of my life?",
-                 "What am I willing to leave behind as I move into next month?",
+        nxt = T_MONTHS[self.month % 12]
+        snp, nnp = T.NODE_SIGN[self.P["south_node"]["sign"]], T.NODE_SIGN[self.P["north_node"]["sign"]]
+        extra = [f"What has {self.M} shown me about {T.HOUSE[self.prof['house']]['area']}?",
+                 f"Where did I catch myself reaching for {snp[1]} out of habit?",
+                 f"What would it look like to give {nnp[0]} a little more room?",
+                 f"What am I willing to leave behind as I move into {nxt}?",
                  "Which parts of my future can I already begin to live?"]
         for q in extra:
             if len(qs) >= 6:
@@ -1255,8 +1381,11 @@ class Builder:
         paras = [p1]
         if len(ranked) > 1:
             sec = ranked[1]
-            paras.append(f"Close behind it is {T.CONVERGE[sec[0]][0].lower()}. When I see these two themes together, I read them as two sides of the same transition rather than two separate experiences. "
-                         f"What changes in one area of your life is likely to ask for change in the other.")
+            shared = [x for x in top[1] if x in sec[1]]
+            paras.append(f"Close behind it is {T.CONVERGE[sec[0]][0].lower()}. "
+                         + (f"{cap(join(shared[:2]))} {'speaks' if len(shared[:2]) == 1 else 'speak'} to both, which is why I read them as two sides of the same transition rather than two separate experiences. "
+                            if shared else "When I see these two themes together, I read them as two sides of the same transition rather than two separate experiences. ")
+                         + f"What changes around {T.CONVERGE[top[0]][0].lower()} is likely to ask for change around {T.CONVERGE[sec[0]][0].lower()} too.")
         return {"title": "Where Your Cycles Converge", "intro": f"The themes {self.M} keeps repeating.",
                 "sections": [{"title": f"The Themes Your Chart Keeps Repeating", "paras": paras,
                               "table": {"head": ["Theme", "Strength", "Indicators"], "widths": [0.3, 0.16, 0.54], "rows": rows},
@@ -1303,7 +1432,16 @@ class Builder:
         lst = join([f"your {hname(h)}, {T.HOUSE[h]['short']}" for h in hs])
         return {"title": "Understanding the Pattern in Your Chart",
                 "paras": [f"When you look at your birth chart alongside {self.M}'s sky, notice how several areas of your life are being touched at once. This month the lines gather around {lst}.",
-                          "Rather than reading each line as a separate influence, notice how the planets connect these areas. A change you're considering in one part of your life may be inseparable from what is developing in another. That's why a shift in work, a creative awakening or a new relationship with responsibility can also become a deeply personal and spiritual experience."]}
+                          self.pattern_link()]}
+
+    def pattern_link(self):
+        c = self.cur
+        t = "Rather than reading each line as a separate influence, notice how the planets connect these areas."
+        if len(c) >= 2:
+            a, b = c[0], c[1]
+            t += (f" {pn(a['planet'], True)} reaches your {self.nm(a['target'])} from your {hname(a['house'])} while {pn(b['planet'])} reaches your {self.nm(b['target'])} from your {hname(b['house'])}, "
+                  f"so a change you make around {T.PT[a['target']]['short']} may be inseparable from what is developing around {T.PT[b['target']]['short']}.")
+        return t
 
     def final(self, cur):
         pr = self.prof
@@ -1328,7 +1466,9 @@ class Builder:
         nn, sn = self.P["north_node"], self.P["south_node"]
         out.append(f"Your nodes tell the same story from another angle. You're learning to move from {T.NODE_SIGN[sn['sign']][1]} toward {T.NODE_SIGN[nn['sign']][0]}, and what you give feels truer when it comes from freedom rather than habit.")
         if self.f["cycles"]:
-            out.append("The bigger cycles you're living through tell me this month is part of a real turning point. You don't have to rush that chapter, and you don't have to leave the person you've been behind to step into it.")
+            ck = [T.CYCLE[(c["planet"], c["aspect"])][0] for c in self.f["cycles"] if (c["planet"], c["aspect"]) in T.CYCLE]
+            nm_ = ck[0].replace("Your ", "your ") if ck else "the bigger cycles you're living through"
+            out.append(f"{cap(nm_)} tells me this month is part of a real turning point. You don't have to rush that chapter, and you don't have to leave the person you've been behind to step into it.")
         octs = []
         for s in cur:
             o = OCT_SHORT[s["planet"]]

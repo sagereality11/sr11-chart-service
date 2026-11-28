@@ -937,3 +937,77 @@ CENTRAL = {
     "chiron": ("whether the old hurt is gone. It may not be", "whether you're ready to meet it with compassion instead of protection"),
     "north_node": ("whether you know exactly where you're going", "whether you'll take the next small step anyway"),
 }
+
+
+# ------------------------------------------------------------------ personal layers (Nov 2026 flow pass)
+# What a natal planet means in the house it lives in. {h} is the house ordinal, {focus} is FOCUS[h].
+PIH = {
+    "sun": "With your Sun in your {h} house, you come most alive through {focus}. It's where you look for proof of who you are, so anything that touches your Sun reaches straight into this part of your life.",
+    "moon": "Your Moon in your {h} house ties your emotional safety to {focus}. When something feels unsettled here, you tend to feel it in your body before you can put it into words.",
+    "mercury": "With Mercury in your {h} house, your mind keeps returning to {focus}. It's where you think things through, plan and talk yourself into or out of things.",
+    "venus": "Venus in your {h} house means you find pleasure, beauty and connection through {focus}, and it's often where you quietly measure how valued you are.",
+    "mars": "Mars in your {h} house puts your drive into {focus}. It's where you push, protect and fight for what matters, sometimes before you've checked whether it's what you want.",
+    "jupiter": "Jupiter in your {h} house is where life tends to open for you, through {focus}. It's also where you can overextend, because more always looks like better here.",
+    "saturn": "Saturn in your {h} house tells me {focus} is where you learned to be careful. It's where you hold yourself to the highest standard, and where your hardest-won strength lives.",
+    "uranus": "Uranus in your {h} house is where you need room to do things your own way, in {focus}. Too much routine here starts to feel like a cage.",
+    "neptune": "Neptune in your {h} house brings longing and sensitivity to {focus}. It's where you can sense what's possible, and also where it's easy to lose your edges.",
+    "pluto": "Pluto in your {h} house tells me {focus} can carry a lot of emotional intensity for you. What happens here never feels casual. It feels like a matter of who you are.",
+    "chiron": "Chiron in your {h} house points to an old tender place around {focus}, and to the wisdom you've built from living with it.",
+    "north_node": "Your North Node in your {h} house points your growth toward {focus}.",
+    "south_node": "Your South Node in your {h} house ties your oldest habits to {focus}.",
+}
+
+# How the shadow and the gift look for each natal point being touched. Added to the transit planet's own octave.
+TGT_OCT = {
+    "sun": ("For your Sun, that can look like shrinking yourself to fit, or proving yourself over and over.",
+            "For your Sun, it looks like letting who you are lead, without waiting to be approved of first."),
+    "moon": ("For your Moon, that can look like taking care of everyone's feelings before you've noticed your own.",
+             "For your Moon, it looks like honoring what you need and letting it be enough of a reason."),
+    "mercury": ("For your Mercury, that can look like overthinking, rehearsing conversations or talking yourself out of what you know.",
+                "For your Mercury, it looks like saying the true thing simply, and trusting your own mind."),
+    "venus": ("For your Venus, that can look like giving more than you receive, or settling for less than you value.",
+              "For your Venus, it looks like choosing what you love on purpose, and letting yourself be loved back."),
+    "mars": ("For your Mars, that can look like pushing through on willpower alone, or snapping when you're tired.",
+             "For your Mars, it looks like acting on what you want, with your energy going where you've chosen."),
+    "jupiter": ("For your Jupiter, that can look like saying yes to everything, or losing faith when growth slows down.",
+                "For your Jupiter, it looks like growth with a direction, and a faith that includes your own path."),
+    "saturn": ("For your Saturn, that can look like holding yourself to an impossible standard and calling it responsibility.",
+               "For your Saturn, it looks like commitments you've chosen, held with a steady and kinder hand."),
+    "uranus": ("For your Uranus, that can look like restlessness you can't name, or breaking away before you know what you want.",
+               "For your Uranus, it looks like freedom you build into your life on purpose."),
+    "neptune": ("For your Neptune, that can look like drifting, escaping or giving yourself away to keep the peace.",
+                "For your Neptune, it looks like a dream you take seriously enough to give it a shape."),
+    "pluto": ("For your Pluto, that can look like holding on tighter, or trying to control what is ready to change.",
+              "For your Pluto, it looks like letting something end so that something truer can begin."),
+    "chiron": ("For your Chiron, that can look like protecting the old wound so well that help can't reach it.",
+               "For your Chiron, it looks like letting what you've survived become wisdom you can share."),
+    "north_node": ("For your North Node, that can look like retreating to what's familiar because the new feels uncertain.",
+                   "For your North Node, it looks like one real step toward the life your soul is reaching for."),
+    "south_node": ("For your South Node, that can look like falling back on old roles because they're easy.",
+                   "For your South Node, it looks like using your gifts by choice rather than by habit."),
+    "asc": ("For your Ascendant, that can look like hiding behind the version of you other people expect.",
+            "For your Ascendant, it looks like showing up as yourself, in your body and on your own terms."),
+    "mc": ("For your Midheaven, that can look like chasing a direction that no longer fits because you've already invested so much.",
+           "For your Midheaven, it looks like a public life that reflects who you are now."),
+}
+
+# Opening line of the letter, by the lead current's transit planet. {M} month, {short} the natal point's short phrase.
+LETTER_HOOK = {
+    "saturn": "{M} isn't only asking you to look at {short}. It's asking how much of yourself you're willing to keep giving to a life that may no longer reflect who you're becoming. There's a difference between being able to carry something and being meant to carry it forever, and this month brings that difference into focus.",
+    "jupiter": "{M} opens a door around {short}. The question isn't whether there's more available to you. It's whether the more you're reaching for is truly yours, or simply what you've learned to want.",
+    "uranus": "{M} shakes something loose around {short}. A part of you that has been patient for a long time is asking for room, and the old arrangement may not be able to hold it anymore.",
+    "neptune": "{M} softens the edges around {short}. What used to feel certain may feel less defined, and that isn't a loss. It's space for something truer to come through.",
+    "pluto": "{M} goes deep around {short}. Something that has quietly held power in your life is ready to change shape, and the invitation is to let it, rather than hold on harder.",
+    "chiron": "{M} touches an old tender place around {short}. Not to reopen it, but to show you how much you've already grown around it.",
+    "north_node": "{M} turns you toward your soul's direction through {short}. Some of what you meet this month is less about what happens to you and more about where you're going.",
+}
+
+WINDOW_OPEN_BIG = ["This is the most concentrated stretch of {M}. ", "A lot happens in these few days. ",
+                   "Several threads meet in this window. ", "These days carry real weight in your chart. "]
+WINDOW_OPEN_GENTLE = ["These are gentler days in your chart. ", "The pace eases here. ",
+                      "This window gives you more room to breathe. ", "Things soften for a few days. "]
+
+# One short label per house, for lists where the longer phrases would pile up "and"s.
+HOUSE_ONE = {1: "your sense of self", 2: "your money and self-worth", 3: "your voice", 4: "your home and family",
+             5: "your creativity", 6: "your daily work", 7: "your relationships", 8: "what you share with others",
+             9: "your beliefs", 10: "your career", 11: "your friendships and your future", 12: "your inner life"}
