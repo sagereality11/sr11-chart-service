@@ -99,15 +99,19 @@ def explain_terms(sections, skip=("next",)):
         for pi, para in enumerate(sec["paragraphs"]):
             if "From there we'll look at" in para or para.startswith("You didn't have a birth time"):
                 continue
-            adds = []
+            sents = re.split(r"(?<=[.!?])\s+(?=[A-Z])", para)
+            changed = False
             for i, (pat, expl) in enumerate(T.GLOSS):
                 if i in done or expl in para:
                     continue
-                if re.search(pat, para):
-                    adds.append(expl)
-                    done.add(i)
-            if adds:
-                sec["paragraphs"][pi] = para + " " + " ".join(adds)
+                for k, st in enumerate(sents):
+                    if re.search(pat, st):
+                        sents[k] = st + " " + expl
+                        done.add(i)
+                        changed = True
+                        break
+            if changed:
+                sec["paragraphs"][pi] = " ".join(sents)
 
 
 class Writer:
@@ -263,11 +267,11 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
         concentrated = False
     else:
         if (P[r2]["sign"], P[r2]["house"]) == (P[rc]["sign"], P[rc]["house"]):
-            stand = (f"The first thing that stands out in your chart is the conversation between two planets. {The(r2)} rules your income "
+            stand = (f"The first thing that stands out in your chart is the conversation between {the(r2)} and {the(rc)}. {The(r2)} rules your income "
                      f"and {the(rc)} guides your career, and both sit in {P[r2]['sign']} in your {T.ORD[P[r2]['house']]} house. "
                      "Much of your wealth story is about how those two connect.")
         else:
-            stand = T.STAND["split"].format(R=The(r2), S=P[r2]["sign"], ord=T.ORD[P[r2]["house"]], C=the(rc),
+            stand = T.STAND["split"].format(Rl=the(r2), R=The(r2), S=P[r2]["sign"], ord=T.ORD[P[r2]["house"]], C=the(rc),
                                             CS=P[rc]["sign"], cord=T.ORD[P[rc]["house"]])
         stand = cap(stand) if False else stand
         concentrated = False
@@ -677,7 +681,7 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
         w.section(f"t-{pl}", title, level=2)
         cyc_cls = ("conj" if cycles and cycles[0]["aspect"] == 0 else "hard") if cycles else None
         _tn = list(dict.fromkeys(tname(h["target"]) for h in sorted(normal, key=lambda h: -h["weight"]) if h["class"] == main_cls))
-        thresh_info[f"t-{pl}"] = (pl, main_cls or cyc_cls, bool(ing), [h["target"] for h in normal], _tn)
+        thresh_info[f"t-{pl}"] = (pl, main_cls or cyc_cls, bool(ing), [h["target"] for h in normal], _tn, ing[0]["house"] if ing else None)
         # timing sentences, per class
         # an IC conjunction and a Midheaven opposition are the same moment on one axis
         ic_conj = [h for h in normal if h["target"] == "ic" and h["aspect"] == 0]
@@ -789,7 +793,8 @@ def build_reading(a: dict, name: str, birth: dict) -> dict:
             break
     s_txt = join([s for s in strengths if s])
     first = f"Your chart centers money on {the(r2)}" + (f", and {the(r2)} is {s_txt}." if s_txt else ".")
-    second = ("That gives you real agency. Your earning power comes from " +
+    second = (("That gives you real agency. " if s_txt else f"{The(r2)} sits in {P[r2]['sign']} in your {T.ORD[P[r2]['house']]} house, so that's where your money story keeps returning. ")
+              + "Your earning power comes from " +
               {"moon": "your instincts, your care, and your ability to recognize what people need.",
                "sun": "your confidence, your leadership, and your willingness to be seen.",
                "mercury": "your mind, your words, and your ability to connect ideas.",

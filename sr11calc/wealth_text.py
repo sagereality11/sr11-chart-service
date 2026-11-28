@@ -661,7 +661,7 @@ STAND = {
                      "from you. It begins with who you are, what you notice, and what you decide to do with it."),
     "stellium": ("The first thing that stands out in your chart is the crowd in your second house. {names} all sit in the house of income "
                  "and worth, so money is never a side topic for you. It's one of the main stages of your life."),
-    "split": ("The first thing that stands out in your chart is the conversation between two planets. {R} rules your income from {S} in your "
+    "split": ("The first thing that stands out in your chart is the conversation between {Rl} and {C}. {R} rules your income from {S} in your "
               "{ord} house, while {C} guides your career from {CS} in your {cord} house. Much of your wealth story is about how those two "
               "connect."),
 }
